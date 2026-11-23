@@ -63,13 +63,19 @@ YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
   - `mace` comes right after sword;
   - `lance` is used for 26.x spears (tag `ysm:pike`);
   - item tags live in the 26.x `tags/item` folder and use `c:` convention tags.
+- Vehicles:
+  - riders sit at the model's `PassengerLocator` bones, and vehicle models turn the way 2.6.5 turns them;
+  - vehicle and projectile models are drawn at scale 1.0 (3.0-dev used 0.7);
+  - the 1.20 ids `minecraft:boat` and `minecraft:chest_boat` match every 26.x boat and chest boat type.
+- Server settings `AcceptSoundFX` and `PlayerSyncTimeout` exist again.
+- WTHIT shows the YSM model of the player or vehicle you look at. 2.6.5 did this through Jade and The One Probe.
 
 ## Not included or not yet working
 
 - The Wine Fox built-in models. They are CC BY-NC-SA 4.0 or All Rights Reserved and are not redistributed.
 - The jars of Forge mods that upstream compiled against (FirstPerson, NotEnoughAnimations, Oculus, Superb Warfare).
-- Integrations with other mods. The Forge-only compat modules remain as declared Molang stand-ins.
-- Iris/Sodium compatibility.
+- Most integrations with other mods. Iris, Mod Menu and WTHIT are done; the Forge-only compat modules remain as
+  declared Molang stand-ins.
 
 ## Known test failures
 
@@ -89,12 +95,14 @@ These 10 failures occur on the author's Windows machine (Chinese locale).
 
 ## Native library
 
-`native-patches/msvc.patch` applies to YesSteveModel-Native `9d92c175cb3c4b8db4ecb334281bd13d0b224f47`. It contains:
+`native-patches/port.patch` applies to YesSteveModel-Native `9d92c175cb3c4b8db4ecb334281bd13d0b224f47`. It contains:
 
 - `/bigobj` for MSVC;
 - two MSVC compile fixes;
 - a unique tag per JNI entry point. `__COUNTER__` restarts in every translation unit, so MSVC merged entry points with
-  equal signatures, and one native function ran another.
+  equal signatures, and one native function ran another;
+- the Iris 1.11 entity vertex layout on 26.x (`VertexKind::kIris56V2`, Java `IRIS_56_V2`): 56 bytes, with
+  `iris_Entity` as four unsigned shorts, the mid-texture coordinate at byte 44 and the tangent at byte 52.
 
 ## Modified files
 
@@ -272,6 +280,7 @@ here.
 - `src/main/java/com/elfmcys/ysm/command/sub/ExportCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/ModelCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/PingCommand.java`
+- `src/main/java/com/elfmcys/ysm/config/ServerConfig.java`
 - `src/main/java/com/elfmcys/ysm/event/CapabilityEvent.java`
 - `src/main/java/com/elfmcys/ysm/event/CommandRegistry.java`
 - `src/main/java/com/elfmcys/ysm/event/CommonEvent.java`
@@ -320,12 +329,15 @@ here.
 - `src/main/java/com/elfmcys/ysm/model/catalog/RawModelImporter.java`
 - `src/main/java/com/elfmcys/ysm/model/catalog/client/ClientCatalogManager.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/ModelRenderTarget.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/TargetSoundResources.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/preview/ClientPreviewGenerator.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/render/HostTexturePublisher.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/render/ModelRenderTargetLoader.java`
 - `src/main/java/com/elfmcys/ysm/model/service/ClientModelService.java`
 - `src/main/java/com/elfmcys/ysm/model/service/GameTrackingView.java`
 - `src/main/java/com/elfmcys/ysm/model/service/ModelExportService.java`
 - `src/main/java/com/elfmcys/ysm/model/service/ServerModelService.java`
+- `src/main/java/com/elfmcys/ysm/model/session/server/ServerModelSession.java`
 - `src/main/java/com/elfmcys/ysm/natives/buffer/NativeHeapBuffer.java`
 - `src/main/java/com/elfmcys/ysm/natives/image/Image.java`
 - `src/main/java/com/elfmcys/ysm/natives/image/ImageEncoder.java`
@@ -335,6 +347,7 @@ here.
 - `src/main/java/com/elfmcys/ysm/natives/render/FallbackVertexWriter.java`
 - `src/main/java/com/elfmcys/ysm/natives/render/NativeBakedModel.java`
 - `src/main/java/com/elfmcys/ysm/natives/render/NativeRenderer.java`
+- `src/main/java/com/elfmcys/ysm/natives/render/VertexFormatType.java`
 - `src/main/java/com/elfmcys/ysm/network/NetworkHandler.java`
 - `src/main/java/com/elfmcys/ysm/network/ProtocolInbound.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ChannelCompressionBypass.java`
@@ -357,6 +370,11 @@ here.
 - `src/main/java/com/elfmcys/ysm/util/ModelIdUtil.java`
 - `src/main/java/com/elfmcys/ysm/util/NativeLibUtil.java`
 - `src/main/java/com/elfmcys/ysm/util/RenderUtil.java`
+- `src/main/resources/assets/ysm/lang/en_us.json`
+- `src/main/resources/assets/ysm/lang/ko_kr.json`
+- `src/main/resources/assets/ysm/lang/ru_ru.json`
+- `src/main/resources/assets/ysm/lang/zh_cn.json`
+- `src/main/resources/assets/ysm/lang/zh_tw.json`
 - `src/main/resources/data/ysm/tags/item/axes.json`
 - `src/main/resources/data/ysm/tags/item/hoes.json`
 - `src/main/resources/data/ysm/tags/item/pickaxes.json`
@@ -457,6 +475,8 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/localtest/java/com/elfmcys/ysm/localtest/VisualTestHarness.java`
 - `src/localtest/resources/fabric.mod.json`
 - `src/main/java/com/elfmcys/ysm/buffer/Memory.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitCommonPlugin.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitPlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/GuiDraw.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiQuadRenderState.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiScissor.java`
@@ -464,9 +484,11 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModelRenderer.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModels.java`
 - `src/main/java/com/elfmcys/ysm/client/texture/YsmTexture.java`
+- `src/main/java/com/elfmcys/ysm/fabric/FabricClientEventHooks.java`
 - `src/main/java/com/elfmcys/ysm/fabric/FabricEventHooks.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabric.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabricClient.java`
+- `src/main/java/com/elfmcys/ysm/fabric/YsmModMenu.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/AbstractArrowExtraInfoMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ArrowPotionAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ChunkMapAccessor.java`
@@ -507,7 +529,9 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/RenderTypeInvoker.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ScreenAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/platform/EntityCapabilityMixin.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/SoundAcceptance.java`
 - `src/main/java/com/elfmcys/ysm/network/NetworkHandlerClient.java`
+- `src/main/java/com/elfmcys/ysm/network/SoundPolicyPayload.java`
 - `src/main/java/com/elfmcys/ysm/network/YsmFramePayload.java`
 - `src/main/java/com/elfmcys/ysm/platform/Connections.java`
 - `src/main/java/com/elfmcys/ysm/platform/Dist.java`
@@ -576,6 +600,8 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/resources/data/ysm/tags/item/shields.json`
 - `src/main/resources/data/ysm/tags/item/throwable_potion.json`
 - `src/main/resources/fabric.mod.json`
+- `src/main/resources/waila_plugins.json`
+- `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/testsupport/FabricTestEnvironment.java`
 - `src/verification/test/resources/META-INF/services/org.junit.platform.launcher.LauncherSessionListener`
 

@@ -25,10 +25,12 @@ import org.jetbrains.annotations.Nullable;
 /** Elytra (and other wing equipment) at the elytra locator (Fabric port: 26.x equipment layers). */
 public class CustomPlayerElytraLayer extends GeoLayerRenderer<CustomPlayerEntity> {
     private final ElytraModel elytraModel;
+    private final ElytraModel babyElytraModel;
     private final EquipmentLayerRenderer equipmentRenderer;
 
     public CustomPlayerElytraLayer(EntityModelSet modelSet, EquipmentLayerRenderer equipmentRenderer) {
         this.elytraModel = new ElytraModel(modelSet.bakeLayer(ModelLayers.ELYTRA));
+        this.babyElytraModel = new ElytraModel(modelSet.bakeLayer(ModelLayers.ELYTRA_BABY));
         this.equipmentRenderer = equipmentRenderer;
     }
 
@@ -47,11 +49,12 @@ public class CustomPlayerElytraLayer extends GeoLayerRenderer<CustomPlayerEntity
         var wings = stack;
         var asset = equippable.assetId().get();
         var texture = playerElytraTexture(state);
+        var model = humanoid.isBaby ? babyElytraModel : elytraModel;
         renderData.modelState.visitLocatorGroup(PlayerLocator.get().elytra, poseStack, locatorPose -> {
-            locatorPose.translate(0, 1.5, 0);
+            // 2.6.5 (26.x) draws the 26.x elytra model at the locator, only flipped; the 1.20.1 offset and 2x scale
+            // made the wings twice as large on 26.x.
             locatorPose.mulPose(Axis.ZP.rotationDegrees(180));
-            locatorPose.scale(2.0f, 2.0f, 2.0f);
-            equipmentRenderer.renderLayers(EquipmentClientInfo.LayerType.WINGS, asset, elytraModel, humanoid, wings,
+            equipmentRenderer.renderLayers(EquipmentClientInfo.LayerType.WINGS, asset, model, humanoid, wings,
                 locatorPose, collector, packedLight, texture, state.outlineColor, 0);
         });
     }

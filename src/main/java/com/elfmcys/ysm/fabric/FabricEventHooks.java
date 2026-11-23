@@ -9,24 +9,16 @@ package com.elfmcys.ysm.fabric;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.platform.event.MinecraftForge;
 import com.elfmcys.ysm.platform.event.forge.AddReloadListenerEvent;
-import com.elfmcys.ysm.platform.event.forge.ClientPlayerNetworkEvent;
 import com.elfmcys.ysm.platform.event.forge.EntityJoinLevelEvent;
 import com.elfmcys.ysm.platform.event.forge.EntityLeaveLevelEvent;
-import com.elfmcys.ysm.platform.event.forge.FMLClientSetupEvent;
 import com.elfmcys.ysm.platform.event.forge.FMLCommonSetupEvent;
-import com.elfmcys.ysm.platform.event.forge.FMLLoadCompleteEvent;
 import com.elfmcys.ysm.platform.event.forge.LevelEvent;
 import com.elfmcys.ysm.platform.event.forge.MobEffectEvent;
 import com.elfmcys.ysm.platform.event.forge.PlayerEvent;
 import com.elfmcys.ysm.platform.event.forge.RegisterCommandsEvent;
-import com.elfmcys.ysm.platform.event.forge.RegisterKeyMappingsEvent;
 import com.elfmcys.ysm.platform.event.forge.ServerAboutToStartEvent;
 import com.elfmcys.ysm.platform.event.forge.ServerStoppingEvent;
 import com.elfmcys.ysm.platform.event.forge.TickEvent;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.entity.event.v1.effect.ServerMobEffectEvents;
@@ -83,32 +75,4 @@ public final class FabricEventHooks {
     public static void postCommonSetup() {
         post(new FMLCommonSetupEvent());
     }
-
-    public static void registerClient() {
-        com.elfmcys.ysm.client.event.ClientCommandHandler.register();
-        com.elfmcys.ysm.client.gui.pip.YsmGuiModels.register();
-        com.elfmcys.ysm.client.event.ClientSetupEvent.registerHudElements();
-        ClientTickEvents.START_CLIENT_TICK.register(client -> post(new TickEvent.ClientTickEvent(TickEvent.Phase.START)));
-        ClientTickEvents.END_CLIENT_TICK.register(client -> post(new TickEvent.ClientTickEvent(TickEvent.Phase.END)));
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> post(new ClientPlayerNetworkEvent.LoggingIn(client.player, handler)));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> post(new ClientPlayerNetworkEvent.LoggingOut(client.player, handler)));
-        ClientEntityEvents.ENTITY_LOAD.register((entity, level) -> post(new EntityJoinLevelEvent(entity, level)));
-        ClientEntityEvents.ENTITY_UNLOAD.register((entity, level) -> post(new EntityLeaveLevelEvent(entity, level)));
-        // Forge ran client setup during the first resource reload, after the window and GPU device existed. Fabric
-        // client initializers run inside the Minecraft constructor before both, so setup waits for the main loop.
-        // 3.0-dev PauseScreenMixin: skin button on the pause screen, mobile launchers only.
-        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
-            if (screen instanceof net.minecraft.client.gui.screens.PauseScreen pause) {
-                var buttons = com.elfmcys.ysm.client.gui.AndroidCompat.addYsmSkinButton(pause);
-                if (buttons != null)
-                    net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(screen).addAll(buttons);
-            }
-        });
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            post(new FMLClientSetupEvent());
-            post(new FMLLoadCompleteEvent());
-        });
-        post(new RegisterKeyMappingsEvent());
-    }
-
 }

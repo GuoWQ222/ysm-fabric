@@ -101,12 +101,17 @@ public final class RenderUtil {
             int index = vehicle.getPassengers().indexOf(entity);
             if (index < 0)
                 return;
-            // TODO (upstream): place passengers at the model's passenger bones.
-            float rawVehicleYaw = Mth.lerp(partialTicks, vehicle.yRotO, vehicle.getYRot());
-            float vehicleYaw = EntityRendererReplace.getYaw(vehicle, rawVehicleYaw, partialTicks);
-            poseStack.mulPose(Axis.YP.rotationDegrees(180 - vehicleYaw));
-            poseStack.mulPose(Axis.YN.rotationDegrees(180 - vehicleYaw));
-            double yOffset = -passengerHeight(vehicle, entity);
+            // 2.6.5 parity: the passenger sits at the vehicle model's PassengerLocator for its index (recorded when the
+            // vehicle was drawn), then undoes the vehicle yaw; without a seat, vanilla placement stays.
+            if (!(vehicleCap instanceof com.elfmcys.ysm.client.entity.CustomVehicleEntity seats))
+                return;
+            var seat = seats.passengerSeat(index);
+            if (seat == null)
+                return;
+            poseStack.mulPose(seat);
+            poseStack.mulPose(Axis.YN.rotationDegrees(seats.seatAngle()));
+            double yOffset = vehicle.position().y - vehicle.getPassengerRidingPosition(entity).y
+                + entity.getVehicleAttachmentPoint(vehicle).y;
             boolean playerHasCap = entity instanceof Player player
                 && player.getCapability(PlayerAnimatableCapabilityProvider.CAP).isPresent();
             if (playerHasCap)
@@ -151,9 +156,12 @@ public final class RenderUtil {
             float pScale, float pitch, float yaw, float partialTicks, TAnimatable entity,
             GeoReplacedEntityRenderer<T, ? super TAnimatable> renderer, boolean showGround) {
         var living = entity.getEntity();
-        view.translate(pPosX, pPosY, 1250.0f).scale(1.0f, 1.0f, -1.0f);
+        view.translate(pPosX, pPosY, 1250.0f);
 
         PoseStack poseStack = new PoseStack();
+        // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
+        // from the pose, so a view-space flip left GUI models lit from behind (dark).
+        poseStack.scale(1.0f, 1.0f, -1.0f);
         poseStack.translate(0.0D, 0.0D, 1000.0D);
         poseStack.scale(pScale, pScale, pScale);
         poseStack.translate(0, 0.8, 0);
@@ -373,8 +381,11 @@ public final class RenderUtil {
         var applied = input.apply();
         Throwable primary = null;
         try {
-            view.translate(posX, posY, 1050.0f).scale(1.0f, 1.0f, -1.0f);
+            view.translate(posX, posY, 1050.0f);
             var poseStack = new PoseStack();
+            // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
+            // from the pose, so a view-space flip left GUI models lit from behind (dark).
+            poseStack.scale(1.0f, 1.0f, -1.0f);
             poseStack.translate(0.0D, input.disableRotation() ? 5.5 : 0, 1000.0D);
             poseStack.scale(scale, scale, scale);
             var zp = Axis.ZP.rotationDegrees(180.0F);
@@ -421,8 +432,11 @@ public final class RenderUtil {
         YsmGuiModels.submit(graphics, x0, y0, x1, y1, (view, collector) -> {
             setRenderingInPaperDoll(true);
             try {
-                view.translate((float)(posX + scale * 0.5), (float)(posY + scale * 2), 0).scale(1, 1, -1);
+                view.translate((float)(posX + scale * 0.5), (float)(posY + scale * 2), 0);
                 var poseStack = new PoseStack();
+                // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
+                // from the pose, so a view-space flip left GUI models lit from behind (dark).
+                poseStack.scale(1, 1, -1);
                 poseStack.translate(0, 0, -z);
                 poseStack.scale(scale, scale, scale);
                 Quaternionf zRot = Axis.ZP.rotationDegrees(180.1F);

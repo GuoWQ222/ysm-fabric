@@ -30,6 +30,28 @@ public class CustomVehicleEntity extends AnimatableEntity<Entity> {
         super(vehicle, true);
     }
 
+    // 2.6.5 parity: passenger seats = vehicle rotation * PassengerLocator[i], relative to the vehicle origin, recorded
+    // when the vehicle model is drawn (render thread) and applied when its passengers are drawn.
+    private final java.util.List<org.joml.Matrix4f> passengerSeats = new java.util.ArrayList<>();
+    private float seatAngle;
+
+    public void updatePassengerSeats(java.util.List<org.joml.Matrix4f> seats, float angle) {
+        passengerSeats.clear();
+        passengerSeats.addAll(seats);
+        seatAngle = angle;
+    }
+
+    public @org.jetbrains.annotations.Nullable org.joml.Matrix4f passengerSeat(int index) {
+        return index >= 0 && index < passengerSeats.size() ? passengerSeats.get(index) : null;
+    }
+
+    public float seatAngle() {
+        return seatAngle;
+    }
+
+    /** Test diagnostics: what the last seat recording found. */
+    public volatile String seatDiagnostic = "none";
+
     @Override
     protected String requestedRenderTargetId() {
         var hash = getModelHash();
@@ -99,13 +121,14 @@ public class CustomVehicleEntity extends AnimatableEntity<Entity> {
     }
 
     @Override
+    // 2.6.5 draws vehicle and projectile models unscaled (its renderers return 1.0); 3.0-dev had 0.7.
     public float getWidthScale() {
-        return 0.7F;
+        return 1.0F;
     }
 
     @Override
     public float getHeightScale() {
-        return 0.7F;
+        return 1.0F;
     }
 
 }

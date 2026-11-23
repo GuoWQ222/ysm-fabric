@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.session.server;
 
 import com.elfmcys.ysm.model.domain.ModelId;
@@ -41,6 +42,8 @@ public final class ServerModelSession {
     private final boolean syncRoaming;
     private AuthoritySnapshot authority;
     private NegotiationState state = NegotiationState.PENDING;
+    private final long offeredAtNanos = System.nanoTime();
+    private boolean timedOut;
     private long nextPublicationId;
     private boolean publicationIdExhausted;
     private boolean publicationCommitted;
@@ -77,6 +80,21 @@ public final class ServerModelSession {
         }
         state = NegotiationState.DECLINED;
         return true;
+    }
+
+    /** 2.6.5 PlayerSyncTimeout: declines an offer the client has not answered within the timeout. */
+    public synchronized boolean expireIfPendingLongerThan(long timeoutNanos) {
+        if (state != NegotiationState.PENDING || System.nanoTime() - offeredAtNanos < timeoutNanos) {
+            return false;
+        }
+        state = NegotiationState.DECLINED;
+        timedOut = true;
+        return true;
+    }
+
+    /** True when the server, not the client, declined this offer (PlayerSyncTimeout). */
+    public synchronized boolean timedOut() {
+        return timedOut;
     }
 
     public synchronized boolean pending() {

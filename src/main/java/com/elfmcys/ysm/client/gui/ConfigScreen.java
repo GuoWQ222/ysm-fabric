@@ -14,10 +14,32 @@ import org.jetbrains.annotations.Nullable;
 public class ConfigScreen extends ModelScreen {
     @Nullable
     private final PlayerModelScreen parent;
+    @Nullable
+    private final net.minecraft.client.gui.screens.Screen returnTo;
+    private final boolean fromModMenu;
 
     public ConfigScreen(@Nullable PlayerModelScreen parent) {
         super(Component.literal("YSM Config GUI"), parent);
         this.parent = parent;
+        this.returnTo = parent;
+        this.fromModMenu = false;
+    }
+
+    /** Fabric port: opened by Mod Menu's "Configure"; Return and Escape go back to Mod Menu's screen. */
+    public ConfigScreen(@Nullable net.minecraft.client.gui.screens.Screen modMenuScreen, boolean fromModMenu) {
+        super(Component.literal("YSM Config GUI"), (ModelScreen)null);
+        this.parent = null;
+        this.returnTo = modMenuScreen;
+        this.fromModMenu = fromModMenu;
+    }
+
+    @Override
+    public void onClose() {
+        if (fromModMenu) {
+            showScreen(returnTo);
+            return;
+        }
+        super.onClose();
     }
 
     @Override
@@ -26,7 +48,7 @@ public class ConfigScreen extends ModelScreen {
         int y = (height - 265) / 2;
 
         addRenderableWidget(new FlatColorButton(x + 5, y + 2, 80, 18,
-            Component.translatable("gui.yes_steve_model.model.return"), (b) -> showScreen(parent)));
+            Component.translatable("gui.yes_steve_model.model.return"), (b) -> showScreen(returnTo)));
 
         addRenderableWidget(
             // Fabric port: vanilla slider in place of ForgeSlider (0-100, step 1, "label: N%").

@@ -59,7 +59,7 @@ public final class YesSteveModel {
         if (!NativeLibUtil.isAvailable())
             return;
         Subscribers.registerClient(EVENT_BUS);
-        FabricEventHooks.registerClient();
+        com.elfmcys.ysm.fabric.FabricClientEventHooks.register();
     }
 
     public static void registerEventHandler(Object handler) {

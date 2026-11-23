@@ -57,6 +57,8 @@ public final class ServerModelService implements AutoCloseable {
     private final ServerPreviewWork previewWork = new ServerPreviewWork();
     private final ReloadableModelCatalog.Subscription publicationSubscription;
     private final ServerConnectionRegistry<ConnectionState> connections = new ServerConnectionRegistry<>();
+    private int syncTimeoutTicks;
+    private int appliedAcceptSoundFx = -1;
     private final AtomicReference<CatalogSnapshot> pendingPublication = new AtomicReference<>();
     private final PreviewStorage previews;
     private final ServerResourceRuntime serverResources;
@@ -85,6 +87,23 @@ public final class ServerModelService implements AutoCloseable {
     public synchronized void tick() {
         if (INSTANCE != this) {
             return;
+        }
+        if (++syncTimeoutTicks >= 20) {
+            syncTimeoutTicks = 0;
+            var timeout = ServerConfig.playerSyncTimeoutNanos();
+            connections.forEach(state -> {
+                if (state.session.expireIfPendingLongerThan(timeout)) {
+                    var player = server.getPlayerList().getPlayer(state.playerId);
+                    YesSteveModel.LOGGER.warn(
+                        "{} did not answer the YSM model sync offer within {} s; continuing without YSM models for this connection",
+                        player == null ? state.playerId : player.getGameProfile().name(),
+                        java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(timeout));
+                }
+            });
+        }
+        if (appliedAcceptSoundFx != ServerConfig.ACCEPT_SOUND_FX.get()) {
+            appliedAcceptSoundFx = ServerConfig.ACCEPT_SOUND_FX.get();
+            server.getPlayerList().getPlayers().forEach(com.elfmcys.ysm.network.NetworkHandler::sendSoundPolicy);
         }
         if (appliedCanSwitch != ServerConfig.CAN_SWITCH_MODEL.get()) {
             appliedCanSwitch = ServerConfig.CAN_SWITCH_MODEL.get();

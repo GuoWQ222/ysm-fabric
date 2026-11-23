@@ -87,13 +87,14 @@ public class CustomProjectileEntity extends AnimatableEntity<Projectile> {
     }
 
     @Override
+    // 2.6.5 draws vehicle and projectile models unscaled (its renderers return 1.0); 3.0-dev had 0.7.
     public float getWidthScale() {
-        return 0.7F;
+        return 1.0F;
     }
 
     @Override
     public float getHeightScale() {
-        return 0.7F;
+        return 1.0F;
     }
 
 }

@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.config;
 
 import com.elfmcys.ysm.natives.NativeRuntime;
@@ -16,6 +17,10 @@ public class ServerConfig {
     public static ForgeConfigSpec.BooleanValue RESTRICTED_AUTH;
     public static ForgeConfigSpec.ConfigValue<List<String>> RESTRICTED_MODEL_LIST;
     public static ForgeConfigSpec.BooleanValue LOW_BANDWIDTH_USAGE;
+    /** 2.6.5 parity: 0 = all model sounds, 1 = short sounds only, 2 = no sounds. */
+    public static ForgeConfigSpec.IntValue ACCEPT_SOUND_FX;
+    /** 2.6.5 parity: seconds a client may take to answer the model-session offer; 10 or less = automatic. */
+    public static ForgeConfigSpec.IntValue PLAYER_SYNC_TIMEOUT;
     public static ForgeConfigSpec.BooleanValue CAN_SWITCH_MODEL;
     public static ForgeConfigSpec.ConfigValue<String> DEFAULT_MODEL_PATH;
     public static ForgeConfigSpec.ConfigValue<String> DEFAULT_MODEL_TEXTURE;
@@ -33,6 +38,12 @@ public class ServerConfig {
     public static com.elfmcys.ysm.model.session.server.RestrictedModelPolicy modelPolicy() {
         var current = active;
         return current == null ? null : current.policy();
+    }
+
+    /** PlayerSyncTimeout in nanoseconds (values of 10 s or less select the automatic 60 s). */
+    public static long playerSyncTimeoutNanos() {
+        int seconds = PLAYER_SYNC_TIMEOUT.get();
+        return java.util.concurrent.TimeUnit.SECONDS.toNanos(seconds <= 10 ? 60 : seconds);
     }
 
     private static void init(ForgeConfigSpec.Builder builder) {
@@ -72,6 +83,16 @@ public class ServerConfig {
         builder.comment("Suppress network synchronization of partial features to reduce bandwidth usage");
         builder.comment("Only effective when there are tons of players");
         LOW_BANDWIDTH_USAGE = builder.define("LowBandwidthUsage", false);
+
+        builder.comment("Model sound effects sent to players, to save bandwidth and client memory");
+        builder.comment("0: all sounds (default)");
+        builder.comment("1: only short sounds (shorter than 4 seconds and smaller than 40 KB)");
+        builder.comment("2: no sounds");
+        ACCEPT_SOUND_FX = builder.defineInRange("AcceptSoundFX", 0, 0, 2);
+
+        builder.comment("Seconds a player's client may take to answer the model sync offer before the server stops");
+        builder.comment("waiting and continues without YSM models for that connection. 10 or less means automatic (60 s).");
+        PLAYER_SYNC_TIMEOUT = builder.defineInRange("PlayerSyncTimeout", 0, 0, 120);
 
         builder.pop();
     }

@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client;
 
 import com.elfmcys.ysm.buffer.BufferType;
@@ -72,6 +73,11 @@ public final class TargetSoundResources implements AutoCloseable {
     public synchronized TargetSoundResources acquire() {
         requireOpen();
         return new TargetSoundResources(representation, firstChunks, validatedMedia, modelId);
+    }
+
+    /** Whether {@link #prepare} fetched and validated this sound (AcceptSoundFX may have left it out). */
+    public synchronized boolean isPrepared(SoundMedia media) {
+        return validatedMedia.contains(media.mediaIdentity()) && firstChunks.containsKey(media.chunkInfos().get(0).type());
     }
 
     public SoundSource bind(SoundMedia media) {

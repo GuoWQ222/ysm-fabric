@@ -1,0 +1,10 @@
+{
+  "ysm:model_info": {
+    "entrypoints": {
+      "common": "com.elfmcys.ysm.client.compat.wthit.YsmWthitCommonPlugin",
+      "client": "com.elfmcys.ysm.client.compat.wthit.YsmWthitPlugin"
+    },
+    "side": "*",
+    "required": ["ysm"]
+  }
+}

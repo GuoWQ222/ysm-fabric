@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client.render;
 
 import com.elfmcys.ysm.model.storage.ModelStorageInfra;
@@ -471,7 +472,9 @@ public final class ModelRenderTargetLoader implements AutoCloseable {
                                 strings = readCommonStrings(cancelled, request.view(), phase);
                                 sounds = resources
                                     .own(TargetSoundResources.prepare(cancelled, request.representation().identity(),
-                                        request.view().getCommon().sounds(), phase, request.stateKey().role()));
+                                        com.elfmcys.ysm.model.resource.client.SoundAcceptance.filter(
+                                            request.view().getCommon().sounds()),
+                                        phase, request.stateKey().role()));
                             }
                             var result = prepareNow(cancelled, request, definition, strings, sounds);
                             resources.commit();
@@ -529,7 +532,9 @@ public final class ModelRenderTargetLoader implements AutoCloseable {
                 var defaultSource = local;
                 var domain = DefaultAnimationKey.domain(request.target().descriptor(), set.id());
                 var defaults = request.defaultModel() ? null : defaultAnimations.source(domain);
-                if (!request.defaultModel() && defaults == null)
+                // 2.6.5 parity: a vehicle or projectile model the default model has no counterpart for (e.g. a horse
+                // "foxcar") runs on its own animations; only player targets require the default model's fallback set.
+                if (!request.defaultModel() && defaults == null && request.target().kind() == RenderTargetKind.PLAYER)
                     throw AssetLoadException.access("Default animation source is unavailable: " + domain);
                 var closure = local.toBuilder();
                 var fallbackDefinition = ModelDataProto.newBuilder();
@@ -659,7 +664,10 @@ public final class ModelRenderTargetLoader implements AutoCloseable {
             throws IOException {
             var sounds = new LinkedHashMap<String, SoundSource>();
             for (var entry : view.getCommon().sounds().entrySet()) {
-                sounds.put(entry.getKey(), soundResources.bind(entry.getValue()));
+                // AcceptSoundFX: rejected (and therefore unprepared) sounds stay absent; playing them is a no-op.
+                if (com.elfmcys.ysm.model.resource.client.SoundAcceptance.accepts(entry.getValue())
+                    && soundResources.isPrepared(entry.getValue()))
+                    sounds.put(entry.getKey(), soundResources.bind(entry.getValue()));
             }
             return new CommonAssetData(sounds, soundResources);
         }
@@ -727,20 +735,30 @@ public final class ModelRenderTargetLoader implements AutoCloseable {
             byte[] textureHash, GeoModelProto geo, BakedModelCache.TexturePixelsSupplier texturePixels,
             RenderTargetView target, PBRTextureSetProto textureProto, boolean defaultModel, boolean cacheOnly)
             throws IOException {
+            var locators = locatorType(target);
             if (defaultModel) {
                 return BakedModelCache.bakeResident(geo, resourceName, texturePixels, CURRENT_RAW_UV_VERSION,
-                    target.descriptor().settings().forceCulling(), false, hasPbr(textureProto), PlayerLocator.get());
+                    target.descriptor().settings().forceCulling(), false, hasPbr(textureProto), locators);
             }
             if (cacheOnly) {
                 var model = bakedModels.loadExisting(representation.containerId(), resourceName, textureHash,
-                    PlayerLocator.get());
+                    locators);
                 if (model == null)
                     throw AssetLoadException.access("Geometry is not locally cached");
                 return model;
             }
             return bakedModels.loadOrBake(representation.containerId(), resourceName, textureHash, geo, texturePixels,
                 CURRENT_RAW_UV_VERSION, target.descriptor().settings().forceCulling(), false, hasPbr(textureProto),
-                PlayerLocator.get());
+                locators);
+        }
+
+        /** Seats (PassengerLocator) only resolve against the vehicle table; projectiles get their own table too. */
+        private static com.elfmcys.ysm.geckolib3.geo.render.built.GeoLocatorType locatorType(RenderTargetView target) {
+            return switch (target.kind()) {
+                case VEHICLE -> com.elfmcys.ysm.client.model.locator.VehicleLocator.get();
+                case PROJECTILE -> com.elfmcys.ysm.client.model.locator.ProjectileLocator.get();
+                default -> PlayerLocator.get();
+            };
         }
 
     }

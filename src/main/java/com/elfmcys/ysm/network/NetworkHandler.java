@@ -50,12 +50,20 @@ public final class NetworkHandler {
         initialized = true;
         PayloadTypeRegistry.clientboundPlay().register(YsmFramePayload.TYPE, YsmFramePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(YsmFramePayload.TYPE, YsmFramePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SoundPolicyPayload.TYPE, SoundPolicyPayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(YsmFramePayload.TYPE,
             (payload, context) -> receive(payload, new NetworkEvent.Context(NetworkDirection.PLAY_TO_SERVER,
                 Connections.of(context.player()), context.player(), context.server()),
                 MessageDirection.CLIENT_TO_SERVER));
         if (com.elfmcys.ysm.platform.Platform.isClient())
             NetworkHandlerClient.init();
+    }
+
+    /** 2.6.5 AcceptSoundFX: tells the player's client which model sounds to fetch and play. */
+    public static void sendSoundPolicy(ServerPlayer player) {
+        if (player.connection != null && ServerPlayNetworking.canSend(player, SoundPolicyPayload.TYPE))
+            ServerPlayNetworking.send(player,
+                new SoundPolicyPayload(com.elfmcys.ysm.config.ServerConfig.ACCEPT_SOUND_FX.get()));
     }
 
     @SuppressWarnings("ConstantValue")

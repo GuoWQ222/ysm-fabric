@@ -29,11 +29,17 @@ without backward compatibility (see README.upstream.md).
 - loading and switching the built-in models;
 - world rendering;
 - the model screen;
-- a 10-minute model-switching soak.
+- a 10-minute model-switching soak;
+- scenario screenshots compared side by side with YSM 2.6.5 (movement, items, riding, vehicles, first person, HUD,
+  emotes, menus);
+- a dedicated server with one and with two clients: other players' models and animations, and a server-only model
+  sent to a client;
+- Iris 1.11 with Sodium and a shader pack;
+- alongside about 30 common 26.2 mods (EMF/ETF, Flashback, Voxy, C2ME, WTHIT and others).
 
 **Not done yet:**
-- integrations with other mods (the Forge-only compat modules are inactive stand-ins);
-- Iris/Sodium compatibility;
+- most integrations with other mods (done: Iris, Mod Menu, WTHIT; the Forge-only compat modules are inactive
+  stand-ins);
 - macOS and Linux builds.
 
 ## Built-in models
@@ -57,11 +63,12 @@ The port's own files are All Rights Reserved (see [License](#license)), so build
 author's permission. The steps are documented for reference.
 
 1. Build the native library from YesSteveModel-Native, commit `9d92c175cb3c4b8db4ecb334281bd13d0b224f47`.
-   On Windows with MSVC, first apply `native-patches/msvc.patch` (`git apply native-patches/msvc.patch` in the
-   native checkout). The patch:
-   - enables big object files;
+   First apply `native-patches/port.patch` (`git apply native-patches/port.patch` in the native checkout). The
+   patch:
+   - enables big object files for MSVC;
    - contains two MSVC compile fixes;
-   - fixes JNI entry points that MSVC merged across translation units, which made one native function run another.
+   - fixes JNI entry points that MSVC merged across translation units, which made one native function run another;
+   - adds the entity vertex layout of Iris 1.11 on 26.x, which the port selects when Iris is installed.
 2. Copy the library to `src/main/resources/META-INF/native/` (for example `ysm.dll`). Only a library placed there is
    packed into the mod jar. For tests and dev runs, setting `YSM_NATIVE_PATH` or `ysm.native_path=<absolute path>`
    in `local.properties` is enough.

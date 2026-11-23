@@ -67,6 +67,7 @@ public final class SessionProtocolHandler {
         if (!session.pending()) {
             return;
         }
+        NetworkHandler.sendSoundPolicy(player);
         NetworkHandler.sendToClientPlayer(ServerHelloProto.newBuilder()
             .setProtocolVersion(ProtocolVersion.TRANSPORT_VERSION).setSyncRoaming(session.syncRoaming()).build(),
             player);
@@ -419,6 +420,12 @@ public final class SessionProtocolHandler {
 
     private static void acceptSession(ServerPlayer player, ServerModelService service, ServerModelSession session,
         SessionResponseProto response) {
+        if (response.decision() == SessionDecision.ACCEPT && session.timedOut()) {
+            // Answered after PlayerSyncTimeout: offer a fresh session instead of leaving the client waiting.
+            service.closeSession(player);
+            sendServerHello(player);
+            return;
+        }
         if (response.decision() == SessionDecision.DECLINE) {
             session.decline();
             return;

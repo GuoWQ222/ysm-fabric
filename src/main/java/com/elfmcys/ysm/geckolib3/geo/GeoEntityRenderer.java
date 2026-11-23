@@ -19,7 +19,8 @@ import net.minecraft.world.entity.Entity;
  */
 public abstract class GeoEntityRenderer<TEntity extends Entity, T extends AnimatableEntity<TEntity>>
     implements IGeoRenderer<T> {
-    public boolean renderReplacement(T animatable, float yaw, float partialTick, EntityRenderState state,
+    public boolean renderReplacement(T animatable, org.joml.Quaternionf rotation, float angle, float partialTick,
+        EntityRenderState state,
         PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
         if (!animatable.isPresentationAllowed())
             return false;
@@ -37,7 +38,9 @@ public abstract class GeoEntityRenderer<TEntity extends Entity, T extends Animat
                 int overlay = getPackedOverlay(entity, 0);
                 poseStack.pushPose();
                 try {
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
+                    poseStack.mulPose(rotation);
+                    if (animatable instanceof com.elfmcys.ysm.client.entity.CustomVehicleEntity vehicle)
+                        recordPassengerSeats(vehicle, data, rotation, angle);
                     preRender(data, animatable, poseStack, collector, light, overlay, Color.WHITE);
                     if (!animatable.canConsume(data, data.ctx))
                         return false;
@@ -58,6 +61,23 @@ public abstract class GeoEntityRenderer<TEntity extends Entity, T extends Animat
                 EntitySubmitHelper.submitLeashesAndName(state, poseStack, collector, camera);
             return true;
         });
+    }
+
+    /** 2.6.5 parity: seat i = vehicle rotation * PassengerLocator[i], relative to the vehicle origin. */
+    private static void recordPassengerSeats(com.elfmcys.ysm.client.entity.CustomVehicleEntity vehicle,
+        GeoRenderData data, org.joml.Quaternionf rotation, float angle) {
+        var seats = new java.util.ArrayList<org.joml.Matrix4f>();
+        var seatStack = new PoseStack();
+        seatStack.mulPose(rotation);
+        try {
+            data.modelState.visitLocatorGroup(com.elfmcys.ysm.client.model.locator.VehicleLocator.get().passenger,
+                seatStack, seat -> seats.add(new org.joml.Matrix4f(seat.last().pose())));
+            vehicle.seatDiagnostic = "seats=" + seats.size();
+        } catch (IllegalArgumentException notAVehicleModel) {
+            seats.clear();
+            vehicle.seatDiagnostic = "locator type mismatch: " + notAVehicleModel.getMessage();
+        }
+        vehicle.updatePassengerSeats(seats, angle);
     }
 
     public static int getPackedOverlay(Entity entity, float uIn) {

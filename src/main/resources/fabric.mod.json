@@ -26,6 +26,9 @@
     ],
     "client": [
       "com.elfmcys.ysm.fabric.YsmFabricClient"
+    ],
+    "modmenu": [
+      "com.elfmcys.ysm.fabric.YsmModMenu"
     ]
   },
   "mixins": [

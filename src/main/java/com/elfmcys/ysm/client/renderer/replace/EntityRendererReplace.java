@@ -22,10 +22,50 @@ public final class EntityRendererReplace {
         return entity.getCapability(VehicleAnimatableCapabilityProvider.CAP).map(cap -> {
             if (!cap.isPresentationAllowed())
                 return true;
-            float yaw = getYaw(entity, state, Mth.lerp(partialTick, entity.yRotO, entity.getYRot()), partialTick);
-            return !RegisterEntityRenderersEvent.getVehicleRenderer().renderReplacement(cap, yaw, partialTick, state,
+            var rotation = rotation(entity, state, partialTick);
+            return !RegisterEntityRenderersEvent.getVehicleRenderer().renderReplacement(cap, rotation.rotation(),
+                rotation.angle(), partialTick, state,
                 poseStack, collector, camera);
         }).orElse(true);
+    }
+
+    /** The vehicle model's rotation, and the yaw angle passengers undo after taking their seat. */
+    public record VehicleRotation(org.joml.Quaternionf rotation, float angle) {
+    }
+
+    /**
+     * 2.6.5 (26.x): living vehicles turn by 180 - body yaw; the rideable minecart follows the new minecart renderer's yaw
+     * and pitch, or the rail direction with the classic one; other vehicles turn by 180 - yaw.
+     */
+    public static VehicleRotation rotation(Entity entity, EntityRenderState state, float partialTick) {
+        if (entity instanceof LivingEntity living) {
+            float angle = 180.0F - getLivingEntityYaw(living, partialTick);
+            return new VehicleRotation(com.mojang.math.Axis.YP.rotationDegrees(angle), angle);
+        }
+        if (entity instanceof net.minecraft.world.entity.vehicle.minecart.Minecart
+            && state instanceof MinecartRenderState minecart) {
+            if (minecart.isNewRender) {
+                var rotation = com.mojang.math.Axis.YP.rotationDegrees(minecart.yRot)
+                    .mul(com.mojang.math.Axis.ZP.rotationDegrees(-minecart.xRot));
+                return new VehicleRotation(rotation, minecart.yRot);
+            }
+            float yaw = minecart.yRot;
+            float pitch = minecart.xRot;
+            if (minecart.posOnRail != null && minecart.frontPos != null && minecart.backPos != null) {
+                var direction = minecart.backPos.subtract(minecart.frontPos);
+                if (direction.length() != 0) {
+                    direction = direction.normalize();
+                    yaw = (float)(Math.atan2(direction.z, direction.x) * 180.0 / Math.PI);
+                    pitch = (float)(Math.atan(direction.y) * 73.0);
+                }
+            }
+            float angle = 180.0F - yaw;
+            var rotation = com.mojang.math.Axis.YP.rotationDegrees(angle)
+                .mul(com.mojang.math.Axis.ZP.rotationDegrees(-pitch));
+            return new VehicleRotation(rotation, angle);
+        }
+        float angle = 180.0F - entity.getYRot(partialTick);
+        return new VehicleRotation(com.mojang.math.Axis.YP.rotationDegrees(angle), angle);
     }
 
     public static float getYaw(Entity entity, float yawIn, float partialTick) {

@@ -17,7 +17,7 @@ Built-in model assets have their own licenses (see NOTICE.md). The models includ
 
 ## All Rights Reserved
 
-The 104 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
+The 111 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
 All Rights Reserved, and are **not** licensed under the Apache License 2.0. Each one says so in its header.
 
 You may view them on GitHub, and GitHub's Terms of Service let you fork the repository on GitHub. Beyond that, no
@@ -29,6 +29,8 @@ stays under the Apache License 2.0 and can be used under that license.
 
 - `src/localtest/java/com/elfmcys/ysm/localtest/VisualTestHarness.java`
 - `src/main/java/com/elfmcys/ysm/buffer/Memory.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitCommonPlugin.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitPlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/GuiDraw.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiQuadRenderState.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiScissor.java`
@@ -36,9 +38,11 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModelRenderer.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModels.java`
 - `src/main/java/com/elfmcys/ysm/client/texture/YsmTexture.java`
+- `src/main/java/com/elfmcys/ysm/fabric/FabricClientEventHooks.java`
 - `src/main/java/com/elfmcys/ysm/fabric/FabricEventHooks.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabric.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabricClient.java`
+- `src/main/java/com/elfmcys/ysm/fabric/YsmModMenu.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/AbstractArrowExtraInfoMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ArrowPotionAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ConnectionAccessor.java`
@@ -71,7 +75,9 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/RenderTypeInvoker.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ScreenAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/platform/EntityCapabilityMixin.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/SoundAcceptance.java`
 - `src/main/java/com/elfmcys/ysm/network/NetworkHandlerClient.java`
+- `src/main/java/com/elfmcys/ysm/network/SoundPolicyPayload.java`
 - `src/main/java/com/elfmcys/ysm/network/YsmFramePayload.java`
 - `src/main/java/com/elfmcys/ysm/platform/Connections.java`
 - `src/main/java/com/elfmcys/ysm/platform/Dist.java`
@@ -130,4 +136,5 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/platform/render/EntitySubmitHelper.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderMatrices.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateKeys.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/testsupport/FabricTestEnvironment.java`

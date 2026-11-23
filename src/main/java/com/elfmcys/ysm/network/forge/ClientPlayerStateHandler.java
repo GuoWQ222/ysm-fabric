@@ -91,6 +91,28 @@ final class ClientPlayerStateHandler {
             NetworkDiagnostics.message("dropped", MessageDirection.SERVER_TO_CLIENT, message, "invalid-sync");
             return;
         }
+        if (message.hasState() && message.state().hasAnimation()) {
+            // 2.6.5 parity: "/ysm play <player> <animation>" also plays on that player's own screen. The local
+            // player's state is otherwise client-owned, so only a server-set animation change is applied, through the
+            // local path (which reports back; the server ignores an unchanged animation, so this does not loop).
+            var animation = message.state().animationUnsafe();
+            var stopped = animation.hasStopped();
+            var name = stopped ? "" : animation.animationId();
+            enqueue(context, message, () -> {
+                var player = Minecraft.getInstance().player;
+                if (player == null || player.getId() != message.entityId())
+                    return;
+                player.getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+                    cap.waitForAsyncUpdate();
+                    if (stopped) {
+                        if (cap.isPlayingExtraAnimation())
+                            ClientProtocolGateway.stopSelfAnimation();
+                    } else if (!(cap.isPlayingExtraAnimation() && name.equals(cap.getExtraAnimationName()))) {
+                        ClientProtocolGateway.playSelfAnimation(name);
+                    }
+                });
+            });
+        }
         enqueue(context, message, () -> subject(message.entityId(), false, message, cap -> {
             var selected = cap.remoteSelection();
             if (selected == null || selected.intentId() != message.intentId()) {

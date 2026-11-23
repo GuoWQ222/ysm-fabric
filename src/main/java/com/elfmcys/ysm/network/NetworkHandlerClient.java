@@ -18,6 +18,8 @@ final class NetworkHandlerClient {
     private NetworkHandlerClient() {}
 
     static void init() {
+        ClientPlayNetworking.registerGlobalReceiver(SoundPolicyPayload.TYPE,
+            (payload, context) -> com.elfmcys.ysm.model.resource.client.SoundAcceptance.setLevel(payload.level()));
         ClientPlayNetworking.registerGlobalReceiver(YsmFramePayload.TYPE, (payload, context) -> {
             var listener = context.client().getConnection();
             if (listener == null)
