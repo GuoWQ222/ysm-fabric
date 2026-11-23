@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog;
 
 import com.elfmcys.ysm.format.parser.DefaultAnimationFilter;
@@ -214,7 +215,8 @@ class RawModelImporterTest {
                     output.closeEntry();
                 }
             }
-            var expected = origin == null || origin.isBlank() ? ModelOriginVersion.CURRENT_RELEASE : origin;
+            // Fabric port (2.6.5 parity): a missing origin_ver means a 2.6.5 model, not the current release.
+            var expected = origin == null || origin.isBlank() ? ModelOriginVersion.MISSING_ORIGIN_DEFAULT : origin;
             for (var input : new Path[] {source, archive}) {
                 try (var captured = importer.capture(input)) {
                     assertEquals(expected, captured.originVer());

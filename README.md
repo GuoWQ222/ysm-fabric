@@ -65,10 +65,13 @@ author's permission. The steps are documented for reference.
 2. Copy the library to `src/main/resources/META-INF/native/` (for example `ysm.dll`). Only a library placed there is
    packed into the mod jar. For tests and dev runs, setting `YSM_NATIVE_PATH` or `ysm.native_path=<absolute path>`
    in `local.properties` is enough.
-3. Run `./gradlew build` with JDK 25. The mod jar is written to `build/libs/`.
+3. Run `./gradlew assemble` with JDK 25. The mod jar is written to `build/libs/`.
 
-Tests that depend on Forge-era Minecraft APIs or on the Wine Fox models are excluded in
-`gradle/test-exclusions.txt`.
+`./gradlew test` (part of `./gradlew build`) runs about 1,300 upstream tests and currently reports 10 known failures;
+PORTING.md lists them and their causes. Some tests are skipped:
+
+- tests bound to Forge-era Minecraft APIs (`gradle/test-exclusions.txt`);
+- tests that read the Wine Fox models, which are absent here (`gradle/test-exclusions-winefox.txt`).
 
 ## License
 

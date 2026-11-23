@@ -214,4 +214,13 @@ tasks.named('test', Test) {
     }
     // Aggregate transfer tests exceed 128 MiB alongside initialized game and compiler fixtures.
     maxHeapSize = '1g'
+    // Without the Wine Fox built-ins (public repository), skip the upstream tests that read their assets.
+    if (!file('src/main/resources/assets/ysm/builtin/wine_fox').isDirectory()) {
+        filter {
+            file('gradle/test-exclusions-winefox.txt').readLines()
+                .collect { it.trim() }
+                .findAll { it && !it.startsWith('#') }
+                .each { excludeTestsMatching it }
+        }
+    }
 }

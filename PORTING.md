@@ -71,6 +71,22 @@ YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
 - Integrations with other mods. The Forge-only compat modules remain as declared Molang stand-ins.
 - Iris/Sodium compatibility.
 
+## Known test failures
+
+These 10 failures occur on the author's Windows machine (Chinese locale).
+
+- **Also fail upstream:**
+  - `ReloadableModelCatalogTest` (admin-token file ACL);
+  - `CatalogSourceReuseTest`;
+  - `ConvertedObjectStoreTest`;
+  - `ModelExporterTest`, whose expectation predates upstream's `origin_ver` change.
+- **Environment:** `NativeRuntimeDeviceIntegrationTest` (2). Reading the child process output fails on a non-English
+  Windows locale.
+- **Config:** `ClientConfigDeviceDefaultsTest` (3) and `ServerConfigSpecTest` (1). Under Forge Config API Port, reload
+  semantics differ from Forge's; still being checked.
+
+`RawModelImporterTest` expects the port's default: a missing `origin_ver` means `2.6.5`.
+
 ## Native library
 
 `native-patches/msvc.patch` applies to YesSteveModel-Native `9d92c175cb3c4b8db4ecb334281bd13d0b224f47`. It contains:
@@ -353,6 +369,7 @@ here.
 - `src/verification/test/java/com/elfmcys/ysm/client/command/ClientRootCommandTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/gui/PlayerModelNavigationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/texture/CustomTextureTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/catalog/RawModelImporterTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/preview/ClientPreviewGeneratorTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelRenderTargetCacheTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelTextureLifecycleVerificationTest.java`
@@ -400,6 +417,7 @@ here.
 
 The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.md](LICENSE-PORT.md) lists them. Copies or moves of upstream files stay Apache-2.0.
 
+- `gradle/test-exclusions-winefox.txt`
 - `gradle/test-exclusions.txt`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/ARCompat.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/CosmeticArmorCompat.java`
