@@ -102,22 +102,23 @@ classes that load when Fabric Loader reports the mod.
 - Integrations whose mods have no 26.2 Fabric version (Elytra Slot, Trinkets, Accessories and the Forge-only mods).
   Their compat modules remain as declared Molang stand-ins.
 
-## Known test failures
+## Tests
 
-These 6 failures occur on the author's Windows machine (Chinese locale).
+The suite passes on the author's Windows machine (Chinese locale). These tests failed before, each for a test or
+environment problem, not a product bug, and were fixed:
 
-- **Also fail upstream:**
-  - `ReloadableModelCatalogTest`: the test denies read access to a folder, and an Administrator account can still
-    read it;
-  - `CatalogSourceReuseTest`;
-  - `ConvertedObjectStoreTest`;
-  - `ModelExporterTest`, whose expectation predates upstream's `origin_ver` change.
-- **Environment:** `NativeRuntimeDeviceIntegrationTest` (2). Reading the child process output fails on a non-English
-  Windows locale.
-
-The config tests `ClientConfigDeviceDefaultsTest` and `ServerConfigSpecTest` used to fail as well: they wrote their
-files with `CommentedFileConfig.of()`, which the night-config version bundled with Forge Config API Port saves
-asynchronously. They now write synchronously and pass.
+- `ClientConfigDeviceDefaultsTest`, `ServerConfigSpecTest`: they wrote their files with `CommentedFileConfig.of()`,
+  which the night-config version bundled with Forge Config API Port saves asynchronously. They write synchronously now.
+- `NativeRuntimeDeviceIntegrationTest`: its child JVM printed in the console code page (`stdout.encoding`), not
+  UTF-8, wrote its config asynchronously, and lacked the Fabric launcher stand-in the test JVM has.
+- `ModelExporterTest`: its fixture declares `origin_ver`, and a declared `origin_ver` takes precedence over the
+  compile default by design, so the test could not force other levels. It compiles a copy without `origin_ver`.
+- `ConvertedObjectStoreTest`: it expected `3.0.0` as the fixture's origin, but the built-in default declares its own.
+- `CatalogSourceReuseTest`: `solid.7z` is an archive of an older `1_alex`, packed from a CRLF checkout. The other
+  forms are now built from the archive's own files.
+- `ReloadableModelCatalogTest`: an elevated Windows account with the backup privilege enabled (for example in an SSH
+  session) can still list a folder it is denied, so the denied-folder case is skipped there; it runs and passes in a
+  desktop session. Temp paths are made canonical for 8.3 TEMP folders such as `C:\Users\ADMINI~1`.
 
 `RawModelImporterTest` expects the port's default: a missing `origin_ver` means `2.6.5`.
 
@@ -418,11 +419,16 @@ here.
 - `src/verification/test/java/com/elfmcys/ysm/config/ClientConfigDeviceDefaultsTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/config/ServerConfigSpecTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/catalog/RawModelImporterTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/catalog/ReloadableModelCatalogTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/catalog/source/CatalogSourceReuseTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/preview/ClientPreviewGeneratorTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelRenderTargetCacheTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelTextureLifecycleVerificationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/PreparedTextureSetTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/PreviewResourceFixture.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/ConvertedObjectStoreTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/ModelExporterTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/natives/NativeRuntimeDeviceIntegrationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/network/ServerSideIsolationTest.java`
 
 ## Renamed or moved files

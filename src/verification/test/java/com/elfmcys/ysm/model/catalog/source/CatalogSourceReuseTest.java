@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog.source;
 
 import com.elfmcys.ysm.format.parser.DefaultAnimationFilter;
@@ -26,9 +27,11 @@ class CatalogSourceReuseTest {
 
     @Test
     void rawZipSevenZipAndBothLegacyRawVersionsHaveOneColdParseAndNoWarmParse() throws Exception {
-        var raw = fixture();
-        var zip = writeZip(temp.resolve("model.zip"), raw);
+        // solid.7z is a fixed archive; build the other forms from its own files so all five hold identical bytes
+        // (the archive predates edits to 1_alex and was packed from a CRLF checkout).
         var seven = resource("solid.7z");
+        var raw = extract(seven, temp.resolve("raw"));
+        var zip = writeZip(temp.resolve("model.zip"), raw);
         var v1 = writeRaw(temp.resolve("v1.ysm"), raw, 1);
         var v2 = writeRaw(temp.resolve("v2.ysm"), raw, 2);
         try (var cache = new AtomicSharedCache(temp.resolve("cache"))) {
@@ -152,6 +155,39 @@ class CatalogSourceReuseTest {
             }
         }
         return target;
+    }
+
+    private static Path extract(Path archive, Path target) throws Exception {
+        try (var seven = com.elfmcys.ysm.natives.NativeArchive.open(archive.toString())) {
+            extractDirectory(seven, null, null, target);
+        }
+        return target;
+    }
+
+    /** Copies one archive directory; a single top-level folder (the 7z wraps the model in "root") is unwrapped. */
+    private static void extractDirectory(com.elfmcys.ysm.natives.NativeArchive archive, String path, String prefix,
+        Path target) throws Exception {
+        var files = archive.listFiles(path);
+        var directories = archive.listDirectories(path);
+        if (path == null && files.length == 0 && directories.length == 1) {
+            extractDirectory(archive, directories[0], directories[0], target);
+            return;
+        }
+        Files.createDirectories(target);
+        for (var file : files) {
+            var name = path == null ? file : path + "/" + file;
+            var buffer = Objects.requireNonNull(archive.getFile(name), name);
+            var bytes = new byte[buffer.size()];
+            var view = buffer.nio().duplicate();
+            view.position(0);
+            view.get(bytes, 0, bytes.length);
+            var relative = prefix == null ? name : name.substring(prefix.length() + 1);
+            var output = target.resolve(relative);
+            Files.createDirectories(output.getParent());
+            Files.write(output, bytes);
+        }
+        for (var directory : directories)
+            extractDirectory(archive, path == null ? directory : path + "/" + directory, prefix, target);
     }
 
     private Path resource(String name) throws Exception {

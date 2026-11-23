@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog;
 
 import com.elfmcys.ysm.model.domain.ModelId;
@@ -61,6 +62,12 @@ class ReloadableModelCatalogTest {
     @TempDir
     Path temp;
 
+    /** Canonical temp path: with an 8.3 TEMP (C:\\Users\\ADMINI~1) catalog locations would differ in spelling. */
+    @org.junit.jupiter.api.BeforeEach
+    void canonicalTemp() throws java.io.IOException {
+        temp = temp.toRealPath();
+    }
+
     private AtomicSharedCache convertedCache;
 
     private static Path defaultFixture;
@@ -69,6 +76,8 @@ class ReloadableModelCatalogTest {
 
     @BeforeAll
     static void createFixtures() throws Exception {
+        // Canonical path, as the catalog reports locations (an 8.3 TEMP such as C:\Users\ADMINI~1 would differ).
+        fixtureTemp = fixtureTemp.toRealPath();
         defaultFixture = parseFixture("/assets/ysm/builtin/default/ysm.json", "default", true);
         firstFixture = parseFixture("/assets/ysm/builtin/misc/1_alex/ysm.json", "first", false);
         secondFixture = parseFixture("/assets/ysm/builtin/misc/2_steve/ysm.json", "second", false);
@@ -871,10 +880,16 @@ class ReloadableModelCatalogTest {
         try (var fixture = open(root)) {
             fixture.activateAndFinish();
             try (var denied = denyDirectoryRead(branch)) {
-                org.junit.jupiter.api.Assertions.assertThrows(java.nio.file.AccessDeniedException.class, () -> {
-                    try (var ignored = Files.newDirectoryStream(branch)) {
-                    }
-                });
+                boolean listingDenied;
+                try (var ignored = Files.newDirectoryStream(branch)) {
+                    listingDenied = false;
+                } catch (java.nio.file.AccessDeniedException expected) {
+                    listingDenied = true;
+                }
+                // An elevated Windows account with the backup privilege enabled (e.g. an SSH session) still lists the
+                // folder; the catalog behaviour below needs a real denial.
+                org.junit.jupiter.api.Assumptions.assumeTrue(listingDenied,
+                    "this account can list a folder its owner is denied (backup privilege); nothing to test here");
                 Files.copy(secondFixture, root.resolve("healthy.mxc"));
                 assertEquals(ReloadStatus.FAILED, fixture.finish(fixture.catalog().reload()).status());
                 assertEquals(2, fixture.catalog().current().byModelId().size());

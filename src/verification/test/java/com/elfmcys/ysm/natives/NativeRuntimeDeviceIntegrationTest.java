@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.natives;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
@@ -63,7 +64,7 @@ public class NativeRuntimeDeviceIntegrationTest {
     private String run(String mode, String heap, Path library, Path config) throws Exception {
         var outputFile = directory.resolve(mode + "-" + heap + "-" + System.nanoTime() + ".log");
         var process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-            "-Dfile.encoding=UTF-8", "-Xmx" + heap, "-cp", System.getProperty("java.class.path"), getClass().getName(),
+            "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Xmx" + heap, "-cp", System.getProperty("java.class.path"), getClass().getName(),
             mode, library.toString(), config.toString()).redirectErrorStream(true).redirectOutput(outputFile.toFile())
             .start();
         if (!process.waitFor(45, TimeUnit.SECONDS)) {
@@ -77,6 +78,7 @@ public class NativeRuntimeDeviceIntegrationTest {
     }
 
     public static void main(String[] args) throws Exception {
+        com.elfmcys.ysm.testsupport.FabricTestEnvironment.install();
         if (args[0].equals("native")) {
             NativeRuntime.load(args[1]);
             NativeRuntime.initialize(new NativeRuntime.JavaConfig(3));
@@ -93,7 +95,8 @@ public class NativeRuntimeDeviceIntegrationTest {
         }
         var file = Path.of(args[2]);
         boolean existing = Files.exists(file);
-        try (var config = CommentedFileConfig.of(file)) {
+        // Synchronous: the next process must see what this one saved.
+        try (var config = CommentedFileConfig.builder(file).sync().build()) {
             if (existing)
                 config.load();
             for (int repeat = 0; repeat < 10; repeat++) {

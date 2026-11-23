@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.buffer.BufferType;
@@ -43,10 +44,32 @@ class ModelExporterTest {
         }
     }
 
+    private static Path withoutOriginVer(Path source, Path target) throws java.io.IOException {
+        try (var paths = Files.walk(source)) {
+            for (var path : paths.toList()) {
+                var output = target.resolve(source.relativize(path).toString());
+                if (Files.isDirectory(path))
+                    Files.createDirectories(output);
+                else
+                    Files.copy(path, output);
+            }
+        }
+        var manifest = target.resolve("ysm.json");
+        var json = com.google.gson.JsonParser.parseString(Files.readString(manifest)).getAsJsonObject();
+        var properties = json.getAsJsonObject("properties");
+        if (properties != null)
+            properties.remove("origin_ver");
+        Files.writeString(manifest, json.toString());
+        return target;
+    }
+
     @Test
     void rawConversionAndReExportPreserveTheOriginBehaviorLevel() throws Exception {
         var manifest = ModelExporterTest.class.getResource("/assets/ysm/builtin/misc/1_alex/ysm.json");
-        var directory = Path.of(Objects.requireNonNull(manifest).toURI()).getParent();
+        // The fixture declares origin_ver itself, and a declared origin_ver beats the compile default (raw capture
+        // records the model's own version). Use a copy without it so each level below is really exercised.
+        var directory = withoutOriginVer(Path.of(Objects.requireNonNull(manifest).toURI()).getParent(),
+            temp.resolve("no-origin"));
         for (int originVer : new int[] {0, 18, 19, 32,
             com.elfmcys.ysm.format.schema.model.ModelOriginVersion.CURRENT}) {
             final Path converted;

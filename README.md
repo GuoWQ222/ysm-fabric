@@ -77,8 +77,8 @@ author's permission. The steps are documented for reference.
    in `local.properties` is enough.
 3. Run `./gradlew assemble` with JDK 25. The mod jar is written to `build/libs/`.
 
-`./gradlew test` (part of `./gradlew build`) runs about 1,300 upstream tests and currently reports 6 known failures;
-PORTING.md lists them and their causes. Some tests are skipped:
+`./gradlew test` (part of `./gradlew build`) runs about 1,300 upstream tests and passes. PORTING.md describes the
+tests that were fixed for this port. Some tests are skipped:
 
 - tests bound to Forge-era Minecraft APIs (`gradle/test-exclusions.txt`);
 - tests that read the Wine Fox models, which are absent here (`gradle/test-exclusions-winefox.txt`).

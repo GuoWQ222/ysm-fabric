@@ -21,6 +21,11 @@ import org.junit.platform.launcher.LauncherSessionListener;
 public final class FabricTestEnvironment implements LauncherSessionListener {
     @Override
     public void launcherSessionOpened(LauncherSession session) {
+        install();
+    }
+
+    /** Also for child JVMs that tests start themselves (they have no JUnit launcher session). */
+    public static void install() {
         if (FabricLauncherBase.getLauncher() != null)
             return;
         var loader = FabricTestEnvironment.class.getClassLoader();

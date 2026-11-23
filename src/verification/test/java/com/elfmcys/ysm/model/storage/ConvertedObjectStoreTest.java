@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.model.domain.ModelId;
@@ -105,7 +106,12 @@ class ConvertedObjectStoreTest {
         Files.copy(fixture, target);
         var entry = entry(identity, target);
         var store = store(cacheRoot);
-        assertTrue(store.findIdentity(entry, "3.0.0").isPresent());
+        // The fixture (built-in default) declares its own origin_ver; reuse needs exactly that captured version.
+        var manifest = Path.of(java.util.Objects.requireNonNull(
+            ConvertedObjectStoreTest.class.getResource("/assets/ysm/builtin/default/ysm.json")).toURI());
+        var captured = com.google.gson.JsonParser.parseString(Files.readString(manifest)).getAsJsonObject()
+            .getAsJsonObject("properties").get("origin_ver").getAsString();
+        assertTrue(store.findIdentity(entry, captured).isPresent());
         assertTrue(store.findIdentity(entry, "0.0.0").isEmpty());
         assertTrue(Files.exists(target));
     }
