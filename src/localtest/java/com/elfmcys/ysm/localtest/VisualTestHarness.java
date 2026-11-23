@@ -100,6 +100,7 @@ public final class VisualTestHarness implements ClientModInitializer {
                             case "observeTicks" -> observeTicks = Integer.parseInt(kv[1].trim());
                             case "observeHud" -> observeHud = Boolean.parseBoolean(kv[1].trim());
                             case "waitFor" -> waitForPlayer = kv[1].trim();
+                            case "configProbe" -> configProbe = kv[1].trim();
                             case "observeDistance" -> observeDistance = Double.parseDouble(kv[1].trim());
                             default -> {
                             }
@@ -176,6 +177,9 @@ public final class VisualTestHarness implements ClientModInitializer {
     private static boolean observeHud;
     /** Two-client test: do not start until this player has joined. */
     private static String waitForPlayer = null;
+    /** "set" or "check": in-game config persistence probe. */
+    private static String configProbe = null;
+    private static int configProbePhase;
     private static int waitForTicks;
     private static double observeDistance = 5.0;
     private static int observeElapsed;
@@ -262,6 +266,11 @@ public final class VisualTestHarness implements ClientModInitializer {
                 if (failure != null)
                     log("  model failure: " + failure);
             }
+            case "click" -> {
+                var mapping = "attack".equals(arg) ? mc.options.keyAttack : mc.options.keyUse;
+                net.minecraft.client.KeyMapping.click(net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping));
+                log("  clicked " + arg);
+            }
             case "key" -> {
                 var a = arg.split("\\s+");
                 var mapping = switch (a[0]) {
@@ -277,7 +286,10 @@ public final class VisualTestHarness implements ClientModInitializer {
                     default -> throw new IllegalArgumentException("unknown key " + a[0]);
                 };
                 boolean down = "down".equals(a[1]);
-                mapping.setDown(down);
+                // Press the physical key: every binding on it activates, as with real input (e.g. Carry On's own
+                // carry key shares Shift with sneak).
+                net.minecraft.client.KeyMapping.set(
+                    net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping), down);
                 if (down)
                     net.minecraft.client.KeyMapping.click(
                         net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping));
@@ -314,7 +326,12 @@ public final class VisualTestHarness implements ClientModInitializer {
             }
             case "respawn" -> player.respawn();
             case "screen" -> mc.gui.setScreen(null);
-            case "press" -> pressMapping(mc, arg);
+            case "press" -> {
+                if (arg.matches("\\d+"))
+                    pressKeyCode(mc, Integer.parseInt(arg), "key code " + arg);
+                else
+                    pressMapping(mc, arg);
+            }
             case "hud" -> setHudHidden(mc, !"show".equals(arg));
             case "log" -> log(String.format(java.util.Locale.ROOT,
                 "%s: flying=%b mayfly=%b ground=%b y=%.3f dy=%.3f mode=%s",
@@ -327,6 +344,7 @@ public final class VisualTestHarness implements ClientModInitializer {
 private static void logState(Minecraft mc) {
         var player = mc.player;
         var vehicle = player.getVehicle();
+        logIntegrations(player);
         for (var entity : mc.level.entitiesForRendering()) {
             if (entity.displayFireAnimation())
                 log(String.format(java.util.Locale.ROOT, "  burning: %s at %.1f %.1f %.1f fireTicks=%d onFireFlag=%b age=%d",
@@ -374,22 +392,110 @@ private static void logState(Minecraft mc) {
             if (!mapping.getName().equals(name))
                 continue;
             var key = net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping);
-            try {
-                var method = net.minecraft.client.KeyboardHandler.class.getDeclaredMethod("keyPress", long.class,
-                    int.class, net.minecraft.client.input.KeyEvent.class);
-                method.setAccessible(true);
-                pretendFocused(mc);
-                var event = new net.minecraft.client.input.KeyEvent(key.getValue(), 0, 0);
-                method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 1, event);
-                method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 0, event);
-                releaseMouse(mc);
-                log("  pressed " + name + " (" + key.getName() + ")");
-            } catch (ReflectiveOperationException error) {
-                log("  press failed " + name + ": " + error);
-            }
+            pressKeyCode(mc, key.getValue(), name + " (" + key.getName() + ")");
             return;
         }
         log("  no key mapping " + name);
+    }
+
+    /** A real key press and release of one GLFW key code through the keyboard handler. */
+    private static void pressKeyCode(Minecraft mc, int keyCode, String label) {
+        try {
+            var method = net.minecraft.client.KeyboardHandler.class.getDeclaredMethod("keyPress", long.class,
+                int.class, net.minecraft.client.input.KeyEvent.class);
+            method.setAccessible(true);
+            pretendFocused(mc);
+            var event = new net.minecraft.client.input.KeyEvent(keyCode, 0, 0);
+            method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 1, event);
+            method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 0, event);
+            releaseMouse(mc);
+            log("  pressed " + label);
+        } catch (ReflectiveOperationException error) {
+            log("  press failed " + label + ": " + error);
+        }
+    }
+
+    /** Integration state, only for mods that are present. */
+    private static void logIntegrations(net.minecraft.client.player.LocalPlayer player) {
+        var loader = net.fabricmc.loader.api.FabricLoader.getInstance();
+        if (loader.isModLoaded("carryon")) {
+            try {
+                var manager = Class.forName("tschipp.carryon.common.carry.CarryOnDataManager");
+                var data = manager.getMethod("getCarryData", net.minecraft.world.entity.player.Player.class)
+                    .invoke(null, player);
+                boolean carrying = (Boolean)data.getClass().getMethod("isCarrying").invoke(data);
+                log("  carryon: carrying=" + carrying + (carrying ? " type=" + data.getClass().getMethod("getType").invoke(data) : ""));
+            } catch (ReflectiveOperationException error) {
+                log("  carryon: state unreadable " + error);
+            }
+        }
+        if (loader.isModLoaded("bettercombat"))
+            log("  bettercombat: attack='" + com.elfmcys.ysm.client.compat.bettercombat.BetterCombatCompat
+                .getAttackAnimation(player) + "' swinging=" + player.swinging);
+        if (loader.isModLoaded("player_animation_library"))
+            log("  playeranim: thirdPersonModelInFirstPerson="
+                + com.elfmcys.ysm.client.compat.PlayerAnimatorCompat.hasThirdPersonModelAnim(player));
+        if (loader.isModLoaded("firstperson"))
+            log("  firstperson: enabled=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isEnabled()
+                + " renderingPlayer=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isRenderingPlayer());
+        if (loader.isModLoaded("realcamera"))
+            log("  realcamera: active=" + com.elfmcys.ysm.client.compat.realcamera.RealCameraCompat.isActive());
+    }
+
+    /** In-game config persistence probe (see configProbe option). */
+    private static void configProbeTick(Minecraft mc) {
+        var volume = com.elfmcys.ysm.config.ClientConfig.SOUND_VOLUME;
+        var hands = com.elfmcys.ysm.config.ClientConfig.DISABLE_SELF_HANDS;
+        var memo = mc.gameDirectory.toPath().resolve("ysm_configprobe.txt");
+        try {
+            if (configProbePhase == 0) {
+                log("configProbe " + configProbe + ": values now SoundVolume=" + volume.get() + " DisableSelfHands="
+                    + hands.get());
+                if (configProbe.equals("set")) {
+                    java.nio.file.Files.writeString(memo, volume.get() + "\n" + hands.get() + "\n");
+                    // Drive the real config screen: press its "disable self hands" checkbox, move its volume slider.
+                    var screen = new com.elfmcys.ysm.client.gui.ConfigScreen(
+                        (com.elfmcys.ysm.client.gui.PlayerModelScreen)null);
+                    mc.gui.setScreen(screen);
+                    boolean pressed = false, slid = false;
+                    for (var child : screen.children()) {
+                        if (child instanceof net.minecraft.client.gui.components.Checkbox box
+                            && box.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents key
+                            && key.getKey().equals("gui.yes_steve_model.config.disable_self_hands")) {
+                            box.onPress(new net.minecraft.client.input.KeyEvent(257, 0, 0));
+                            pressed = true;
+                        } else if (child instanceof net.minecraft.client.gui.components.AbstractSliderButton slider) {
+                            var setValue = net.minecraft.client.gui.components.AbstractSliderButton.class
+                                .getDeclaredMethod("setValue", double.class);
+                            setValue.setAccessible(true);
+                            setValue.invoke(slider, 0.37);
+                            slid = true;
+                        }
+                    }
+                    mc.gui.setScreen(null);
+                    log("configProbe set via ConfigScreen widgets: checkbox pressed=" + pressed + " slider moved=" + slid
+                        + " -> SoundVolume=" + volume.get() + " DisableSelfHands=" + hands.get());
+                } else {
+                    var original = java.nio.file.Files.readAllLines(memo);
+                    boolean kept = volume.get() == 37.0 && hands.get() != Boolean.parseBoolean(original.get(1).trim());
+                    log("configProbe check: " + (kept ? "PERSISTED" : "LOST") + " after restart");
+                    volume.set(Double.parseDouble(original.get(0).trim()));
+                    hands.set(Boolean.parseBoolean(original.get(1).trim()));
+                    hands.save();
+                    log("configProbe restored SoundVolume=" + volume.get() + " DisableSelfHands=" + hands.get());
+                }
+                configProbePhase = 1;
+                wait = 20;
+                return;
+            }
+            var file = mc.gameDirectory.toPath().resolve("config").resolve("ysm-client.toml");
+            for (var line : java.nio.file.Files.readAllLines(file))
+                if (line.contains("SoundVolume") || line.contains("DisableSelfHands"))
+                    log("configProbe file: " + line.trim());
+        } catch (java.io.IOException | ReflectiveOperationException | RuntimeException failure) {
+            log("configProbe failed: " + failure);
+        }
+        stage = 8;
     }
 
     /** Observer mode: follows the remote player, alternating a teleport in front of it and a screenshot + state log. */
@@ -529,7 +635,7 @@ private static void logState(Minecraft mc) {
                 mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
                 sample("before-models", true);
                 wait = 40;
-                stage = observeTarget != null ? 30 : scenarioFile != null ? 20 : 2;
+                stage = configProbe != null ? 40 : observeTarget != null ? 30 : scenarioFile != null ? 20 : 2;
                 if (observeTarget != null) {
                     mc.options.setCameraType(CameraType.FIRST_PERSON);
                     if (observeHud)
@@ -538,6 +644,7 @@ private static void logState(Minecraft mc) {
                 }
             }
             case 20 -> scenarioTick(mc);
+            case 40 -> configProbeTick(mc);
             case 30 -> observeTick(mc);
             case 2 -> {
                 if (index >= models.size()) {

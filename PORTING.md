@@ -70,26 +70,54 @@ YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
 - Server settings `AcceptSoundFX` and `PlayerSyncTimeout` exist again.
 - WTHIT shows the YSM model of the player or vehicle you look at. 2.6.5 did this through Jade and The One Probe.
 
+## Integrations (26.2 Fabric)
+
+Ported from upstream's Forge integrations to the mods' 26.2 Fabric APIs. Each mod's classes are only used from inner
+classes that load when Fabric Loader reports the mod.
+
+- First-person Model: the camera follows the model's head height; the model's body is drawn in first person.
+- Real Camera: while it is active, the full model is drawn in first person. Its default binding mode looks for the
+  vanilla player model, so with a YSM model use its classic mode.
+- Better Combat 3.x: an attack starts a synced vanilla swing, and the running attack animation's name is available
+  to models. Better Combat now animates through Player Animation Library instead of playerAnimator.
+- Player Animation Library: while an external animation asks for the third-person model in first person, the full
+  model is drawn there.
+- Carry On: `carryon:block`, `carryon:entity` and `carryon:player` animations and the Carry On Molang values.
+- Immersive Melodies: melody progress for the `ctrl:im_*` Molang functions.
+- Immersive Aircraft: YSM vehicle models follow the aircraft's pitch, roll and wind sway.
+
+## Fixes
+
+- Settings changed in YSM's screens are saved. Forge's config files saved on every change; under Forge Config API
+  Port a change stays in memory until it is saved, so the config screen, its checkboxes, the disclaimer, the
+  extra-player screen and the loading-indicator position were lost on restart.
+- The optional-mod linkage check (`OptionalLinkageVerifier`, upstream) rejected methods that a compat class
+  inherits instead of declaring, such as an enum's `name()`. That switched the whole Carry On integration off. It
+  now resolves methods through superclasses and interfaces, as the JVM does.
+
 ## Not included or not yet working
 
 - The Wine Fox built-in models. They are CC BY-NC-SA 4.0 or All Rights Reserved and are not redistributed.
 - The jars of Forge mods that upstream compiled against (FirstPerson, NotEnoughAnimations, Oculus, Superb Warfare).
-- Most integrations with other mods. Iris, Mod Menu and WTHIT are done; the Forge-only compat modules remain as
-  declared Molang stand-ins.
+- Integrations whose mods have no 26.2 Fabric version (Elytra Slot, Trinkets, Accessories and the Forge-only mods).
+  Their compat modules remain as declared Molang stand-ins.
 
 ## Known test failures
 
-These 10 failures occur on the author's Windows machine (Chinese locale).
+These 6 failures occur on the author's Windows machine (Chinese locale).
 
 - **Also fail upstream:**
-  - `ReloadableModelCatalogTest` (admin-token file ACL);
+  - `ReloadableModelCatalogTest`: the test denies read access to a folder, and an Administrator account can still
+    read it;
   - `CatalogSourceReuseTest`;
   - `ConvertedObjectStoreTest`;
   - `ModelExporterTest`, whose expectation predates upstream's `origin_ver` change.
 - **Environment:** `NativeRuntimeDeviceIntegrationTest` (2). Reading the child process output fails on a non-English
   Windows locale.
-- **Config:** `ClientConfigDeviceDefaultsTest` (3) and `ServerConfigSpecTest` (1). Under Forge Config API Port, reload
-  semantics differ from Forge's; still being checked.
+
+The config tests `ClientConfigDeviceDefaultsTest` and `ServerConfigSpecTest` used to fail as well: they wrote their
+files with `CommentedFileConfig.of()`, which the night-config version bundled with Forge Config API Port saves
+asynchronously. They now write synchronously and pass.
 
 `RawModelImporterTest` expects the port's default: a missing `origin_ver` means `2.6.5`.
 
@@ -175,9 +203,8 @@ here.
 - `src/main/java/com/elfmcys/ysm/client/compat/SimplePlaneCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedBuiltinComponent.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedCompat.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatBuiltinComponent.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompat.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/carryon/CarryOnBuiltinComponent.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompatInner.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/carryon/CarryOnCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/create/CreateBuiltinComponent.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/create/CreateCompat.java`
@@ -291,6 +318,7 @@ here.
 - `src/main/java/com/elfmcys/ysm/event/ServerStartingEvent.java`
 - `src/main/java/com/elfmcys/ysm/event/api/SpecialPlayerRenderEvent.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/MolangExtensionLoader.java`
+- `src/main/java/com/elfmcys/ysm/expression/host/OptionalLinkageVerifier.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/ControllerPredicateBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/DebugBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/EntityBuiltins.java`
@@ -387,6 +415,8 @@ here.
 - `src/verification/test/java/com/elfmcys/ysm/client/command/ClientRootCommandTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/gui/PlayerModelNavigationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/texture/CustomTextureTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/config/ClientConfigDeviceDefaultsTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/config/ServerConfigSpecTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/catalog/RawModelImporterTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/preview/ClientPreviewGeneratorTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelRenderTargetCacheTest.java`
@@ -399,10 +429,6 @@ here.
 
 - `src/main/java/com/elfmcys/ysm/client/compat/backpack/sophisticated/BackpackCuriosCompat.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/backpack/sophisticated/BackpackCuriosCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedBackpackLayerRenderer.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedBackpackLayerRenderer.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompatInner.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompatInner.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/event/PlayerAttackEvent.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/event/PlayerAttackEvent.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/carryon/CarryOnInnerCompat.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnInnerCompat.java`
-- `src/main/java/com/elfmcys/ysm/client/compat/carryon/CarryOnPredicate.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnPredicate.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/create/CreateCompatInner.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/create/CreateCompatInner.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/curios/CuriosCompatInner.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/curios/CuriosCompatInner.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/curios/MolangCache.java` -> `src/forge-compat-reference/com/elfmcys/ysm/client/compat/curios/MolangCache.java`
@@ -450,8 +476,12 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedCompat.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatBuiltinComponent.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompat.java`
+- `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompatInner.java`
+- `src/forge-compat-reference/com/elfmcys/ysm/client/compat/bettercombat/event/PlayerAttackEvent.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnBuiltinComponent.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnCompat.java`
+- `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnInnerCompat.java`
+- `src/forge-compat-reference/com/elfmcys/ysm/client/compat/carryon/CarryOnPredicate.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/create/CreateBuiltinComponent.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/create/CreateCompat.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/curios/CuriosBuiltins.java`
@@ -601,6 +631,7 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/resources/data/ysm/tags/item/throwable_potion.json`
 - `src/main/resources/fabric.mod.json`
 - `src/main/resources/waila_plugins.json`
+- `src/verification/test/java/com/elfmcys/ysm/expression/host/OptionalLinkageVerifierTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/testsupport/FabricTestEnvironment.java`
 - `src/verification/test/resources/META-INF/services/org.junit.platform.launcher.LauncherSessionListener`

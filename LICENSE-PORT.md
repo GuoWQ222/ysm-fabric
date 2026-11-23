@@ -17,7 +17,7 @@ Built-in model assets have their own licenses (see NOTICE.md). The models includ
 
 ## All Rights Reserved
 
-The 111 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
+The 112 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
 All Rights Reserved, and are **not** licensed under the Apache License 2.0. Each one says so in its header.
 
 You may view them on GitHub, and GitHub's Terms of Service let you fork the repository on GitHub. Beyond that, no
@@ -136,5 +136,6 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/platform/render/EntitySubmitHelper.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderMatrices.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateKeys.java`
+- `src/verification/test/java/com/elfmcys/ysm/expression/host/OptionalLinkageVerifierTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/testsupport/FabricTestEnvironment.java`

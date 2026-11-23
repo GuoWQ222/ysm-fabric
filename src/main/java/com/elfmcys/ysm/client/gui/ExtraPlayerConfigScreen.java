@@ -53,7 +53,10 @@ public class ExtraPlayerConfigScreen extends Screen {
         int nameWidth = this.font.width(name) + 24;
         this.addRenderableWidget(Checkbox.builder(name, this.font).pos((this.width - nameWidth) / 2, this.height + yOffset)
             .selected(ExtraPlayerScreenConfig.DISABLE_PLAYER_RENDER.get())
-            .onValueChange((checkbox, selected) -> ExtraPlayerScreenConfig.DISABLE_PLAYER_RENDER.set(selected)).build());
+            .onValueChange((checkbox, selected) -> {
+                ExtraPlayerScreenConfig.DISABLE_PLAYER_RENDER.set(selected);
+                ExtraPlayerScreenConfig.DISABLE_PLAYER_RENDER.save();
+            }).build());
     }
 
     @Override
@@ -179,6 +182,8 @@ public class ExtraPlayerConfigScreen extends Screen {
         ExtraPlayerScreenConfig.PLAYER_POS_Y.set(this.posY);
         ExtraPlayerScreenConfig.PLAYER_SCALE.set((double)this.scale);
         ExtraPlayerScreenConfig.PLAYER_YAW_OFFSET.set((double)this.yawOffset);
+        // One save writes the whole client spec (all four values above).
+        ExtraPlayerScreenConfig.PLAYER_YAW_OFFSET.save();
         super.onClose();
     }
 }

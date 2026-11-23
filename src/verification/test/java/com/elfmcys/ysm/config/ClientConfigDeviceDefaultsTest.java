@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.config;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
@@ -41,13 +42,13 @@ class ClientConfigDeviceDefaultsTest {
     @EnumSource(NativeRuntime.DeviceQuality.class)
     void reloadsExplicitTomlValuesWithoutReplacingThemWithDefaults(NativeRuntime.DeviceQuality quality) {
         var file = directory.resolve("client.toml");
-        try (var config = CommentedFileConfig.of(file)) {
+        try (var config = CommentedFileConfig.builder(file).sync().build()) {
             config.set("general.ModelScreenEagerLoading", false);
             config.set("general.ModelRetentionCount", 123);
             config.save();
         }
         for (int reload = 0; reload < 2; reload++) {
-            try (var config = CommentedFileConfig.of(file)) {
+            try (var config = CommentedFileConfig.builder(file).sync().build()) {
                 config.load();
                 var builder = new ForgeConfigSpec.Builder();
                 ClientConfig.init(builder, quality);

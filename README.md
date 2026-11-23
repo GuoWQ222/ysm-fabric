@@ -37,9 +37,12 @@ without backward compatibility (see README.upstream.md).
 - Iris 1.11 with Sodium and a shader pack;
 - alongside about 30 common 26.2 mods (EMF/ETF, Flashback, Voxy, C2ME, WTHIT and others).
 
+- integrations with the 26.2 Fabric versions of Iris, Mod Menu, WTHIT, First-person Model, Real Camera, Better
+  Combat (with Player Animation Library), Carry On, Immersive Melodies and Immersive Aircraft.
+
 **Not done yet:**
-- most integrations with other mods (done: Iris, Mod Menu, WTHIT; the Forge-only compat modules are inactive
-  stand-ins);
+- integrations whose mods have no 26.2 Fabric version (Elytra Slot, Trinkets, Accessories, and the Forge-only
+  mods); their compat modules remain inactive stand-ins;
 - macOS and Linux builds.
 
 ## Built-in models
@@ -74,7 +77,7 @@ author's permission. The steps are documented for reference.
    in `local.properties` is enough.
 3. Run `./gradlew assemble` with JDK 25. The mod jar is written to `build/libs/`.
 
-`./gradlew test` (part of `./gradlew build`) runs about 1,300 upstream tests and currently reports 10 known failures;
+`./gradlew test` (part of `./gradlew build`) runs about 1,300 upstream tests and currently reports 6 known failures;
 PORTING.md lists them and their causes. Some tests are skipped:
 
 - tests bound to Forge-era Minecraft APIs (`gradle/test-exclusions.txt`);

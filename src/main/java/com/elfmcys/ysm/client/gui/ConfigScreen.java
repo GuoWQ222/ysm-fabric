@@ -71,6 +71,7 @@ public class ConfigScreen extends ModelScreen {
                 @Override
                 protected void applyValue() {
                     ClientConfig.SOUND_VOLUME.set(percent());
+                    ClientConfig.SOUND_VOLUME.save();
                 }
             });
 

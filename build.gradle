@@ -97,6 +97,14 @@ dependencies {
     compileOnly "maven.modrinth:iris:${iris_version}"
     // WTHIT plugin (client/compat/wthit, waila_plugins.json); the user's WTHIT is 20.0.0
     compileOnly("maven.modrinth:wthit:${wthit_version}") { transitive = false }
+    // Optional integrations (client/compat): APIs only, the mods stay optional at runtime. Modrinth version ids.
+    compileOnly("maven.modrinth:carry-on:${carryon_version}") { transitive = false }
+    compileOnly("maven.modrinth:better-combat:${bettercombat_version}") { transitive = false }
+    compileOnly("maven.modrinth:player-animation-library:${playeranimlib_version}") { transitive = false }
+    compileOnly("maven.modrinth:first-person-model:${firstperson_version}") { transitive = false }
+    compileOnly("maven.modrinth:real-camera:${realcamera_version}") { transitive = false }
+    compileOnly("maven.modrinth:immersive-melodies:${immersivemelodies_version}") { transitive = false }
+    compileOnly("maven.modrinth:immersive-aircraft:${immersiveaircraft_version}") { transitive = false }
 
     compileOnly 'org.jetbrains:annotations:26.0.2'
 

@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host;
 
 import org.objectweb.asm.ClassReader;
@@ -57,7 +58,8 @@ final class OptionalLinkageVerifier {
                 throw missingClass(reference.owner(), null);
             }
             var matched = new boolean[] {reference.name() == null || "<clinit>".equals(reference.name())};
-            new ClassReader(input).accept(new ClassVisitor(Opcodes.ASM9) {
+            var reader = new ClassReader(input);
+            reader.accept(new ClassVisitor(Opcodes.ASM9) {
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
                     String[] exceptions) {
@@ -69,12 +71,43 @@ final class OptionalLinkageVerifier {
                     return visitor(loader, reference.owner(), externalClass, followedClass, pending);
                 }
             }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            if (!matched[0]) {
+            if (!matched[0] && !resolveInherited(loader, reference, reader, followedClass, pending)) {
                 throw new NoSuchMethodError(reference.toString());
             }
         } catch (IOException failure) {
             throw new IllegalStateException("Cannot read optional linkage owner " + reference.owner(), failure);
         }
+    }
+
+    /**
+     * A method not declared by a followed class may be inherited, as the JVM resolves it: superclass chain first, then
+     * superinterfaces. A followed supertype is scanned like any followed owner; any other supertype (JDK, Minecraft,
+     * an optional mod) is checked by reflection.
+     */
+    private static boolean resolveInherited(ClassLoader loader, MethodRef reference, ClassReader reader,
+        Predicate<String> followedClass, ArrayDeque<MethodRef> pending) {
+        if ("<init>".equals(reference.name())) {
+            return false;
+        }
+        var candidates = new java.util.ArrayList<String>();
+        if (reader.getSuperName() != null) {
+            candidates.add(reader.getSuperName());
+        }
+        candidates.addAll(java.util.Arrays.asList(reader.getInterfaces()));
+        var methodType = Type.getMethodType(reference.descriptor());
+        for (var internalName : candidates) {
+            var binaryName = internalName.replace('/', '.');
+            if (followedClass.test(binaryName)) {
+                pending.add(new MethodRef(binaryName, reference.name(), reference.descriptor()));
+                return true;
+            }
+            var method = findMethod(load(loader, binaryName), reference.name(),
+                classes(loader, methodType.getArgumentTypes()));
+            if (method != null && method.getReturnType() == classFor(loader, methodType.getReturnType())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static MethodVisitor visitor(ClassLoader loader, String currentOwner, Predicate<String> externalClass,

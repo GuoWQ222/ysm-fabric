@@ -1,3 +1,4 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.config;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
@@ -35,7 +36,7 @@ class ServerConfigSpecTest {
         var path = temp.resolve("server.toml");
         Files.writeString(path, "RestrictedModelList = ['path:global:*']\n");
         var spec = ServerConfig.init();
-        try (var config = CommentedFileConfig.of(path)) {
+        try (var config = CommentedFileConfig.builder(path).sync().build()) {
             config.load();
             spec.acceptConfig(config);
             assertEquals(List.of("path:global:*"), ServerConfig.RESTRICTED_MODEL_LIST.get());

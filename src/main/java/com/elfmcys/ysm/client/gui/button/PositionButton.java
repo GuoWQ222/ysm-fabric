@@ -45,5 +45,6 @@ public class PositionButton extends Button {
             case BOTTOM_LEFT -> LoadingStateScreenConfig.Position.TOP_LEFT;
         };
         LoadingStateScreenConfig.LOADING_STATE_POSITION.set(nextPosition);
+        LoadingStateScreenConfig.LOADING_STATE_POSITION.save();
     }
 }

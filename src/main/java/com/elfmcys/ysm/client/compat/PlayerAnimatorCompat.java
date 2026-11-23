@@ -1,26 +1,42 @@
 // Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.player.AbstractClientPlayer;
 
 /**
- * Fabric port stand-in: the PlayerAnimatorCompat integration targets a Forge mod and is not ported; every method reports
- * "not installed". The original is kept in src/forge-compat-reference.
+ * Player animation library. Upstream (Forge, 1.20) used KosmX's playerAnimator; on 26.2 Fabric its successor is
+ * Player Animation Library (mod id {@code player_animation_library}), which Better Combat 3.x and others animate with.
+ * As upstream: while an external animation asks for the third-person model in first person, YSM draws its full model
+ * there (unless DisableExternalFirstPersonAnim). Library classes are only touched by {@link Inner}.
  */
-@SuppressWarnings("unused")
 public final class PlayerAnimatorCompat {
+    private static final String MOD_ID = "player_animation_library";
+    private static boolean installed;
 
     private PlayerAnimatorCompat() {}
 
     public static void init() {
-        
+        installed = FabricLoader.getInstance().isModLoaded(MOD_ID);
     }
 
     public static boolean isInstalled() {
-        return false;
+        return installed;
     }
 
     public static boolean hasThirdPersonModelAnim(AbstractClientPlayer player) {
-        return false;
+        return installed && Inner.hasThirdPersonModelAnim(player);
+    }
+
+    private static final class Inner {
+        static boolean hasThirdPersonModelAnim(AbstractClientPlayer player) {
+            try {
+                var animations = com.zigythebird.playeranim.api.PlayerAnimationAccess.getPlayerAnimManager(player);
+                return animations != null && animations.isActive() && animations.getFirstPersonMode()
+                    == com.zigythebird.playeranimcore.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL;
+            } catch (IllegalArgumentException notAnimatable) {
+                return false;
+            }
+        }
     }
 }

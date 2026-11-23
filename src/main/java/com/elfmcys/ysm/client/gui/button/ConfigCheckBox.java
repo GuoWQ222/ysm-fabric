@@ -13,6 +13,10 @@ public final class ConfigCheckBox {
     public static Checkbox create(int x, int y, String key, ForgeConfigSpec.BooleanValue configSpec) {
         return Checkbox.builder(Component.translatable("gui.yes_steve_model.config." + key), Minecraft.getInstance().font)
             .pos(x, y).maxWidth(400).selected(configSpec.get())
-            .onValueChange((checkbox, selected) -> configSpec.set(selected)).build();
+            .onValueChange((checkbox, selected) -> {
+                configSpec.set(selected);
+                // FCAP does not autosave like Forge's file configs did; without this the change is lost on restart.
+                configSpec.save();
+            }).build();
     }
 }
