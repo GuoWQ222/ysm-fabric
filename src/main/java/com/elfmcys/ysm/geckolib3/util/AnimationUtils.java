@@ -1,0 +1,29 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+/*
+ * Copyright (c) 2020. Author: Bernie G. (Gecko)
+ */
+
+package com.elfmcys.ysm.geckolib3.util;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.world.entity.Entity;
+
+public class AnimationUtils {
+    public static float convertTicksToSeconds(float ticks) {
+        return ticks / 20;
+    }
+
+    public static float convertSecondsToTicks(float seconds) {
+        return seconds * 20;
+    }
+
+    /**
+     * 获取实体的 Renderer
+     */
+    public static <T extends Entity> EntityRenderer<? super T, ?> getRenderer(T entity) {
+        EntityRenderDispatcher renderManager = Minecraft.getInstance().getEntityRenderDispatcher();
+        return renderManager.getRenderer(entity);
+    }
+}

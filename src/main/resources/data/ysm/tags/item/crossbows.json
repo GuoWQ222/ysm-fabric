@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "#c:tools/crossbows",
+      "required": false
+    },
+    {
+      "id": "#c:tools/crossbow",
+      "required": false
+    }
+  ]
+}

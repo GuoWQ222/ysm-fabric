@@ -1,0 +1,217 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Yes Steve Model 3.0-dev - unofficial Fabric 26.2 port, based on the upstream Forge 1.20.1 build.
+plugins {
+    id 'java-library'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'com.google.protobuf' version '0.9.5'
+    id 'com.gradleup.shadow' version '9.2.2'
+}
+
+// Build-tool and declaration classpaths need these source sets before their compiler setup.
+sourceSets { declaration }
+
+// Dev-only visual test harness (separate mod, never in the release jar).
+sourceSets {
+    localtest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output + sourceSets.declaration.output
+        // main.runtimeClasspath is replaced later by gradle/declaration.gradle; name the declaration output here.
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output + sourceSets.declaration.output
+    }
+}
+
+// Upstream verification tests (JUnit). Fabric port: tests bound to Forge-era Minecraft APIs are excluded in
+// gradle/test-exclusions.txt; the rest check the shared model, format, network and native logic.
+def ysmTestExclusions = file('gradle/test-exclusions.txt').exists()
+        ? file('gradle/test-exclusions.txt').readLines().collect { it.trim() }.findAll { it && !it.startsWith('#') }
+        : []
+sourceSets {
+    test {
+        java.setSrcDirs(['src/verification/test/java', 'src/verification/shared/java'])
+        java.exclude(ysmTestExclusions)
+        resources.setSrcDirs(['src/verification/test/resources'])
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath + sourceSets.declaration.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath + sourceSets.declaration.output
+    }
+}
+apply from: 'gradle/local-properties.gradle'
+apply from: 'gradle/native.gradle'
+
+version = mod_version
+group = 'com.elfmcys.ysm'
+base { archivesName = 'ysm' }
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+    options.compilerArgs += ['-Xmaxerrs', '100000', '-Xmaxwarns', '0']
+}
+
+repositories {
+    mavenCentral()
+    flatDir { dirs 'libs' }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+def mavenCentralHosts = ['repo.maven.apache.org', 'repo1.maven.org']
+repositories.withType(MavenArtifactRepository).configureEach { repo ->
+    if (!mavenCentralHosts.contains(repo.url.host)) {
+        repo.content {
+            excludeGroup 'com.google.protobuf'
+            excludeGroup 'us.hebi.quickbuf'
+        }
+    }
+}
+
+configurations {
+    // Fabric port: libraries that FCAP ships as nested jars, needed on plain JVM classpaths (build tools, tests).
+    nestedLibs
+    ysmImplementation
+    implementation.extendsFrom ysmImplementation
+}
+
+ext.ysmBundledExpressionLibraries = Collections.unmodifiableMap([
+        'dev.semaweave:semaweave-engine:0.1.0-SNAPSHOT'         : file('libs/semaweave-engine-0.1.0-SNAPSHOT.jar'),
+        'dev.semaweave:semaweave-backend-janino:0.1.0-SNAPSHOT' : file('libs/semaweave-backend-janino-0.1.0-SNAPSHOT.jar'),
+        'org.codehaus.janino:janino:3.1.12-semaweave'           : file('libs/janino-3.1.12-semaweave.jar')
+])
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // Forge-style config API on Fabric (provides net.minecraftforge.common.ForgeConfigSpec); bundled.
+    implementation "maven.modrinth:forge-config-api-port:${fcap_version}"
+    include "maven.modrinth:forge-config-api-port:${fcap_version}"
+
+    compileOnly 'org.jetbrains:annotations:26.0.2'
+
+    ysmImplementation files('libs/quickbuf-runtime-1.4.1-ysm.jar')
+    ysmImplementation files(ysmBundledExpressionLibraries.values())
+    // File dependencies do not carry the runtime dependencies declared in their POMs.
+    ysmImplementation 'org.codehaus.janino:commons-compiler:3.1.12'
+    ysmImplementation 'org.yaml:snakeyaml:2.2'
+    // Version parsing (Forge shipped maven-artifact; Fabric does not).
+    ysmImplementation 'org.apache.maven:maven-artifact:3.9.9'
+    // Night-config types appear in config code; Forge Config API Port bundles it at runtime.
+    compileOnly 'com.electronwill.night-config:core:3.8.4'
+    compileOnly 'com.electronwill.night-config:toml:3.8.4'
+    nestedLibs 'com.electronwill.night-config:core:3.8.4'
+    nestedLibs 'com.electronwill.night-config:toml:3.8.4'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.xerial:sqlite-jdbc:3.54.1.0'
+    testImplementation 'com.google.protobuf:protobuf-java:3.21.12'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'org.ow2.asm:asm:9.7.1'
+    testImplementation 'org.ow2.asm:asm-tree:9.7.1'
+    testRuntimeOnly 'com.electronwill.night-config:core:3.8.4'
+    testRuntimeOnly 'com.electronwill.night-config:toml:3.8.4'
+    // Fabric Loader supplies ASM and fastutil at runtime.
+    compileOnly 'org.ow2.asm:asm:9.9.1'
+    compileOnly 'org.ow2.asm:asm-tree:9.9.1'
+}
+
+// Port in progress: other-mod compatibility code and the Forge-era mixins stay in the tree for reference
+// but are not compiled; ported mixins live under mixin/platform and mixin/fabric.
+sourceSets.main.java {
+    exclude 'com/elfmcys/ysm/mixin/client/**'
+    exclude 'com/elfmcys/ysm/mixin/plugin/**'
+    exclude 'com/elfmcys/ysm/mixin/*.java'
+}
+
+apply from: 'gradle/declaration.gradle'
+apply from: 'gradle/builtin-index.gradle'
+apply from: 'gradle/expression-compatibility.gradle'
+
+loom {
+    mods {
+        register('ysm') {
+            sourceSet sourceSets.main
+            // Packaged into the jar with main; in dev runs Knot only sees mod-group directories.
+            sourceSet sourceSets.declaration
+        }
+        register('ysm_localtest') {
+            sourceSet sourceSets.localtest
+        }
+    }
+    runs {
+        configureEach {
+            if (ysmNativeLibraryPathOrNull != null)
+                environmentVariable 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
+        }
+        client {
+            runDir 'run/client'
+            source sourceSets.localtest
+        }
+        server {
+            runDir 'run/server'
+        }
+    }
+}
+
+processResources {
+    inputs.property 'mod_version', project.version
+    filteringCharset 'UTF-8'
+    from('LICENSE')
+    from('NOTICE.md')
+    filesMatching('fabric.mod.json') {
+        expand 'mod_version': project.version
+    }
+}
+
+jar {
+    manifest.attributes([
+            'Implementation-Title'  : project.name,
+            'Implementation-Version': "${version}"
+    ])
+    archiveClassifier = 'raw'
+    destinationDirectory = layout.buildDirectory.dir('devlibs')
+}
+
+tasks.named('shadowJar') {
+    dependsOn tasks.named('jar')
+    from(tasks.named('jar').flatMap { it.archiveFile }.map { project.zipTree(it.asFile) })
+    from(sourceSets.declaration.output) {
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+    from(tasks.named('relocateProcessorAsm', Jar).flatMap { it.archiveFile }.map { project.zipTree(it.asFile) })
+    configurations = [project.configurations.ysmImplementation]
+    archiveClassifier = ''
+    addMultiReleaseAttribute = false
+    mergeServiceFiles()
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude '**/*.proto'
+    exclude '/META-INF/maven/**'
+    exclude '/META-INF/native-image/*'
+    exclude '/META-INF/proguard/*'
+    relocate 'us.hebi.quickbuf', 'com.elfmcys.quickbuf'
+    relocate 'mixel', 'com.elfmcys.mixel'
+    relocate 'dev.semaweave', 'com.elfmcys.ysm.internal.expression.semaweave'
+    relocate 'org.codehaus.janino', 'com.elfmcys.ysm.internal.expression.janino'
+    relocate 'org.codehaus.commons.compiler', 'com.elfmcys.ysm.internal.expression.commonscompiler'
+    relocate 'org.yaml.snakeyaml', 'com.elfmcys.ysm.internal.snakeyaml'
+    relocate 'org.apache.maven.artifact', 'com.elfmcys.ysm.internal.mavenartifact'
+}
+
+tasks.named('build') { dependsOn tasks.named('shadowJar') }
+
+// Protobuf sources (applied last: it re-adds generated roots to every source set).
+apply from: 'gradle/schema.gradle'
+
+tasks.named('test', Test) {
+    useJUnitPlatform {
+        excludeTags 'mock'
+    }
+    // Aggregate transfer tests exceed 128 MiB alongside initialized game and compiler fixtures.
+    maxHeapSize = '1g'
+}

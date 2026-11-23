@@ -1,0 +1,82 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+package com.elfmcys.ysm.model;
+
+import com.elfmcys.ysm.AssetDirectoryPlatform;
+import com.elfmcys.ysm.AssetPaths;
+import com.elfmcys.ysm.ProcessAssetPaths;
+import com.elfmcys.ysm.YesSteveModel;
+import com.elfmcys.ysm.platform.FMLPaths;
+
+/**
+ * Lifecycle bridge between Forge common setup and the process model-system owner.
+ *
+ * <p>
+ * Execution: synchronization protects one-time publication. The published system lives until JVM termination; process
+ * exit neither drains background work nor closes its resources.
+ *
+ * <p>
+ * Seam: implements the [process lifecycle](docs/architecture/runtime/overview.md#结束与替换); game-service and connection
+ * shutdown do not close this owner.
+ */
+public final class ModelRuntime {
+    private static ModelSystem system;
+    private static final ProcessAssetPaths directories = new ProcessAssetPaths(ModelRuntime::discoverDirectories);
+
+    private ModelRuntime() {}
+
+    /**
+     * Publishes a complete system once; repeated calls keep the published instance.
+     *
+     * <p>
+     * Requires: Forge paths and the active mod container are available. Ordinary catalog activation and required client
+     * preparation have separate owners.
+     *
+     * <p>
+     * Failure: construction failure propagates without publishing a partial system.
+     */
+    public static synchronized void initialize() {
+        if (system != null) {
+            return;
+        }
+        system = ModelSystem.openDefault(directories.get());
+    }
+
+    /**
+     * Returns the borrowed process system; callers do not acquire a close right or a lifetime pin.
+     *
+     * @throws IllegalStateException if initialization has not published a system
+     */
+    public static synchronized ModelSystem system() {
+        if (system == null) {
+            throw new IllegalStateException("Model runtime has not been initialized");
+        }
+        return system;
+    }
+
+    /** Returns the directory configuration fixed for this process. */
+    public static AssetPaths paths() {
+        return directories.get();
+    }
+
+    private static AssetPaths discoverDirectories() {
+        var environment = java.util.Map.copyOf(System.getenv());
+        var builtin = com.elfmcys.ysm.platform.Platform.ownResource("assets", YesSteveModel.MOD_ID, "builtin");
+        AssetDirectoryPlatform.MacDirectories mac = null;
+        var platform = environment.containsKey("YSM_HOME") ? AssetDirectoryPlatform.Kind.UNSUPPORTED
+            : AssetDirectoryPlatform.current();
+        if (!environment.containsKey("YSM_HOME") && platform == AssetDirectoryPlatform.Kind.MACOS) {
+            try {
+                mac = AssetDirectoryPlatform.queryMacDirectories();
+            } catch (RuntimeException | LinkageError error) {
+                YesSteveModel.LOGGER.error("Global model directory query failed", error);
+            }
+        }
+        var paths =
+            AssetPaths.discover(FMLPaths.GAMEDIR.get(), FMLPaths.CONFIGDIR.get(), builtin, environment, platform, mac);
+        for (var diagnostic : paths.diagnostics()) {
+            YesSteveModel.LOGGER.error("Global model directory {} failed at {}: {}", diagnostic.operation(),
+                diagnostic.path(), diagnostic.message());
+        }
+        return paths;
+    }
+}

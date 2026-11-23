@@ -1,0 +1,93 @@
+// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+package com.elfmcys.ysm.event;
+
+import com.elfmcys.ysm.YesSteveModel;
+import com.elfmcys.ysm.model.service.ClientModelService;
+import com.elfmcys.ysm.command.RootCommand;
+import com.elfmcys.ysm.model.service.ServerModelService;
+import com.google.common.collect.Sets;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.synchronization.SuggestionProviders;
+import net.minecraft.resources.Identifier;
+import com.elfmcys.ysm.platform.Dist;
+import com.elfmcys.ysm.platform.event.forge.RegisterCommandsEvent;
+import com.elfmcys.ysm.platform.event.SubscribeEvent;
+import com.elfmcys.ysm.platform.event.Mod;
+import com.elfmcys.ysm.platform.FMLEnvironment;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Mod.EventBusSubscriber
+@SuppressWarnings("removal")
+public final class CommandRegistry {
+    public static final SuggestionProvider<CommandSourceStack> ALL_MODELS =
+        SuggestionProviders.register(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "models"), (source, builder) -> {
+            if (source.getSource() instanceof SharedSuggestionProvider) {
+                var paths = ServerModelService.current().flatMap(ServerModelService::catalog)
+                    .map(snapshot -> com.elfmcys.ysm.model.catalog.source.ModelSelector
+                        .suggestions(snapshot.catalog().byLocation()).stream().map(CommandRegistry::filterSuggestionStr)
+                        .toList())
+                    .orElse(List.of());
+                return SharedSuggestionProvider.suggest(paths, builder);
+            } else {
+                return Suggestions.empty();
+            }
+        });
+
+    public static final SuggestionProvider<CommandSourceStack> ALL_ANIMATIONS =
+        SuggestionProviders.register(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "animations"), (source, builder) -> {
+            if (source.getSource() instanceof SharedSuggestionProvider) {
+                if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+                    // Fixme: 应该为服务器后台也添加提示功能
+                    return Suggestions.empty();
+                } else {
+                    var main = ClientModelService.instance().defaultRenderTarget().playerResources().animations();
+                    Set<String> animations = Sets.newHashSet();
+                    animations.addAll(main.keySet().stream().map(CommandRegistry::filterSuggestionStr).toList());
+                    animations.add("stop");
+                    return SharedSuggestionProvider.suggest(animations, builder);
+                }
+            } else {
+                return Suggestions.empty();
+            }
+        });
+
+    public static final SuggestionProvider<CommandSourceStack> ALL_TEXTURES =
+        SuggestionProviders.register(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "textures"), (source, builder) -> {
+            if (source.getSource() instanceof SharedSuggestionProvider) {
+                String modelPath = source.getArgument("model_path", String.class);
+                var model = ServerModelService.current().flatMap(ServerModelService::catalog)
+                    .flatMap(snapshot -> snapshot.findPath(modelPath));
+                if (model.isPresent()) {
+                    List<String> textures = model.get().representation().view().getPlayer().getTextureNames().stream()
+                        .sorted().map(CommandRegistry::filterSuggestionStr).collect(Collectors.toList());
+                    textures.add(0, "-");
+                    return SharedSuggestionProvider.suggest(textures, builder);
+                }
+            }
+            return Suggestions.empty();
+        });
+
+    @SubscribeEvent
+    public static void onServerStaring(RegisterCommandsEvent event) {
+        if (!YesSteveModel.isAvailable()) {
+            RootCommand.registerPlaceholder(event.getDispatcher());
+            return;
+        }
+
+        RootCommand.register(event.getDispatcher());
+    }
+
+    private static String filterSuggestionStr(String str) {
+        if (str.chars().allMatch(c -> StringReader.isAllowedInUnquotedString((char)c))) {
+            return str;
+        }
+        return "\"" + str.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+}

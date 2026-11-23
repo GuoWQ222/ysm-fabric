@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: CC0-1.0
+syntax = "proto3";
+
+package mixel.asset.model.data;
+
+import "expression/program.proto";
+
+message AnimationControllerFile {
+  repeated AnimationController controllers = 1;
+}
+
+message AnimationController {
+  string name = 1;
+  string default_state = 2;
+  repeated State states = 3;
+}
+
+message State {
+  string name = 1;
+  repeated AnimationReference animations = 2;
+  repeated Transition transitions = 3;
+  repeated expression.program.EncodedProgram on_entry = 4;
+  repeated expression.program.EncodedProgram on_exit = 5;
+  BlendTransition blend_transition = 6;
+  bool blend_via_shortest_path = 7;
+  repeated string sound_effects = 8;
+}
+
+message Transition {
+  string dst = 1;
+  expression.program.EncodedProgram condition = 2;
+}
+
+message AnimationReference {
+  string name = 1;
+  expression.program.EncodedProgram condition = 2;
+}
+
+message BlendTransition {
+  optional float linear_length = 1;
+  repeated BlendPoint points = 2;
+}
+
+message BlendPoint {
+  float key = 1;
+  float value = 2;
+}

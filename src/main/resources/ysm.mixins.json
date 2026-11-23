@@ -1,0 +1,53 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.elfmcys.ysm.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "fabric.NativeImageAccessor",
+    "fabric.client.ProjectionMatrixBufferMixin",
+    "fabric.client.ByteBufferBuilderAccessor",
+    "fabric.client.BufferBuilderDirectWriteMixin",
+    "fabric.client.RenderTypeInvoker",
+    "fabric.client.EntityRendererStateMixin",
+    "fabric.client.LivingEntityRendererMixin",
+    "fabric.client.EntityRenderDispatcherReloadMixin",
+    "fabric.client.EntityRenderDispatcherMixin",
+    "fabric.client.LevelFrameMixin",
+    "fabric.client.LevelRendererFrameMixin",
+    "fabric.client.GameRendererProfileMixin",
+    "fabric.client.ItemInHandRendererMixin",
+    "fabric.client.GuiGraphicsExtractorAccessor",
+    "fabric.client.PictureInPictureRendererAccessor",
+    "fabric.client.GuiEntityRendererMixin",
+    "fabric.client.ScreenAccessor",
+    "fabric.client.PlayerQueryProjectionMixin",
+    "fabric.client.EntitySubjectSampleMixin",
+    "fabric.client.InputEventsMixin",
+    "fabric.client.MouseButtonEventsMixin",
+    "fabric.client.GuiScreenOpeningMixin",
+    "fabric.client.ClientRespawnCloneMixin",
+    "fabric.client.GuiExtractWaitMixin"
+  ],
+  "mixins": [
+    "platform.EntityCapabilityMixin",
+    "fabric.EntityWalkDistanceMixin",
+    "fabric.ArrowPotionAccessor",
+    "fabric.AbstractArrowExtraInfoMixin",
+    "fabric.FishingHookAccessor",
+    "fabric.ThrowableItemProjectileAccessor",
+    "fabric.LivingEntityEventsMixin",
+    "fabric.ServerCommonPacketListenerAccessor",
+    "fabric.ChunkMapAccessor",
+    "fabric.TrackedEntityAccessor",
+    "fabric.ProjectileOwnerMixin",
+    "fabric.ServerPlayerRidingMixin",
+    "fabric.ConnectionCompressionMixin",
+    "fabric.ConnectionAccessor",
+    "fabric.LivingEntityEquipmentAccessor",
+    "fabric.PlayerListLoginMixin"
+  ]
+}

@@ -1,0 +1,104 @@
+diff --git a/conan/cmake/targets/windows-x64.cmake b/conan/cmake/targets/windows-x64.cmake
+index 75fd008..b7f66ec 100644
+--- a/conan/cmake/targets/windows-x64.cmake
++++ b/conan/cmake/targets/windows-x64.cmake
+@@ -11,6 +11,8 @@ add_compile_definitions(
+ 
+ if (CMAKE_C_COMPILER_ID MATCHES "MSVC" OR CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+     add_c_compile_options(/Zc:preprocessor)
++    # Local MSVC build fix: large translation units exceed the default COFF section limit (C1128).
++    add_compile_options(/bigobj)
+ endif ()
+ 
+ add_c_compile_options(
+diff --git a/modules/gfx/src/renderer/buffer/quad_ref.h b/modules/gfx/src/renderer/buffer/quad_ref.h
+index 73e0084..d2260e0 100644
+--- a/modules/gfx/src/renderer/buffer/quad_ref.h
++++ b/modules/gfx/src/renderer/buffer/quad_ref.h
+@@ -9,7 +9,13 @@ namespace ysm::gfx::renderer::buffer {
+ constexpr uint32_t kInvalidDepthSortKey =
+     std::numeric_limits<uint32_t>::max();
+ 
+-constexpr uint32_t NdcDepthSortKey(float depth) noexcept {
++// Local MSVC build fix: MSVC's std::isfinite is not constexpr; only runtime callers exist.
++#if defined(_MSC_VER) && !defined(__clang__)
++#define YSM_NDC_SORT_KEY_SPEC inline
++#else
++#define YSM_NDC_SORT_KEY_SPEC constexpr
++#endif
++YSM_NDC_SORT_KEY_SPEC uint32_t NdcDepthSortKey(float depth) noexcept {
+     if (!std::isfinite(depth)) [[unlikely]] {
+         return kInvalidDepthSortKey;
+     }
+diff --git a/modules/java/include/java/entry.h b/modules/java/include/java/entry.h
+index be01e5a..01ba8db 100644
+--- a/modules/java/include/java/entry.h
++++ b/modules/java/include/java/entry.h
+@@ -508,9 +508,12 @@ struct EntryThunk<Impl, Desc, Fallback,
+     using JniReturn =
+         std::conditional_t<kReturnDescriptor == "Z", jboolean, void>;
+ 
++    // Local MSVC fix: a [&] lambda naming a plain-function NTTP makes MSVC try to capture &Impl (C2102).
++    static constexpr auto kImpl = Impl;
++
+     static JniReturn JNICALL Invoke(JNIEnv_* env, jclass, Args... args) {
+         const bool ok =
+-            InvokeStatus<Desc>([&] { return Impl(env, args...); });
++            InvokeStatus<Desc>([&] { return kImpl(env, args...); });
+         if constexpr (std::is_same_v<JniReturn, jboolean>) {
+             return ok ? JNI_TRUE : JNI_FALSE;
+         }
+@@ -529,8 +532,11 @@ struct EntryThunk<Impl, Desc, Fallback,
+                   "absl::StatusOr<R> does not match the descriptor return "
+                   "type");
+ 
++    // Local MSVC fix: see the absl::Status specialization above.
++    static constexpr auto kImpl = Impl;
++
+     static R JNICALL Invoke(JNIEnv_* env, jclass, Args... args) {
+-        return InvokeStatusOr<R, Desc>([&] { return Impl(env, args...); },
++        return InvokeStatusOr<R, Desc>([&] { return kImpl(env, args...); },
+                                        FailureValue<R, Fallback>());
+     }
+ };
+@@ -587,18 +593,38 @@ class EntryRegistrar final {
+ #define YSM_JNI_ENTRY_INTERNAL_REGISTRAR(id)                             \
+     YSM_MACROS_CONCAT_NAME(kYsmJniEntryRegistrar, id)
+ 
+-#define YSM_JNI_ENTRY_INTERNAL_SIGNATURE(desc, names, id)                \
++// Local MSVC fix: __COUNTER__ restarts in every translation unit, so two files can both define a
++// static YsmJniEntryImplementation0 with the same parameters. MSVC gives the lambdas inside them
++// identical mangled names, and templates instantiated on those lambdas (Complete<lambda>, ...) are
++// merged across files by the linker, so one JNI entry runs another file's body. A defaulted tag type
++// from an unnamed namespace makes each implementation, and its lambdas, unique per translation unit.
++// Clang already gives such lambdas internal linkage, so its behaviour is unchanged.
++#define YSM_JNI_ENTRY_INTERNAL_TAG(id)                                   \
++    YSM_MACROS_CONCAT_NAME(YsmJniEntryTag, id)
++
++#define YSM_JNI_ENTRY_INTERNAL_SIGNATURE_TAIL(desc, names, id)           \
+     static auto YSM_JNI_ENTRY_INTERNAL_FUNCTION(id)(                     \
+         JNIEnv_* env YSM_JNI_ENTRY_INTERNAL_PARAMETERS(names))           \
+         ->::ysm::java::internal::EntryImplementationResultT<desc>
+ 
++#define YSM_JNI_ENTRY_INTERNAL_DECLARATION(desc, names, id)              \
++    namespace {                                                          \
++    struct YSM_JNI_ENTRY_INTERNAL_TAG(id);                               \
++    }                                                                    \
++    template <typename = YSM_JNI_ENTRY_INTERNAL_TAG(id)>                 \
++    YSM_JNI_ENTRY_INTERNAL_SIGNATURE_TAIL(desc, names, id)
++
++#define YSM_JNI_ENTRY_INTERNAL_SIGNATURE(desc, names, id)                \
++    template <typename>                                                  \
++    YSM_JNI_ENTRY_INTERNAL_SIGNATURE_TAIL(desc, names, id)
++
+ #define YSM_JNI_ENTRY_INTERNAL_IMPL(desc, names, id, ...)                \
+     static_assert(                                                       \
+         ::ysm::java::internal::EntrySignature<desc>::kArgumentCount ==   \
+             YSM_JNI_ENTRY_INTERNAL_PARAMETER_COUNT(names),               \
+         "JNI descriptor argument count does not match the parameter "    \
+         "name count");                                                  \
+-    YSM_JNI_ENTRY_INTERNAL_SIGNATURE(desc, names, id);                   \
++    YSM_JNI_ENTRY_INTERNAL_DECLARATION(desc, names, id);                 \
+     [[maybe_unused]] static ::ysm::java::EntryRegistrar<                 \
+         static_cast<                                                     \
+             ::ysm::java::internal::EntryImplementationPointerT<desc>>(   \

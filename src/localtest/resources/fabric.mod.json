@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "ysm_localtest",
+  "version": "0.0.0",
+  "name": "YSM local test harness",
+  "description": "Dev runs only: drives a test world through every built-in model and takes screenshots.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.elfmcys.ysm.localtest.VisualTestHarness"]
+  },
+  "depends": {
+    "ysm": "*"
+  }
+}

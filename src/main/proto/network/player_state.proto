@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package ysm.network;
+
+import "network/common.proto";
+
+message SelectionChange {
+  optional Selection selection = 1;
+}
+
+message Selection {
+  int32 entity_id = 1;
+  optional ModelReference model = 2;
+  uint64 intent_id = 3;
+  repeated string roaming_names = 4;
+  optional SelectionState state = 5;
+}
+
+message SelectionStateSync {
+  int32 entity_id = 1;
+  uint64 intent_id = 2;
+  oneof payload {
+    SelectionState state = 3;
+    SyncArguments sync = 4;
+  }
+}
+
+message SyncArguments {
+  repeated float arguments = 1 [packed = true];
+}
+
+message SelectionState {
+  optional string texture_id = 1;
+  optional AnimationState animation = 2;
+  optional RoamingState roaming = 3;
+}
+
+message EntityStateSync {
+  int32 entity_id = 1;
+  optional EntityState state = 2;
+}
+
+message EntityState {
+  optional GameplayState gameplay = 1;
+  optional EffectStateSet effects = 2;
+}
+
+message EntityTrack {
+  optional Selection selection = 1;
+  optional EntityState state = 2;
+  optional PlayerFlagsState flags = 3;
+}
+
+message PlayerFlagsState {
+  bool disabled = 1;
+}
+
+message PlayerFlags {
+  int32 entity_id = 1;
+  optional PlayerFlagsState state = 2;
+}
+
+message ServerFlags {
+  bool can_switch_model = 1;
+}
+
+message SelectionDirective {
+  optional ModelReference model = 1;
+  string texture_id = 2;
+}
+
+message SelectionInvalidated {}
+
+message GameplayState {
+  optional bool flying = 1;
+  optional uint32 experience_level = 2;
+  optional uint32 food_level = 3;
+  optional uint32 health = 4;
+  optional uint32 max_health = 5;
+  optional sint32 move_x_q7 = 6;
+  optional sint32 move_y_q7 = 7;
+  optional sint32 move_z_q7 = 8;
+  optional bool shield_cooldown = 9;
+}
+
+message EffectStateSet {
+  repeated EffectState effects = 1;
+}
+
+message EffectState {
+  string effect_id = 1;
+  uint32 level = 2;
+}
+
+message AnimationState {
+  oneof state {
+    bool stopped = 1;
+    string animation_id = 2;
+  }
+}
+
+message RoamingState {
+  repeated uint32 ids = 1 [packed = true];
+  repeated float values = 2 [packed = true];
+}

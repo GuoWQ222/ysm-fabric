@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ysm.network;
+
+import "network/common.proto";
+
+message ExpressionTargetIdentity {
+  // Schema 2: module_identity is the shared model/target/config/event-contract
+  // projection. Local artifact, ProgramId, profile, backend and layout are excluded.
+  uint32 schema_version = 1;
+  string model_id = 2;
+  string target_id = 3;
+  bytes module_identity = 4;
+  bytes config_identity = 5;
+  bytes catalog_identity = 6;
+}
+
+message ConfigAction {
+  string button_id = 1;
+  uint32 form_index = 2;
+  oneof payload {
+    bool bool_value = 3;
+    float f32_value = 4;
+    uint32 label_index = 5;
+  }
+  string label_name = 6;
+}
+
+message SubmitConfigActionRequest {
+  EntityRef target = 1;
+  ExpressionTargetIdentity identity = 2;
+  ConfigAction action = 3;
+}
+
+message ConfigActionEvent {
+  EntityRef subject = 1;
+  ExpressionTargetIdentity identity = 2;
+  ConfigAction action = 3;
+}
+
+message SwingHandRequest {
+  Hand hand = 1;
+}
+
+enum Hand {
+  HAND_UNSPECIFIED = 0;
+  HAND_MAIN = 1;
+  HAND_OFF = 2;
+}
