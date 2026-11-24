@@ -26,13 +26,23 @@ public final class EntitySubmitHelper {
         }
         poseStack.pushPose();
         if (state.scoreText != null) {
+            //#if MC >= 26.2
             collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.scoreText, !state.isDiscrete,
                 state.lightCoords, camera);
+            //#else
+            //$$ collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.scoreText, !state.isDiscrete,
+            //$$     state.lightCoords, state.distanceToCameraSq, camera);
+            //#endif
             poseStack.translate(0.0F, 9.0F * 1.15F * 0.025F, 0.0F);
         }
         if (state.nameTag != null)
+            //#if MC >= 26.2
             collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.nameTag, !state.isDiscrete,
                 state.lightCoords, camera);
+            //#else
+            //$$ collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.nameTag, !state.isDiscrete,
+            //$$     state.lightCoords, state.distanceToCameraSq, camera);
+            //#endif
         poseStack.popPose();
     }
 }

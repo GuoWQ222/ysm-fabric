@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.format.schema.model.views;
 
 import com.elfmcys.ysm.model.domain.Hash256;
@@ -20,6 +21,7 @@ import com.elfmcys.ysm.proto.mixel.manifest.info.PropertiesProto;
 import com.elfmcys.ysm.proto.mixel.manifest.info.SettingsProto;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -109,8 +111,10 @@ class ModelViewPresenceTest {
         assertThrows(UnsupportedOperationException.class, () -> view.getExtraAnimationButtons().put("other", button));
     }
 
+    // Fabric port (2.6.5 parity): an extra-animation form of an unknown type is skipped, not a reason to reject the
+    // model; community 2.x models use such forms and 2.6.5 loads them.
     @Test
-    void rejectsUnknownRouletteFormAtTheMetadataInterface() {
+    void ignoresUnknownRouletteFormAtTheMetadataInterface() {
         var form = ConfigFormsProto.newBuilder().setType("unknown").setTitle("").setDescription("")
             .setReadProgram(
                 ProgramProto.newBuilder().setFormat(1).setBytecode(java.nio.ByteBuffer.wrap(new byte[] {1})).build())
@@ -123,7 +127,8 @@ class ModelViewPresenceTest {
             .setPreviewAnimation("idle").setDisablePreviewRotation(false).addExtraAnimationButtons(button).build())
             .build();
 
-        assertThrows(IllegalArgumentException.class, () -> view(info, player()));
+        var view = assertDoesNotThrow(() -> view(info, player()));
+        assertTrue(view.getExtraAnimationButtons().containsKey("settings"));
     }
 
     private static ModelInfoView view(InfoProto info, RenderTargetProto player) {

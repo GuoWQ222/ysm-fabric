@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui.button;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.client.gui.GuiDraw;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
@@ -26,7 +27,7 @@ public class StarButton extends FlatColorButton {
         int startY = (this.height - 16) / 2;
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(modelInfoCap -> {
+            ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(modelInfoCap -> {
                 var preferences = com.elfmcys.ysm.model.service.ClientModelService.instance().preferences();
                 var modelHash = modelInfoCap.getModelHash();
                 if (modelHash != null && preferences.favourite(modelHash)) {
@@ -42,7 +43,7 @@ public class StarButton extends FlatColorButton {
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(modelInfoCap -> {
+            ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(modelInfoCap -> {
                 var preferences = com.elfmcys.ysm.model.service.ClientModelService.instance().preferences();
                 var modelHash = modelInfoCap.getModelHash();
                 if (modelHash == null) {

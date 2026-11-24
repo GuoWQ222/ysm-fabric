@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.protocol;
 
 import com.elfmcys.ysm.capability.CommittedSelection;
@@ -19,17 +20,17 @@ public final class SelectionCodec {
     private static RoamingValues read(RoamingStateProto state, int fieldCount) {
         if (state.ids().size() > ProtocolLimits.MAX_ROAMING_VARIABLES || state.ids().size() != state.values_().size())
             throw new IllegalArgumentException("Invalid roaming array shape");
-        long seen = 0;
+        // Fabric port: ids may exceed 63 (see ProtocolLimits), so no 64-bit mask
+        var seen = new java.util.BitSet(fieldCount);
         for (int i = 0; i < state.ids().size(); i++) {
             int id = state.ids().getInt(i);
             if (id < 0 || id >= fieldCount)
                 throw new IllegalArgumentException("Roaming uint32 ID is outside the wire range");
             if (!Float.isFinite(state.values_().getFloat(i)))
                 throw new IllegalArgumentException("Non-finite roaming value");
-            long bit = 1L << id;
-            if ((seen & bit) != 0)
+            if (seen.get(id))
                 throw new IllegalArgumentException("Duplicate roaming ID");
-            seen |= bit;
+            seen.set(id);
         }
         var ids = new short[state.ids().size()];
         for (int i = 0; i < ids.length; i++)

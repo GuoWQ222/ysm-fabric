@@ -11,10 +11,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fabric port: Forge's entity capability methods. Injected into {@code Entity} at compile time by Loom
- * (fabric.mod.json loom:injected_interfaces) and implemented at runtime by {@code EntityCapabilityMixin}.
+ * Fabric port: Forge's entity capability methods, added to {@code Entity} at runtime by {@code EntityCapabilityMixin}.
+ * Call sites go through {@link #of} (no compile-time interface injection, which ForgeGradle 7 lacks). The lifecycle
+ * methods carry YSM in their names so they never replace Forge's own {@code Entity.invalidateCaps/reviveCaps}.
  */
 public interface ICapabilityHolder {
+    /** The capability view of an entity (every entity implements this interface at runtime). */
+    static ICapabilityHolder of(net.minecraft.world.entity.Entity entity) {
+        return (ICapabilityHolder) entity;
+    }
+
     @NotNull
     default <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         throw new AssertionError("EntityCapabilityMixin not applied");
@@ -25,11 +31,11 @@ public interface ICapabilityHolder {
         return getCapability(cap, null);
     }
 
-    default void invalidateCaps() {
+    default void invalidateYsmCaps() {
         throw new AssertionError("EntityCapabilityMixin not applied");
     }
 
-    default void reviveCaps() {
+    default void reviveYsmCaps() {
         throw new AssertionError("EntityCapabilityMixin not applied");
     }
 }

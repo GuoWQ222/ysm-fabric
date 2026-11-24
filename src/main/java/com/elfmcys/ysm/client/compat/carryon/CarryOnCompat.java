@@ -1,10 +1,9 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat.carryon;
 
 import com.elfmcys.ysm.client.entity.CustomPlayerEntity;
 import com.elfmcys.ysm.geckolib3.core.controller.HybridAnimationController;
 import com.elfmcys.ysm.geckolib3.core.controller.IAnimationController;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
@@ -24,7 +23,7 @@ public final class CarryOnCompat {
     private CarryOnCompat() {}
 
     public static void init() {
-        installed = FabricLoader.getInstance().isModLoaded(CARRY_ON_ID);
+        installed = com.elfmcys.ysm.platform.Platform.isModLoaded(CARRY_ON_ID);
     }
 
     public static boolean isInstalled() {

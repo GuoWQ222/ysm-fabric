@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.service;
 
 import com.elfmcys.ysm.expression.host.MolangExtensionLoader;
@@ -433,6 +433,10 @@ public final class ClientModelService implements AutoCloseable {
 
     public boolean permitsAcquisition(ResourceRequest request) {
         return renderTargetManager.permitsAcquisition(request);
+    }
+
+    public boolean awaitsAcquisition(ResourceRequest request) {
+        return renderTargetManager.awaitsAcquisition(request);
     }
 
     public Optional<ResourceLease> findReady(ResourceRequest request) {

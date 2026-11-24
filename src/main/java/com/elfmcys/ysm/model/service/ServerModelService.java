@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.service;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.model.domain.ModelId;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.config.ServerConfig;
@@ -168,7 +169,7 @@ public final class ServerModelService implements AutoCloseable {
         var session = new ServerModelSession(() -> publication, syncRoaming);
         session.bindSelection(() -> {
             var currentPlayer = server.getPlayerList().getPlayer(playerId);
-            var capability = currentPlayer == null ? null : currentPlayer
+            var capability = currentPlayer == null ? null : com.elfmcys.ysm.platform.capability.ICapabilityHolder.of(currentPlayer)
                 .getCapability(com.elfmcys.ysm.capability.ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
             return capability == null || capability.selection() == null
                 ? new com.elfmcys.ysm.model.session.server.state.Selection.IntrinsicDefault()
@@ -236,7 +237,7 @@ public final class ServerModelService implements AutoCloseable {
         var state = connections.current(observer.getUUID(), com.elfmcys.ysm.platform.Connections.of(observer)).orElse(null);
         if (state == null || !state.session.active())
             return;
-        subject.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(subject).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
             if (!capability.isMandatory() && !NetworkHandler.isPlayerChannelPresent(subject))
                 return;
             catalog().flatMap(snapshot -> ModelInfoSyncAssembler.build(subject, capability, snapshot))
@@ -442,7 +443,7 @@ public final class ServerModelService implements AutoCloseable {
             closed = true;
             var player = server.getPlayerList().getPlayer(playerId);
             if (player != null)
-                player.getCapability(com.elfmcys.ysm.capability.ModelInfoCapabilityProvider.MODEL_INFO_CAP)
+                ICapabilityHolder.of(player).getCapability(com.elfmcys.ysm.capability.ModelInfoCapabilityProvider.MODEL_INFO_CAP)
                     .ifPresent(capability -> capability.retireProducer(session));
             assetTransfers.close();
             dispatch.disconnect(session);

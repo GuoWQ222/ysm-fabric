@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.animation.predicate;
 
 import com.elfmcys.ysm.client.animation.EntityTickStates;
@@ -48,22 +49,22 @@ public class SwingPredicate implements IAnimationPredicate<CustomHumanoidEntity<
         }
 
         // 其他情况
-        if (entity.swinging && !entity.isSleeping()) {
-            if (entity.swingTime == 0
+        if (com.elfmcys.ysm.platform.McCompat.isSwinging(entity) && !entity.isSleeping()) {
+            if (com.elfmcys.ysm.platform.McCompat.swingTime(entity) == 0
                 && event.getAnimatableEntity().getStateTracker().setEntityTickState(EntityTickStates.SWING)) {
                 // swing 开始时重置动画
                 event.getCodedController().indicateReload();
             }
             ConditionManager conditionManager = event.getAnimatableEntity().getConditionManager();
-            ConditionalSwing conditionalSwing = entity.swingingArm == InteractionHand.MAIN_HAND
+            ConditionalSwing conditionalSwing = com.elfmcys.ysm.platform.McCompat.swingingArm(entity) == InteractionHand.MAIN_HAND
                 ? conditionManager.getSwingMainhand() : conditionManager.getSwingOffhand();
             if (conditionalSwing != null) {
-                String name = conditionalSwing.doTest(entity, entity.swingingArm);
+                String name = conditionalSwing.doTest(entity, com.elfmcys.ysm.platform.McCompat.swingingArm(entity));
                 if (StringUtils.isNoneBlank(name)) {
                     return playCompatAnimation(event, name, LoopType.PLAY_ONCE);
                 }
             }
-            String defaultSwing = (entity.swingingArm == InteractionHand.MAIN_HAND) ? "swing_hand" : "swing_offhand";
+            String defaultSwing = (com.elfmcys.ysm.platform.McCompat.swingingArm(entity) == InteractionHand.MAIN_HAND) ? "swing_hand" : "swing_offhand";
             return playCompatAnimation(event, defaultSwing, LoopType.PLAY_ONCE);
         }
         return PlayState.CONTINUE;

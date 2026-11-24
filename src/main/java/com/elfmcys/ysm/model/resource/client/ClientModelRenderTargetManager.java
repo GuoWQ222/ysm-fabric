@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client;
 
 import com.elfmcys.ysm.model.domain.ModelId;
@@ -367,6 +368,11 @@ public final class ClientModelRenderTargetManager implements AutoCloseable {
 
     public boolean permitsAcquisition(ResourceRequest request) {
         return catalogs.snapshot().permitsRuntimeContent(request.modelId());
+    }
+
+    /** Not permitted yet, but published and still activating: acquisition waits instead of being denied. */
+    public boolean awaitsAcquisition(ResourceRequest request) {
+        return catalogs.snapshot().awaitsRuntimeContent(request.modelId());
     }
 
     public void tick() {

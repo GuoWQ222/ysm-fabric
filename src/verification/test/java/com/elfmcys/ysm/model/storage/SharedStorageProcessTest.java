@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import java.nio.file.Files;
@@ -133,8 +134,12 @@ class SharedStorageProcessTest {
         var paths = com.elfmcys.ysm.AssetPaths.discover(game, game.resolve("config"), game.resolve("builtin"),
             java.util.Map.of("YSM_HOME", home.toString()), com.elfmcys.ysm.AssetDirectoryPlatform.Kind.WINDOWS, null);
         try (var storage = ModelStorageInfra.open(paths, CacheMaintenanceTest.clock(1_800_000_000L))) {
+            // Fabric port: the 2.6.5 custom: and auth: scopes share the local cache region, so seed each region once
+            // (its first scope), as before those scopes existed; seeding the same object again cannot commit
+            var seeded = new java.util.HashSet<java.nio.file.Path>();
             for (var scope : storage.scopes())
-                CacheMaintenanceTest.seedObjects(scope.region().root(), scope.indexes().key());
+                if (seeded.add(scope.region().root()))
+                    CacheMaintenanceTest.seedObjects(scope.region().root(), scope.indexes().key());
         }
         var global = home.resolve("cache");
         try (var ordinary = child("maintenance", game, home, "1800000000", "ordinary", "round")) {

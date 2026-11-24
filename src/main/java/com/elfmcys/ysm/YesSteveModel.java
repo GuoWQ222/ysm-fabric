@@ -1,20 +1,20 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm;
 
 import com.elfmcys.ysm.api.internal.event.ExtensionEventHandlerLoader;
 import com.elfmcys.ysm.config.ClientConfig;
 import com.elfmcys.ysm.config.ServerConfig;
-import com.elfmcys.ysm.fabric.FabricEventHooks;
 import com.elfmcys.ysm.init.ModSounds;
 import com.elfmcys.ysm.platform.event.Event;
 import com.elfmcys.ysm.platform.event.IEventBus;
 import com.elfmcys.ysm.platform.event.MinecraftForge;
 import com.elfmcys.ysm.platform.event.Subscribers;
 import com.elfmcys.ysm.util.NativeLibUtil;
-import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+//#if LOADER != forge
 import net.neoforged.fml.config.ModConfig;
+//#endif
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,8 +50,14 @@ public final class YesSteveModel {
         }
         Subscribers.registerCommon(EVENT_BUS);
         ExtensionEventHandlerLoader.attach(EVENT_BUS);
-        FabricEventHooks.registerCommon();
-        FabricEventHooks.postCommonSetup();
+        //#if LOADER == fabric
+        com.elfmcys.ysm.fabric.FabricEventHooks.registerCommon();
+        com.elfmcys.ysm.fabric.FabricEventHooks.postCommonSetup();
+        //#elseif LOADER == neoforge
+        //$$ com.elfmcys.ysm.neoforge.NeoForgeEventHooks.registerCommon();
+        //#else
+        //$$ com.elfmcys.ysm.forge.ForgeEventHooks.registerCommon();
+        //#endif
     }
 
     public static void initClient() {
@@ -59,7 +65,13 @@ public final class YesSteveModel {
         if (!NativeLibUtil.isAvailable())
             return;
         Subscribers.registerClient(EVENT_BUS);
+        //#if LOADER == fabric
         com.elfmcys.ysm.fabric.FabricClientEventHooks.register();
+        //#elseif LOADER == neoforge
+        //$$ com.elfmcys.ysm.neoforge.NeoForgeClientEventHooks.register();
+        //#else
+        //$$ com.elfmcys.ysm.forge.ForgeClientEventHooks.register();
+        //#endif
     }
 
     public static void registerEventHandler(Object handler) {
@@ -67,8 +79,19 @@ public final class YesSteveModel {
     }
 
     private static void initConfig() {
-        ConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.CLIENT, ClientConfig.init());
-        ConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SERVER, ServerConfig.init());
+        //#if LOADER == fabric
+        fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.CLIENT, ClientConfig.init());
+        fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SERVER, ServerConfig.init());
+        //#elseif LOADER == neoforge && MC >= 26.3
+        //$$ // FML 12 (NeoForge 26.3): server-synced configs are Type.SYNCED (was SERVER)
+        //$$ fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.CLIENT, ClientConfig.init());
+        //$$ fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SYNCED, ServerConfig.init());
+        //#elseif LOADER == neoforge
+        //$$ fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.CLIENT, ClientConfig.init());
+        //$$ fuzs.forgeconfigapiport.neoforge.api.v5.ForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.SERVER, ServerConfig.init());
+        //#else
+        //$$ com.elfmcys.ysm.forge.YsmForge.registerConfigs(ClientConfig.init(), ServerConfig.init());
+        //#endif
     }
 
     public static boolean postEvent(Event event) {

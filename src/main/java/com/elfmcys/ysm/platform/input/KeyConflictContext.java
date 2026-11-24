@@ -15,8 +15,8 @@ public enum KeyConflictContext {
     public boolean isActive() {
         return switch (this) {
             case UNIVERSAL -> true;
-            case GUI -> Minecraft.getInstance().gui.screen() != null;
-            case IN_GAME -> Minecraft.getInstance().gui.screen() == null;
+            case GUI -> com.elfmcys.ysm.platform.McCompat.screen() != null;
+            case IN_GAME -> com.elfmcys.ysm.platform.McCompat.screen() == null;
         };
     }
 }

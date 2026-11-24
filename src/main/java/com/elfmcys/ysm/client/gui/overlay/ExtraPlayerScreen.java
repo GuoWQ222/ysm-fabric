@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui.overlay;
 
 import com.elfmcys.ysm.client.gui.ExtraPlayerConfigScreen;
@@ -8,9 +8,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 
-public class ExtraPlayerScreen implements net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement {
+public class ExtraPlayerScreen implements HudLayer {
+    /** Diagnostics (test harness): HUD extraction calls. */
+    public static volatile int calls;
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, net.minecraft.client.DeltaTracker deltaTracker) {
+        calls++;
         if (ExtraPlayerScreenConfig.DISABLE_PLAYER_RENDER.get()) {
             return;
         }
@@ -20,7 +24,7 @@ public class ExtraPlayerScreen implements net.fabricmc.fabric.api.client.renderi
         if (player == null) {
             return;
         }
-        if (mc.gui.screen() instanceof ExtraPlayerConfigScreen) {
+        if (com.elfmcys.ysm.platform.McCompat.screen() instanceof ExtraPlayerConfigScreen) {
             return;
         }
 

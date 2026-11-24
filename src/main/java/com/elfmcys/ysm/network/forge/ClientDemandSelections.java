@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapability;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.demand.ClientDemandCoordinator;
@@ -17,7 +19,7 @@ public final class ClientDemandSelections implements ClientDemandCoordinator.Sel
 
     private PlayerAnimatableCapability player() {
         var player = Minecraft.getInstance().player;
-        return player == null ? null : player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        return player == null ? null : ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
     }
 
     @Override

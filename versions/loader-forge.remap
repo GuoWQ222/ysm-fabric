@@ -1,0 +1,7 @@
+# Applied to every Java file of a -Ploader build after the //#if directives (see buildSrc Preprocessor.remap).
+# Client commands: Fabric's client command API -> vanilla's (RegisterClientCommandsEvent hands out a
+# CommandDispatcher<CommandSourceStack>; Commands.literal/argument have the same shape as ClientCommands').
+net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource net.minecraft.commands.CommandSourceStack
+net.fabricmc.fabric.api.client.command.v2.ClientCommands net.minecraft.commands.Commands
+FabricClientCommandSource CommandSourceStack
+ClientCommands Commands

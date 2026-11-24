@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.network.NetworkHandler;
@@ -21,10 +22,10 @@ public class LocalPlayerRespawnEvent {
             return;
         }
 
-        event.getOldPlayer().reviveCaps();
-        event.getOldPlayer().getCapability(PlayerAnimatableCapabilityProvider.CAP)
-            .ifPresent(oldCap -> event.getNewPlayer().getCapability(PlayerAnimatableCapabilityProvider.CAP)
+        ICapabilityHolder.of(event.getOldPlayer()).reviveYsmCaps();
+        ICapabilityHolder.of(event.getOldPlayer()).getCapability(PlayerAnimatableCapabilityProvider.CAP)
+            .ifPresent(oldCap -> ICapabilityHolder.of(event.getNewPlayer()).getCapability(PlayerAnimatableCapabilityProvider.CAP)
                 .ifPresent(newCap -> newCap.moveFrom(oldCap)));
-        event.getOldPlayer().invalidateCaps();
+        ICapabilityHolder.of(event.getOldPlayer()).invalidateYsmCaps();
     }
 }

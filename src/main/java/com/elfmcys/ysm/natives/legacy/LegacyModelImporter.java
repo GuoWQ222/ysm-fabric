@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.natives.legacy;
 
 import com.elfmcys.ysm.model.domain.ModelId;
@@ -206,6 +207,9 @@ public final class LegacyModelImporter {
         }
     }
 
+    /** Largest Vorbis block size (blocksize_1 is at most 2^13); bounds the frames end trimming can remove. */
+    private static final long MAX_VORBIS_BLOCK = 8192;
+
     static void validateSound(NativeLegacyProtocol.PayloadRecord record, ByteBuffer payload) {
         var expected = record.encoding() == NativeLegacyProtocol.PayloadEncoding.OGG_VORBIS
             ? SupportedAudioProbe.Encoding.OGG_VORBIS : SupportedAudioProbe.Encoding.OGG_OPUS;
@@ -218,11 +222,18 @@ public final class LegacyModelImporter {
         var sampleRate = Integer.toUnsignedLong(record.meta1());
         // The Java Vorbis probe sees an absolute final granule; native reports
         // decoder-emitted frames after applying a legal non-zero stream origin.
+        // Fabric port: native counts the last packet's frames without the stream's end trimming, so it can exceed
+        // the final granule (seen: +1 and +56 frames in community 2.x models that genuine 2.6.5 loads). End
+        // trimming removes at most what the final packet produced, which is bounded by the largest Vorbis block.
         boolean framesMatch = expected == SupportedAudioProbe.Encoding.OGG_VORBIS
-            ? record.meta2() > 0 && record.meta2() <= actual.frames() : record.meta2() == actual.frames();
+            ? record.meta2() > 0 && record.meta2() <= actual.frames() + MAX_VORBIS_BLOCK
+            : record.meta2() == actual.frames();
         if (actual.encoding() != expected || actual.channels() != record.meta0() || actual.sampleRate() != sampleRate
             || !framesMatch) {
-            throw new NativeLegacyProtocol.ProtocolException("Legacy sound descriptor does not match its bytes");
+            throw new NativeLegacyProtocol.ProtocolException("Legacy sound descriptor does not match its bytes: declared "
+                + expected + " " + record.meta0() + "ch " + sampleRate + "Hz " + record.meta2() + " frames, actual "
+                + actual.encoding() + " " + actual.channels() + "ch " + actual.sampleRate() + "Hz " + actual.frames()
+                + " frames");
         }
     }
 

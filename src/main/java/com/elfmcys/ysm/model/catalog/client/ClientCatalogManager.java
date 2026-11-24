@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog.client;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -111,6 +111,7 @@ public final class ClientCatalogManager implements AutoCloseable {
     }
 
     public CatalogSnapshot beginRemote() {
+        com.elfmcys.ysm.network.NetworkDiagnostics.trace("catalog-begin-remote");
         sessionPublished = true;
         var active = local.snapshot();
         var change = remoteStartTransition(catalog, local.snapshot());
@@ -137,10 +138,12 @@ public final class ClientCatalogManager implements AutoCloseable {
         catalog = new ClientCatalogSnapshot(activation.readyCatalog().withIntrinsicDefaultFrom(local.snapshot()),
             failed, activation.publication());
         sessionPublished = true;
+        com.elfmcys.ysm.network.NetworkDiagnostics.trace("catalog-session-published", activation.readyCatalog().byModelId().size(), failed.size());
         notifyListener(new CatalogChange(previous, catalog));
     }
 
     public void failRemote() {
+        com.elfmcys.ysm.network.NetworkDiagnostics.trace("catalog-remote-failed");
         var previous = catalog;
         catalog = new ClientCatalogSnapshot(local.snapshot().intrinsicDefaultOnly());
         sessionPublished = true;

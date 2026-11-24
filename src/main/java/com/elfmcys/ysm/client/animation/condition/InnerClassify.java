@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.animation.condition;
 
 import com.elfmcys.ysm.client.compat.slashblade.SlashBladeCompat;
@@ -32,16 +32,28 @@ public class InnerClassify {
         if (item instanceof net.minecraft.world.item.MaceItem || itemInHand.is(ModItemTags.MACE)) {
             return "mace";
         }
+        //#if MC >= 26.3
+        //$$ if (itemInHand.is(net.minecraft.tags.ItemTags.AXES) || itemInHand.is(ModItemTags.AXES)) {
+        //#else
         if (item instanceof AxeItem || itemInHand.is(ModItemTags.AXES)) {
+        //#endif
             return "axe";
         }
         if (itemInHand.is(net.minecraft.tags.ItemTags.PICKAXES) || itemInHand.is(ModItemTags.PICKAXES)) {
             return "pickaxe";
         }
+        //#if MC >= 26.3
+        //$$ if (itemInHand.is(net.minecraft.tags.ItemTags.SHOVELS) || itemInHand.is(ModItemTags.SHOVELS)) {
+        //#else
         if (item instanceof ShovelItem || itemInHand.is(ModItemTags.SHOVELS)) {
+        //#endif
             return "shovel";
         }
+        //#if MC >= 26.3
+        //$$ if (itemInHand.is(net.minecraft.tags.ItemTags.HOES) || itemInHand.is(ModItemTags.HOES)) {
+        //#else
         if (item instanceof HoeItem || itemInHand.is(ModItemTags.HOES)) {
+        //#endif
             return "hoe";
         }
         if (item instanceof ShieldItem || itemInHand.is(ModItemTags.SHIELDS)) {

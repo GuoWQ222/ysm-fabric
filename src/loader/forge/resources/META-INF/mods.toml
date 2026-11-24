@@ -1,0 +1,24 @@
+modLoader = "javafml"
+loaderVersion = "${forge_range}"
+license = "Apache-2.0 (Yes Steve Model 3.0-dev code) and All Rights Reserved (new port files); see LICENSE-PORT.md"
+
+[[mods]]
+modId = "ysm"
+version = "${mod_version}"
+displayName = "YSM for Minecraft 26.x (unofficial)"
+displayURL = "https://github.com/GuoWQ222/ysm-fabric"
+description = '''Unofficial port of the open-source Yes Steve Model 3.0-dev (Apache-2.0) to Minecraft 26.1-26.3 (Fabric, NeoForge, Forge). Not affiliated with or endorsed by the Yes Steve Model authors.'''
+
+[[dependencies.ysm]]
+modId = "forge"
+mandatory = true
+versionRange = "${forge_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ysm]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${mc_range_maven}"
+ordering = "NONE"
+side = "BOTH"

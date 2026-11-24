@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.config.ClientConfig;
@@ -25,7 +26,7 @@ public final class ReplacePlayerHandRenderEvent {
         var player = Minecraft.getInstance().player;
         if (player == null)
             return false;
-        var cap = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        var cap = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
         if (cap == null)
             return false;
         float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);

@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.geckolib3.geo;
 
 import com.elfmcys.ysm.client.entity.AnimatableEntity;
@@ -28,6 +28,10 @@ public interface IGeoRenderer<T extends AnimatableEntity<?>> {
     /** Full-bright light used for outline passes, as vanilla. */
     int OUTLINE_LIGHT = 15728880;
 
+    /** Dev diagnostics (YSM_DEBUG_PIP): log skipped deferred draws (first 40). */
+    boolean DRAW_DEBUG = System.getenv("YSM_DEBUG_PIP") != null;
+    int[] drawDebugBudget = {40};
+
     /** The default hook scales the current pose; the caller owns restoration of that pose-stack frame. */
     default void preRender(GeoRenderData data, T animatable, PoseStack poseStack, SubmitNodeCollector collector,
         int packedLight, int packedOverlay, Color color) {
@@ -40,12 +44,19 @@ public interface IGeoRenderer<T extends AnimatableEntity<?>> {
      */
     default boolean render(GeoRenderData data, T animatable, RenderType type, PoseStack poseStack,
         SubmitNodeCollector collector, int packedLight, int packedOverlay, Color color) {
-        if (!animatable.canConsume(data, data.ctx))
+        if (!animatable.canConsume(data, data.ctx)) {
+            if (DRAW_DEBUG && drawDebugBudget[0]-- > 0)
+                com.elfmcys.ysm.YesSteveModel.LOGGER.info("[draw] refused at submit: {}", animatable.consumptionDebug(data));
             return false;
+        }
         int argb = color.getColor();
-        collector.submitCustomGeometry(poseStack, type,
-            (pose, buffer) -> animatable.consumePrepared(data, borrowed -> NativeRenderer.render(buffer, pose,
-                borrowed.modelState.getNativeState(), packedLight, packedOverlay, argb, borrowed.ctx.nativeType())));
+        collector.submitCustomGeometry(poseStack, type, (pose, buffer) -> {
+            boolean drawn = animatable.consumePrepared(data, borrowed -> NativeRenderer.render(buffer, pose,
+                borrowed.modelState.getNativeState(), packedLight, packedOverlay, argb, borrowed.ctx.nativeType()));
+            if (!drawn && DRAW_DEBUG && drawDebugBudget[0]-- > 0)
+                com.elfmcys.ysm.YesSteveModel.LOGGER.info("[draw] skipped deferred model draw: {}",
+                    animatable.consumptionDebug(data));
+        });
         return true;
     }
 

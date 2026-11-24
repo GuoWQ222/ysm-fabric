@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui.button;
 
 import com.elfmcys.ysm.client.gui.GuiDraw;
@@ -68,7 +68,7 @@ public class AuthorButton extends Button {
         if (author == null || model == null || avatar == null) {
             graphics.fillGradient(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height,
                 0x8F_434242, 0x8F_434242);
-            GuiDraw.drawCenteredString(graphics, font, Component.literal("......"), this.getX() + this.width / 2, this.getY() + this.height / 2, net.minecraft.network.chat.TextColor.GRAY.getValue());
+            GuiDraw.drawCenteredString(graphics, font, Component.literal("......"), this.getX() + this.width / 2, this.getY() + this.height / 2, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GRAY));
             return;
         }
         if (this.isHoveredOrFocused()) {
@@ -86,9 +86,9 @@ public class AuthorButton extends Button {
             LanguageManager.getI18n(model, "metadata.authors.%d.comment".formatted(index), author.comment().orElse(""));
 
         graphics.textRenderer().acceptScrollingWithDefaultCenter(
-            Component.literal(authorName).withColor(net.minecraft.network.chat.TextColor.GOLD.getValue()),
+            Component.literal(authorName).withColor(com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GOLD)),
             this.getX() + 2, this.getX() + width - 2, this.getY() + 72, this.getY() + 82);
-        GuiDraw.drawCenteredString(graphics, font, authorRole, this.getX() + 35, this.getY() + 82, net.minecraft.network.chat.TextColor.GREEN.getValue());
+        GuiDraw.drawCenteredString(graphics, font, authorRole, this.getX() + 35, this.getY() + 82, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GREEN));
         drawWordWrap(graphics, Component.literal(authorComment), this.getX() + 3, this.getY() + 95, 64, 0xFFFFFFFF);
     }
 
@@ -176,10 +176,14 @@ public class AuthorButton extends Button {
                 if (!parent.hasCurrentWorld())
                     return;
                 if (yes) {
-                    Util.getPlatform().openUri(value);
+                    com.elfmcys.ysm.platform.McCompat.openUri(value);
                 }
                 parent.showScreen(parent);
+            //#if MC >= 26.3
+            //$$ }, java.net.URI.create(value), true));
+            //#else
             }, value, true));
+            //#endif
         } else {
             Minecraft.getInstance().keyboardHandler.setClipboard(value);
             if (selectedContactIndex == -1) {

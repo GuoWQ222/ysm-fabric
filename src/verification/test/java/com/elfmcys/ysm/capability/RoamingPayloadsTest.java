@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.capability;
 
 import static com.elfmcys.ysm.expression.TestRoamingPayloads.named;
@@ -36,12 +37,12 @@ final class RoamingPayloadsTest {
     @Test
     void ingressRejectsNamesAndCountsOutsideWireCapacity() {
         var network = new Int2FloatOpenHashMap();
-        for (int index = 0; index <= 64; index++)
+        for (int index = 0; index <= com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES; index++)
             network.put(StringPool.computeIfAbsent("r" + index), 1.0f);
         assertThrows(IllegalArgumentException.class, () -> RoamingPayloads.validateNetwork(network));
 
         network.clear();
-        network.put(StringPool.computeIfAbsent("r".repeat(33)), 1.0f);
+        network.put(StringPool.computeIfAbsent("r".repeat(com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES + 1)), 1.0f);
         assertThrows(IllegalArgumentException.class, () -> RoamingPayloads.validateNetwork(network));
     }
 }

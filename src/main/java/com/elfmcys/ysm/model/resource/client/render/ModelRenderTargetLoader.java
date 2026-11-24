@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client.render;
 
 import com.elfmcys.ysm.model.storage.ModelStorageInfra;
@@ -510,8 +510,12 @@ public final class ModelRenderTargetLoader implements AutoCloseable {
                 var union = new java.util.HashSet<>(main.animationStore().roamingFields());
                 if (arm != null)
                     union.addAll(arm.animationStore().roamingFields());
-                if (union.size() > com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES)
-                    throw AssetLoadException.content("Combined roaming layout exceeds wire capacity");
+                if (union.size() > com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES
+                    || com.elfmcys.ysm.network.protocol.ProtocolLimits.utf8Bytes(union)
+                        > com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES)
+                    throw AssetLoadException.content("Combined roaming layout exceeds wire capacity: " + union.size()
+                        + " fields (limit " + com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES + "), "
+                        + com.elfmcys.ysm.network.protocol.ProtocolLimits.utf8Bytes(union) + " name bytes");
                 var sources = new LinkedHashMap<String, DefaultAnimationRuntime.Source>();
                 if (request.defaultModel()) {
                     sources.put(DefaultAnimationKey.domain(request.target().descriptor(), "main"),

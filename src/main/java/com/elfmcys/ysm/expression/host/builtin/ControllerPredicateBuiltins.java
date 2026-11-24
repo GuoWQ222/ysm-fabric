@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host.builtin;
 
 import com.elfmcys.ysm.api.molang.MolangContextView;
@@ -274,7 +274,7 @@ public final class ControllerPredicateBuiltins implements EntityComponent<Entity
         if (StringUtils.isBlank(input)) {
             return false;
         }
-        if (operation == ItemCheck.SWING && (!living.swinging || living.isSleeping())
+        if (operation == ItemCheck.SWING && (!com.elfmcys.ysm.platform.McCompat.isSwinging(living) || living.isSleeping())
             || operation == ItemCheck.USE && (!living.isUsingItem() || living.isSleeping())) {
             return false;
         }

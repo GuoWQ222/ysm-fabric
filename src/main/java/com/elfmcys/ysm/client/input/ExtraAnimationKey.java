@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.input;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.platform.input.YsmKeyMapping;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
@@ -20,7 +21,6 @@ import com.elfmcys.ysm.platform.input.KeyConflictContext;
 import com.elfmcys.ysm.platform.input.KeyModifier;
 import com.elfmcys.ysm.platform.event.SubscribeEvent;
 import com.elfmcys.ysm.platform.event.Mod;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class ExtraAnimationKey {
         for (int i = 0; i <= 7; i++) {
             String name = String.format("key.yes_steve_model.extra_animation.%d.desc", i);
             YsmKeyMapping keyMapping = new YsmKeyMapping(name, KeyConflictContext.IN_GAME, KeyModifier.NONE,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "key.category.yes_steve_model");
+                InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.yes_steve_model");
             event.register(keyMapping);
             EXTRA_ANIMATION_KEYS.add(keyMapping);
         }
@@ -54,9 +54,9 @@ public class ExtraAnimationKey {
         }
         LocalPlayer player = Minecraft.getInstance().player;
         for (var key : EXTRA_ANIMATION_KEYS) {
-            if (event.getAction() == GLFW.GLFW_PRESS && InputCheckUtil.keyIsMatch(event, key) && player != null
+            if (event.getAction() == InputConstants.PRESS && InputCheckUtil.keyIsMatch(event, key) && player != null
                 && !PlayerMoveEvent.isMoveKey(player)) {
-                player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+                ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                     var model = cap.getModelRenderTarget();
                     int index = EXTRA_ANIMATION_KEYS.indexOf(key);
                     var info = model.info();
@@ -71,7 +71,7 @@ public class ExtraAnimationKey {
                             addRootClassify(keyName.substring(1));
                             AnimationRouletteScreen screen = new AnimationRouletteScreen(
                                 info.getExtraAnimationButtons(), info.getExtraAnimationClassifications(), model, cap);
-                            Minecraft.getInstance().gui.setScreen(screen);
+                            com.elfmcys.ysm.platform.McCompat.setScreen(screen);
                         } else {
                             ClientProtocolGateway.playSelfAnimation(keyName);
                         }

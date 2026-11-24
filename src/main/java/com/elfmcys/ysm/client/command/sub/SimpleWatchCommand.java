@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command.sub;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.gui.overlay.DebugAnimationScreen;
 import com.elfmcys.ysm.geckolib3.core.processor.DebugInfo;
@@ -58,7 +59,7 @@ public class SimpleWatchCommand {
         }
         Minecraft mc = Minecraft.getInstance();
         String exp = StringArgumentType.getString(ctx, EXPRESSION_NAME);
-        mc.execute(() -> mc.player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+        mc.execute(() -> ICapabilityHolder.of(mc.player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
             DebugAnimationScreen.getDebugInfo().add(DebugInfo.Phase.POST_ANIMATION, exp, exp);
             // 强制打开调试界面
             if (!DebugAnimationScreen.isEnabled()) {
@@ -75,7 +76,7 @@ public class SimpleWatchCommand {
             return Command.SINGLE_SUCCESS;
         }
         Minecraft mc = Minecraft.getInstance();
-        mc.execute(() -> mc.player.getCapability(PlayerAnimatableCapabilityProvider.CAP)
+        mc.execute(() -> ICapabilityHolder.of(mc.player).getCapability(PlayerAnimatableCapabilityProvider.CAP)
             .ifPresent(cap -> DebugAnimationScreen.getDebugInfo().clear()));
         DebugAnimationScreen.clearDebugController();
         return Command.SINGLE_SUCCESS;

@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.renderer.layer;
 
 import com.elfmcys.ysm.client.entity.CustomPlayerEntity;
@@ -44,7 +44,7 @@ public class CustomParrotOnShoulderLayer extends GeoLayerRenderer<CustomPlayerEn
         LivingEntityRenderState state, Parrot.Variant variant, float limbSwing, float limbSwingAmount, float yRot,
         float xRot) {
         poseStack.translate(0, 1.5, 0);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZP.rotationDegrees(180));
         var parrotState = new ParrotRenderState();
         parrotState.pose = ParrotModel.Pose.ON_SHOULDER;
         parrotState.ageInTicks = state.ageInTicks;
@@ -52,7 +52,12 @@ public class CustomParrotOnShoulderLayer extends GeoLayerRenderer<CustomPlayerEn
         parrotState.walkAnimationSpeed = limbSwingAmount;
         parrotState.yRot = yRot;
         parrotState.xRot = xRot;
+        //#if MC >= 26.3
+        //$$ collector.submitModel(model, parrotState, poseStack, ParrotRenderer.getVariantTexture(variant), packedLight,
+        //$$     OverlayTexture.NO_OVERLAY, state.outlineColor);
+        //#else
         collector.submitModel(model, parrotState, poseStack, ParrotRenderer.getVariantTexture(variant), packedLight,
             OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+        //#endif
     }
 }

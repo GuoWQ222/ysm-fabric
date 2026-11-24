@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapability;
 import com.elfmcys.ysm.model.service.ClientModelService;
 import com.elfmcys.ysm.expression.inventory.MolangEventCatalog;
@@ -45,7 +47,7 @@ public final class ClientProtocolGateway {
     public static void playSelfAnimation(String animationId) {
         var player = net.minecraft.client.Minecraft.getInstance().player;
         if (player != null)
-            player.getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP)
+            ICapabilityHolder.of(player).getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP)
                 .ifPresent(capability -> capability.playExtraAnimation(animationId));
         STATE_REPORTER.setAnimation(animationId);
     }
@@ -53,7 +55,7 @@ public final class ClientProtocolGateway {
     public static void stopSelfAnimation() {
         var player = net.minecraft.client.Minecraft.getInstance().player;
         if (player != null)
-            player.getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP)
+            ICapabilityHolder.of(player).getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP)
                 .ifPresent(PlayerAnimatableCapability::stopExtraAnimation);
         reportAnimationStopped();
     }

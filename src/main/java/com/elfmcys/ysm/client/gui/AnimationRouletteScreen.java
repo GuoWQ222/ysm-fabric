@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.event.PlayerMoveEvent;
@@ -459,7 +460,7 @@ public class AnimationRouletteScreen extends Screen {
         graphics.fill(this.x + 157, this.y - 87, this.x + 238, this.y - 72, 0xCF000000);
         String pageText =
             String.format("%d/%d", current.getRight() + 1, (this.extraAnimations.size() - 1) / MAX_ROULETTE_COUNT + 1);
-        GuiDraw.drawCenteredString(graphics, font, pageText, this.x + 197, this.y - 83, net.minecraft.network.chat.TextColor.AQUA.getValue());
+        GuiDraw.drawCenteredString(graphics, font, pageText, this.x + 197, this.y - 83, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.AQUA));
     }
 
     @Override
@@ -555,9 +556,9 @@ public class AnimationRouletteScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key(), scanCode = event.scancode(), modifiers = event.modifiers();
+        int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
         if (AnimationRouletteKey.ANIMATION_ROULETTE_KEY.matches(keyCode, scanCode)
-            && AnimationRouletteKey.ANIMATION_ROULETTE_KEY.getKeyModifier().isActive()) {
+            && AnimationRouletteKey.ANIMATION_ROULETTE_KEY.ysmKeyModifier().isActive()) {
             this.onClose();
             return true;
         }
@@ -576,7 +577,7 @@ public class AnimationRouletteScreen extends Screen {
         if (NetworkHandler.isRemoteChannelPresent()) {
             ClientProtocolGateway.playSelfAnimation(selectKey);
         } else if (player != null) {
-            player.getCapability(PlayerAnimatableCapabilityProvider.CAP)
+            ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP)
                 .ifPresent(cap -> cap.playExtraAnimation(selectKey));
         }
         if (player != null && ClientConfig.PRINT_ANIMATION_ROULETTE_MSG.get()) {
@@ -584,7 +585,7 @@ public class AnimationRouletteScreen extends Screen {
                 Component.translatable("message.yes_steve_model.model.animation_roulette.play", selectKey);
             player.sendSystemMessage(component);
         }
-        this.minecraft.gui.setScreen(null);
+        com.elfmcys.ysm.platform.McCompat.setScreen(null);
     }
 
     private void clickClassify(String selectKey) {
@@ -601,7 +602,7 @@ public class AnimationRouletteScreen extends Screen {
             CACHE.addLast(MutablePair.of(key, 0));
             AnimationRouletteScreen screen =
                 new AnimationRouletteScreen(this.buttonMap, this.classifyMap, this.model, this.animatableEntity);
-            this.minecraft.gui.setScreen(screen);
+            com.elfmcys.ysm.platform.McCompat.setScreen(screen);
         }
     }
 
@@ -610,9 +611,9 @@ public class AnimationRouletteScreen extends Screen {
             CACHE.removeLast();
             AnimationRouletteScreen screen =
                 new AnimationRouletteScreen(this.buttonMap, this.classifyMap, this.model, this.animatableEntity);
-            this.minecraft.gui.setScreen(screen);
+            com.elfmcys.ysm.platform.McCompat.setScreen(screen);
         } else {
-            this.minecraft.gui.setScreen(null);
+            com.elfmcys.ysm.platform.McCompat.setScreen(null);
         }
     }
 

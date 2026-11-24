@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.inventory;
 
 import com.elfmcys.ysm.compatibility.AbiVersion;
@@ -463,8 +464,14 @@ public final class ModelProgramInventory {
         }
 
         private void settings(SettingsProto settings) throws InventoryException {
-            for (var buttonIndex = 0; buttonIndex < settings.extraAnimationButtons().size(); buttonIndex++) {
-                var button = settings.extraAnimationButtons().get(buttonIndex);
+            // Fabric port (2.6.5 parity): one button per id, the last definition winning, as ModelInfoView (and
+            // 2.6.5's id-keyed map) keep them; community models repeat an id, which made the program keys collide.
+            var buttons = new java.util.LinkedHashMap<String,
+                com.elfmcys.ysm.proto.mixel.manifest.info.ExtraAnimationButtonProto>();
+            for (var button : settings.extraAnimationButtons()) {
+                buttons.put(button.id(), button);
+            }
+            for (var button : buttons.values()) {
                 for (var formIndex = 0; formIndex < button.configForms().size(); formIndex++) {
                     var form = button.configForms().get(formIndex);
                     var route = new ConfigActionRoute(button.id(), formIndex);
@@ -472,7 +479,8 @@ public final class ModelProgramInventory {
                     var bool = form.type().equals("checkbox");
                     var f32 = form.type().equals("range") || form.type().equals("radio");
                     if (!bool && !f32) {
-                        throw new InventoryException("unknown config form type at " + base);
+                        // Fabric port (2.6.5 parity): unknown form types are ignored, see ModelInfoView.
+                        continue;
                     }
                     add(form.readProgram(), bool ? ProgramRole.CONFIG_READ_BOOL : ProgramRole.CONFIG_READ_F32, base,
                         "read", null);

@@ -1,0 +1,16 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "dev only"
+
+[[mods]]
+modId = "ysm_localtest"
+version = "0.0.0"
+displayName = "YSM local test harness"
+description = '''Dev runs only: drives a test world through YSM models and takes screenshots.'''
+
+[[dependencies.ysm_localtest]]
+modId = "ysm"
+type = "required"
+versionRange = "*"
+ordering = "AFTER"
+side = "CLIENT"

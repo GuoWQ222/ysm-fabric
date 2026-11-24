@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.demand;
 
 import com.elfmcys.ysm.model.resource.client.work.WorkPriority;
@@ -543,6 +544,8 @@ public final class ClientDemandCoordinator implements AutoCloseable {
         if (current == null || current.terminal)
             return;
         var failure = new SelectionFailure(stage, cause);
+        // Fabric port: the chat message alone does not say why; keep the cause in the log.
+        com.elfmcys.ysm.YesSteveModel.LOGGER.warn("Model selection failed at {} for {}", stage, current.target, cause);
         retire(current);
         authorityWaiting = false;
         feedback = new Feedback(false, failure);

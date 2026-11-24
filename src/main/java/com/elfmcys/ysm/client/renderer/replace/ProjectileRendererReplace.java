@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.renderer.replace;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.ProjectileAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.event.RegisterEntityRenderersEvent;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -17,7 +18,7 @@ public final class ProjectileRendererReplace {
     /** @return true when vanilla should still submit this entity */
     public static boolean renderInMixin(Projectile entity, EntityRenderState state, float partialTick,
         PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
-        return entity.getCapability(ProjectileAnimatableCapabilityProvider.CAP).map(cap -> {
+        return ICapabilityHolder.of(entity).getCapability(ProjectileAnimatableCapabilityProvider.CAP).map(cap -> {
             if (!cap.isPresentationAllowed())
                 return true;
             float yaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());

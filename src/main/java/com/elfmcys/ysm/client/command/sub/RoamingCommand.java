@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command.sub;
 
 import com.elfmcys.ysm.command.ModelSelectorArgument;
@@ -25,7 +25,7 @@ public final class RoamingCommand {
                 var result = ModelSelector.resolveHistorical(context.getArgument("model", String.class),
                     models.catalog().catalog().byLocation());
                 if (result.found().isEmpty()) {
-                    context.getSource().sendError(Component.literal(result.message()));
+                    com.elfmcys.ysm.client.command.ClientFeedback.error(context.getSource(), Component.literal(result.message()));
                     return 0;
                 }
                 models.preferences().clear(result.found().orElseThrow());

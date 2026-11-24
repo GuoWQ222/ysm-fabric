@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.demand;
 
 import com.elfmcys.ysm.model.resource.client.AcquireResult;
@@ -32,6 +33,11 @@ public final class ModelResourceDemand implements AutoCloseable {
 
     public interface Access {
         boolean permitsAcquisition(ResourceRequest request);
+
+        /** Not permitted yet but pending (published model still activating): the demand waits instead of denying. */
+        default boolean awaitsAcquisition(ResourceRequest request) {
+            return false;
+        }
 
         Optional<ResourceLease> findReady(ResourceRequest request);
 
@@ -94,7 +100,7 @@ public final class ModelResourceDemand implements AutoCloseable {
                 attempted = allowed;
             }
             if (lease == null && !access.permitsAcquisition(request)) {
-                denied = true;
+                denied = !access.awaitsAcquisition(request);
                 attempted = null;
                 return null;
             }

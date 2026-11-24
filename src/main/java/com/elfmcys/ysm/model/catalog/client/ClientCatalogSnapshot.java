@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog.client;
 
 import com.elfmcys.ysm.model.catalog.client.entry.ClientCatalogEntry;
@@ -50,6 +51,24 @@ public final class ClientCatalogSnapshot {
         if (entry != null)
             return entry.runtimeContentAllowed();
         return false;
+    }
+
+    /**
+     * Whether new use of a model is pending rather than denied: the session publication lists it with runtime content
+     * allowed, but its activation has not finished (neither ready nor failed). The server sends the selection
+     * directive right after the publication fragments, so a reselect can arrive while activation is still running.
+     */
+    public boolean awaitsRuntimeContent(ModelId modelId) {
+        if (publication == null || catalog.byModelId().get(modelId) != null)
+            return false;
+        var entry = publication.entries().get(modelId);
+        if (entry == null || !entry.runtimeContentAllowed())
+            return false;
+        return failed.stream().noneMatch(failure -> failure.modelId().equals(modelId));
+    }
+
+    public boolean awaitsRuntimeContent(PublishedModelId modelId) {
+        return modelId instanceof PublishedModelId.Model model && awaitsRuntimeContent(model.hash());
     }
 
     public boolean permitsRuntimeContent(PublishedModelId modelId) {

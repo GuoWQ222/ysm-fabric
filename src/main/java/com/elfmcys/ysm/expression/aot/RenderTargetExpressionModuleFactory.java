@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.aot;
 
 import com.elfmcys.ysm.compatibility.AbiVersion;
@@ -341,12 +342,21 @@ public final class RenderTargetExpressionModuleFactory {
 
     private static void requireWireCompatibleRoamingLayout(ModelProgramInventory.Result inventory) {
         if (inventory.roamingSlots().size() > ProtocolLimits.MAX_ROAMING_VARIABLES) {
-            throw new IllegalArgumentException("roaming layout exceeds wire field capacity");
+            int longest = inventory.roamingSlots().values().stream()
+                .mapToInt(name -> name.getBytes(StandardCharsets.UTF_8).length).max().orElse(0);
+            throw new IllegalArgumentException("roaming layout exceeds wire field capacity: "
+                + inventory.roamingSlots().size() + " fields (limit " + ProtocolLimits.MAX_ROAMING_VARIABLES
+                + "), longest name " + longest + " bytes");
         }
         for (var name : inventory.roamingSlots().values()) {
             if (name.getBytes(StandardCharsets.UTF_8).length > ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES) {
                 throw new IllegalArgumentException("roaming field name exceeds wire capacity: " + name);
             }
+        }
+        var total = ProtocolLimits.utf8Bytes(inventory.roamingSlots().values());
+        if (total > ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES) {
+            throw new IllegalArgumentException("roaming field names exceed wire capacity: " + total + " bytes (limit "
+                + ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES + ")");
         }
     }
 

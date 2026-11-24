@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.demand;
 
 import com.elfmcys.ysm.model.domain.Hash256;
@@ -272,12 +273,45 @@ class ModelResourceDemandTest {
         demand.close();
     }
 
+    @Test
+    void pendingActivationWaitsInsteadOfDenying() {
+        // Join: the selection directive arrives while the published model is still activating
+        var access = new Access();
+        access.permitted = false;
+        access.awaiting = true;
+        var demand = new ModelResourceDemand(access, REQUEST);
+        assertNull(demand.advance(ONLINE));
+        assertFalse(demand.denied());
+        assertNull(demand.failure());
+        assertEquals(0, access.cachedCalls + access.offlineCalls + access.onlineCalls);
+        // activation finished: acquisition proceeds
+        access.permitted = true;
+        access.awaiting = false;
+        var ready = Lease.ready();
+        access.ready.add(ready);
+        assertSame(ready, demand.advance(ONLINE));
+        assertFalse(demand.denied());
+        // activation failed or the model was withdrawn: denied
+        var later = new ModelResourceDemand(access, REQUEST);
+        access.permitted = false;
+        assertNull(later.advance(ONLINE));
+        assertTrue(later.denied());
+        demand.close();
+        later.close();
+    }
+
     private static final class Access implements ModelResourceDemand.Access {
         boolean permitted = true;
+        boolean awaiting;
 
         @Override
         public boolean permitsAcquisition(ResourceRequest request) {
             return permitted;
+        }
+
+        @Override
+        public boolean awaitsAcquisition(ResourceRequest request) {
+            return awaiting;
         }
 
         final ArrayDeque<ResourceLease> ready = new ArrayDeque<>();

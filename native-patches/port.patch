@@ -216,3 +216,42 @@ index be01e5a..01ba8db 100644
      [[maybe_unused]] static ::ysm::java::EntryRegistrar<                 \
          static_cast<                                                     \
              ::ysm::java::internal::EntryImplementationPointerT<desc>>(   \
+diff --git a/modules/legacy/src/v3/container/decoder.cc b/modules/legacy/src/v3/container/decoder.cc
+index a24e6bc..01ed4a6 100644
+--- a/modules/legacy/src/v3/container/decoder.cc
++++ b/modules/legacy/src/v3/container/decoder.cc
+@@ -775,9 +775,13 @@ bool ParseSound(auto& context, LegacySound& value, bool& playable) {
+             playable = false;
+             return true;
+         case SoundDisposition::kCorruptSupported:
+-            YSM_LEGACY_INVALID("Historical supported Ogg sound is corrupt: " +
+-                               std::string(classification.diagnostic) + " (" +
+-                               std::to_string(value.bytes.size()) + " bytes)");
++            // Fabric port (2.6.5 parity): a historical Ogg sound that fails the
++            // strict timeline check (e.g. non-conforming Opus granules from
++            // some encoders) is omitted like an unknown sound instead of
++            // rejecting the whole model; 2.6.5 loads such community models.
++            ++context.omitted_sound_count;
++            playable = false;
++            return true;
+     }
+     return true;
+ }
+@@ -1727,6 +1731,17 @@ bool ParseLegacyFamily(auto& context, LegacyModel& value) {
+             }
+         }
+     }
++    // Fabric port (2.6.5 parity): the default texture is the declared one
++    // when it names a texture of the model, otherwise the first texture in
++    // file order. The manifest stores textures sorted by name, so the file
++    // order is only known here.
++    if (value.player && !value.player->textures.empty() &&
++        (value.info.properties.default_texture.empty() ||
++         Find(value.player->textures,
++              value.info.properties.default_texture) == nullptr)) {
++        value.info.properties.default_texture =
++            value.player->textures.front().first;
++    }
+     return true;
+ }
+ 

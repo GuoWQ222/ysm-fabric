@@ -64,12 +64,12 @@ public abstract class EntityCapabilityMixin implements ICapabilityHolder {
     }
 
     @Override
-    public void invalidateCaps() {
+    public void invalidateYsmCaps() {
         ysm$valid = false;
     }
 
     @Override
-    public void reviveCaps() {
+    public void reviveYsmCaps() {
         ysm$valid = true;
     }
 

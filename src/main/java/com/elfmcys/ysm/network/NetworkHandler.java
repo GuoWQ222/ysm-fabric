@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -18,8 +18,10 @@ import com.elfmcys.ysm.platform.network.NetworkEvent;
 import com.elfmcys.ysm.platform.network.PacketTarget;
 import io.netty.buffer.Unpooled;
 import java.util.function.Consumer;
+//#if LOADER == fabric
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+//#endif
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
@@ -48,6 +50,7 @@ public final class NetworkHandler {
         if (initialized)
             return;
         initialized = true;
+        //#if LOADER == fabric
         PayloadTypeRegistry.clientboundPlay().register(YsmFramePayload.TYPE, YsmFramePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(YsmFramePayload.TYPE, YsmFramePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(SoundPolicyPayload.TYPE, SoundPolicyPayload.CODEC);
@@ -57,18 +60,23 @@ public final class NetworkHandler {
                 MessageDirection.CLIENT_TO_SERVER));
         if (com.elfmcys.ysm.platform.Platform.isClient())
             NetworkHandlerClient.init();
+        //#elseif LOADER == neoforge
+        //$$ com.elfmcys.ysm.neoforge.NeoForgeNetwork.register();
+        //#else
+        //$$ com.elfmcys.ysm.forge.ForgeNetwork.register();
+        //#endif
     }
 
     /** 2.6.5 AcceptSoundFX: tells the player's client which model sounds to fetch and play. */
     public static void sendSoundPolicy(ServerPlayer player) {
-        if (player.connection != null && ServerPlayNetworking.canSend(player, SoundPolicyPayload.TYPE))
-            ServerPlayNetworking.send(player,
-                new SoundPolicyPayload(com.elfmcys.ysm.config.ServerConfig.ACCEPT_SOUND_FX.get()));
+        if (player.connection != null && canSend(player.connection, SoundPolicyPayload.TYPE))
+            player.connection.send(com.elfmcys.ysm.platform.network.Payloads.toClient(
+                new SoundPolicyPayload(com.elfmcys.ysm.config.ServerConfig.ACCEPT_SOUND_FX.get())));
     }
 
     @SuppressWarnings("ConstantValue")
     public static boolean isPlayerChannelPresent(ServerPlayer player) {
-        return player.connection != null && ServerPlayNetworking.canSend(player, YsmFramePayload.TYPE);
+        return player.connection != null && canSend(player.connection, YsmFramePayload.TYPE);
     }
 
     public static boolean isRemoteChannelPresent() {
@@ -80,7 +88,7 @@ public final class NetworkHandler {
             return false;
         var listener = connection.getPacketListener();
         if (listener instanceof ServerGamePacketListenerImpl server)
-            return ServerPlayNetworking.canSend(server, YsmFramePayload.TYPE);
+            return canSend(server, YsmFramePayload.TYPE);
         return com.elfmcys.ysm.platform.Platform.isClient() && NetworkHandlerClient.isChannelPresent(connection);
     }
 
@@ -148,8 +156,9 @@ public final class NetworkHandler {
             var buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(bytes).writerIndex(0));
             ForgeUniBufferIO.write(buffer, frame.borrow());
             var payload = new YsmFramePayload(bytes);
-            Packet<?> packet = direction == NetworkDirection.PLAY_TO_SERVER ? new ServerboundCustomPayloadPacket(payload)
-                : new net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket(payload);
+            Packet<?> packet = direction == NetworkDirection.PLAY_TO_SERVER
+                ? com.elfmcys.ysm.platform.network.Payloads.toServer(payload)
+                : com.elfmcys.ysm.platform.network.Payloads.toClient(payload);
             sender.accept(packet);
             submitted = true;
             NetworkDiagnostics.frame("send-submitted", diagnosticDirection, frame, path);
@@ -185,7 +194,19 @@ public final class NetworkHandler {
         return spec;
     }
 
-    static void receive(YsmFramePayload payload, NetworkEvent.Context context, MessageDirection direction) {
+    /** Whether the client behind this listener registered the payload channel (loader-specific). */
+    public static boolean canSend(ServerGamePacketListenerImpl listener,
+        net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type<?> type) {
+        //#if LOADER == fabric
+        return ServerPlayNetworking.canSend(listener, type);
+        //#elseif LOADER == neoforge
+        //$$ return listener.hasChannel(type);
+        //#else
+        //$$ return com.elfmcys.ysm.forge.ForgeNetwork.canSend(listener, type);
+        //#endif
+    }
+
+    public static void receive(YsmFramePayload payload, NetworkEvent.Context context, MessageDirection direction) {
         var frameBytes = payload.frame().length;
         NetworkDiagnostics.frame("received", direction, -1, frameBytes, "fabric");
         try {

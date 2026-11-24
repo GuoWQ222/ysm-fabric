@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.geckolib3.geo;
 
 import com.elfmcys.ysm.client.entity.AnimatableEntity;
@@ -36,9 +36,9 @@ public abstract class GeoProjectilesRenderer<TEntity extends Projectile, T exten
                 int overlay = getPackedOverlay(entity, 0);
                 poseStack.pushPose();
                 try {
-                    poseStack.mulPose(
+                    com.elfmcys.ysm.platform.McCompat.rotate(poseStack, 
                         Axis.YP.rotationDegrees(Mth.lerp(partialTick, entity.yRotO, entity.getYRot()) - 90));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, entity.xRotO, entity.getXRot())));
+                    com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZP.rotationDegrees(Mth.lerp(partialTick, entity.xRotO, entity.getXRot())));
                     preRender(data, animatable, poseStack, collector, light, overlay, Color.WHITE);
                     if (!animatable.canConsume(data, data.ctx))
                         return false;

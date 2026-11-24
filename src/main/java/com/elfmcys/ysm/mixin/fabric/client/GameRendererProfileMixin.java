@@ -21,13 +21,23 @@ public abstract class GameRendererProfileMixin {
     @Unique
     private boolean ysm$profileFrameActive;
 
+    //#if MC >= 26.3
+    //$$ @Inject(method = "render()V", at = @At("HEAD"))
+    //$$ private void ysm$beforeRender(CallbackInfo ci) {
+    //#else
     @Inject(method = "render(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("HEAD"))
     private void ysm$beforeRender(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo ci) {
+    //#endif
         ysm$profileFrameActive = NativeProfiler.beginFrame();
     }
 
+    //#if MC >= 26.3
+    //$$ @Inject(method = "render()V", at = @At("RETURN"))
+    //$$ private void ysm$afterRender(CallbackInfo ci) {
+    //#else
     @Inject(method = "render(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("RETURN"))
     private void ysm$afterRender(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo ci) {
+    //#endif
         NativeProfiler.endFrame(ysm$profileFrameActive);
         ysm$profileFrameActive = false;
     }

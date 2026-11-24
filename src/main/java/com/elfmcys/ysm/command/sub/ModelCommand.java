@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.command.sub;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.AuthModelsCapabilityProvider;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.ysm.event.CommandRegistry;
@@ -83,8 +84,8 @@ public final class ModelCommand {
         var selectedTexture = texture;
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, TARGETS);
         for (var player : targets) {
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(
-                selection -> player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(auth -> {
+            ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(
+                selection -> ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(auth -> {
                     if (!resolution.found().orElseThrow().isIntrinsicDefault()
                         && catalog.catalog().byModelId().get(hash).entry().access() == CatalogAccess.AUTHORIZED
                         && !auth.containModel(hash)) {
@@ -146,7 +147,7 @@ public final class ModelCommand {
     private static int disable(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var disabled = BoolArgumentType.getBool(context, "value");
         for (var player : EntityArgument.getPlayers(context, TARGETS)) {
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP)
+            ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP)
                 .ifPresent(capability -> capability.setDisabled(disabled));
         }
         return Command.SINGLE_SUCCESS;

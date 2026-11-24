@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.command.sub;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.ysm.event.CommandRegistry;
 import com.elfmcys.ysm.util.CommandUtil;
@@ -37,7 +39,7 @@ public class PlayAnimationCommand {
     private static int playAnimation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, TARGETS_NAME);
         String animation = StringArgumentType.getString(context, ANIMATION_NAME);
-        targets.forEach(player -> player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
+        targets.forEach(player -> ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
             if (STOP.equals(animation)) {
                 cap.stopAnimation(player);
             } else {

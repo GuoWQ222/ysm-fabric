@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,7 @@ public class MobEffectSyncEvent {
         }
         if (event.getEntity() instanceof ServerPlayer player && event.getEffectInstance().getEffect() != null) {
             var effectInstance = event.getEffectInstance();
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
                 cap.getPropertiesTracker().addEffect(player, effectInstance.getEffect().value(),
                     effectInstance.getAmplifier() + 1);
             });
@@ -31,7 +32,7 @@ public class MobEffectSyncEvent {
             return;
         }
         if (event.getEntity() instanceof ServerPlayer player && event.getEffect() != null) {
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
                 cap.getPropertiesTracker().removeEffect(player, event.getEffect().value());
             });
         }
@@ -44,7 +45,7 @@ public class MobEffectSyncEvent {
         }
         if (event.getEntity() instanceof ServerPlayer player && event.getEffectInstance() != null
             && event.getEffectInstance().getEffect() != null) {
-            player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(cap -> {
                 cap.getPropertiesTracker().removeEffect(player, event.getEffectInstance().getEffect().value());
             });
         }

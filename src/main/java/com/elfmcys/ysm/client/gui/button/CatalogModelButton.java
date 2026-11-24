@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui.button;
 
 import com.elfmcys.ysm.client.gui.GuiDraw;
@@ -117,7 +117,7 @@ public final class CatalogModelButton extends Button implements AutoCloseable {
             if (!java.nio.file.Files.readAttributes(directory, java.nio.file.attribute.BasicFileAttributes.class)
                 .isDirectory())
                 throw new java.io.IOException("Model entry directory is unavailable");
-            Util.getPlatform().openFile(directory.toFile());
+            com.elfmcys.ysm.platform.McCompat.openPath(directory);
         } catch (java.io.IOException | RuntimeException failure) {
             YesSteveModel.LOGGER.error("Failed to open model entry directory", failure);
             var player = Minecraft.getInstance().player;

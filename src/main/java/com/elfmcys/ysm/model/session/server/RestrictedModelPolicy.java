@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.session.server;
 
 import com.elfmcys.ysm.model.catalog.snapshot.CatalogAccess;
@@ -62,8 +63,10 @@ public final class RestrictedModelPolicy {
             var builtin = record.location().rootKind() == CatalogRootKind.BUILTIN;
             if (!builtin && policy == null)
                 return;
-            var access = !builtin && policy.restricted(record.location().value(), id) ? CatalogAccess.AUTHORIZED
-                : CatalogAccess.PUBLIC;
+            // Fabric port (2.6.5 parity): models in 2.6.5's auth folder are restricted, as in 2.6.5.
+            var legacyAuth = record.location().root() == com.elfmcys.ysm.model.catalog.source.CatalogRoot.AUTH;
+            var access = !builtin && (legacyAuth || policy.restricted(record.location().value(), id))
+                ? CatalogAccess.AUTHORIZED : CatalogAccess.PUBLIC;
             var entry = record.entry();
             records.put(id, access == entry.access() ? record : new CatalogRecord(
                 new CatalogEntry(id, entry.path(), access, entry.presentation()), record.location(), record.binding()));

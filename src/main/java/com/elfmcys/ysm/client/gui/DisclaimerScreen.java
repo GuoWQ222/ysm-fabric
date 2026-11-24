@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.config.ClientConfig;
@@ -41,9 +41,9 @@ public class DisclaimerScreen extends Screen {
             if (readCheckbox.selected()) {
                 ClientConfig.DISCLAIMER_SHOW.set(false);
                 ClientConfig.DISCLAIMER_SHOW.save();
-                Minecraft.getInstance().gui.setScreen(new PlayerModelScreen());
+                com.elfmcys.ysm.platform.McCompat.setScreen(new PlayerModelScreen());
             } else {
-                Minecraft.getInstance().gui.setScreen(null);
+                com.elfmcys.ysm.platform.McCompat.setScreen(null);
             }
         }).size(300, 20).pos((width - 300) / 2, y + totalHeight - 20).build());
     }

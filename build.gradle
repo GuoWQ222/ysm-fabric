@@ -1,11 +1,42 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 // Yes Steve Model 3.0-dev - unofficial Fabric 26.2 port, based on the upstream Forge 1.20.1 build.
 plugins {
     id 'java-library'
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    // Multi-loader: declared here, applied by gradle/loader-<loader>.gradle
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'net.neoforged.moddev' version "${moddev_version}" apply false
+    id 'net.minecraftforge.gradle' version "${forgegradle_version}" apply false
     id 'com.google.protobuf' version '0.9.5'
     id 'com.gradleup.shadow' version '9.2.2'
 }
+
+// Multi-version (Fabric port): -Pmc=<version> applies versions/<version>.properties over gradle.properties. The
+// checked-in sources are the 26.2 variant; other versions compile a copy processed by //#if MC ... blocks
+// (buildSrc Preprocessor).
+def ysmSourceMc = '26.2'
+def ysmTargetMc = (findProperty('mc') ?: minecraft_version).toString()
+if (ysmTargetMc != minecraft_version) {
+    def versionFile = file("versions/${ysmTargetMc}.properties")
+    if (!versionFile.exists())
+        throw new GradleException("No versions/${ysmTargetMc}.properties")
+    def overrides = new Properties()
+    versionFile.withReader('UTF-8') { overrides.load(it) }
+    overrides.each { key, value -> project.ext.set(key.toString(), value.toString().trim()) }
+}
+// -Pysm_set=key=value[;key=value]: test-only overrides applied after versions/<mc>.properties (e.g. a newer loader
+// build; also as environment ORG_GRADLE_PROJECT_ysm_set for a test client)
+if (findProperty('ysm_set')) {
+    findProperty('ysm_set').toString().split(';').each { pair ->
+        def kv = pair.split('=', 2)
+        if (kv.length == 2)
+            project.ext.set(kv[0].trim(), kv[1].trim())
+    }
+}
+// -Ploader=fabric|neoforge|forge (default fabric)
+ext.ysmLoader = (findProperty('loader') ?: 'fabric').toString()
+if (!['fabric', 'neoforge', 'forge'].contains(ysmLoader))
+    throw new GradleException("Unknown loader ${ysmLoader}")
+apply plugin: [fabric: 'net.fabricmc.fabric-loom', neoforge: 'net.neoforged.moddev', forge: 'net.minecraftforge.gradle'][ysmLoader]
 
 // Build-tool and declaration classpaths need these source sets before their compiler setup.
 sourceSets { declaration }
@@ -16,6 +47,22 @@ sourceSets {
         compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output + sourceSets.declaration.output
         // main.runtimeClasspath is replaced later by gradle/declaration.gradle; name the declaration output here.
         runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output + sourceSets.declaration.output
+    }
+}
+
+// Other Minecraft versions: hand-written sources go through the preprocessor (generated source dirs are added later
+// by the schema and compatibility scripts and stay as they are).
+if (minecraft_version != ysmSourceMc || ysmLoader != 'fabric') {
+    [main: 'src/main/java', localtest: 'src/localtest/java'].each { setName, dirPath ->
+        def prepare = tasks.register("preprocess${setName.capitalize()}Java", com.elfmcys.ysm.gradle.PreprocessTask) {
+            sources.from(file(dirPath))
+            minecraftVersion.set(minecraft_version)
+            loader.set(ysmLoader)
+            output.set(layout.buildDirectory.dir("preprocessed/${minecraft_version}/${setName}"))
+            [file("versions/${minecraft_version}.remap"), file("versions/loader-${ysmLoader}.remap")].findAll { it.exists() }
+                .each { remaps.from(it) }
+        }
+        sourceSets.getByName(setName).java.setSrcDirs([prepare.flatMap { it.output }])
     }
 }
 
@@ -36,7 +83,8 @@ sourceSets {
 apply from: 'gradle/local-properties.gradle'
 apply from: 'gradle/native.gradle'
 
-version = mod_version
+// mod_version names the Fabric build (e.g. 3.0-dev-fabric+mc26.2-local); NeoForge/Forge jars carry their loader
+version = mod_version.toString().replace('-fabric+', "-${ysmLoader}+")
 group = 'com.elfmcys.ysm'
 base { archivesName = 'ysm' }
 
@@ -84,25 +132,16 @@ ext.ysmBundledExpressionLibraries = Collections.unmodifiableMap([
 ])
 
 dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
-
-    // Forge-style config API on Fabric (provides net.minecraftforge.common.ForgeConfigSpec); bundled.
-    implementation "maven.modrinth:forge-config-api-port:${fcap_version}"
-    include "maven.modrinth:forge-config-api-port:${fcap_version}"
-    // Mod Menu API for the "Configure" entry point; Mod Menu itself stays optional at runtime.
-    compileOnly "maven.modrinth:modmenu:${modmenu_version}"
-    // Iris API for the shader integration (client/compat/IrisCompat); Iris stays optional at runtime.
-    compileOnly "maven.modrinth:iris:${iris_version}"
-    // WTHIT plugin (client/compat/wthit, waila_plugins.json); the user's WTHIT is 20.0.0
-    compileOnly("maven.modrinth:wthit:${wthit_version}") { transitive = false }
+    // Jade plugin (client/compat/jade), as 2.6.5 had
+    compileOnly("maven.modrinth:jade:${jade_version}") { transitive = false }
     // Optional integrations (client/compat): APIs only, the mods stay optional at runtime. Modrinth version ids.
     compileOnly("maven.modrinth:carry-on:${carryon_version}") { transitive = false }
     compileOnly("maven.modrinth:better-combat:${bettercombat_version}") { transitive = false }
     compileOnly("maven.modrinth:player-animation-library:${playeranimlib_version}") { transitive = false }
     compileOnly("maven.modrinth:first-person-model:${firstperson_version}") { transitive = false }
     compileOnly("maven.modrinth:real-camera:${realcamera_version}") { transitive = false }
+    // WTHIT plugin (client/compat/wthit, registered by waila_plugins.json on every loader); loader-neutral API
+    compileOnly("maven.modrinth:wthit:${wthit_version}") { transitive = false }
     compileOnly("maven.modrinth:immersive-melodies:${immersivemelodies_version}") { transitive = false }
     compileOnly("maven.modrinth:immersive-aircraft:${immersiveaircraft_version}") { transitive = false }
 
@@ -141,54 +180,33 @@ sourceSets.main.java {
     exclude 'com/elfmcys/ysm/mixin/client/**'
     exclude 'com/elfmcys/ysm/mixin/plugin/**'
     exclude 'com/elfmcys/ysm/mixin/*.java'
+    // Multi-loader: each loader compiles only its own glue package.
+    ['fabric', 'neoforge', 'forge'].findAll { it != ysmLoader }.each { other -> exclude "com/elfmcys/ysm/${other}/**" }
+    // Fabric-only integration (Mod Menu entry); the WTHIT plugin is built for every loader (WTHIT exists for all)
+    if (ysmLoader != 'fabric') {
+        exclude 'com/elfmcys/ysm/fabric/YsmModMenu.java'
+    }
 }
 
+apply from: "gradle/loader-${ysmLoader}.gradle"
 apply from: 'gradle/declaration.gradle'
 apply from: 'gradle/builtin-index.gradle'
 apply from: 'gradle/expression-compatibility.gradle'
 
-loom {
-    mods {
-        register('ysm') {
-            sourceSet sourceSets.main
-            // Packaged into the jar with main; in dev runs Knot only sees mod-group directories.
-            sourceSet sourceSets.declaration
-        }
-        register('ysm_localtest') {
-            sourceSet sourceSets.localtest
-        }
-    }
-    runs {
-        configureEach {
-            if (ysmNativeLibraryPathOrNull != null)
-                environmentVariable 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
-        }
-        client {
-            runDir 'run/client'
-            source sourceSets.localtest
-            // Fixed offline name (as the 2.6.5 harness) so the test server can list it in ops.json.
-            programArgs '--username', 'YsmTester'
-        }
-        // Second dev client for the two-client multiplayer test (observer mode of the harness).
-        client2 {
-            client()
-            runDir 'run/client2'
-            source sourceSets.localtest
-            programArgs '--username', 'YsmObserver'
-        }
-        server {
-            runDir 'run/server'
-        }
-    }
-}
 
 processResources {
     inputs.property 'mod_version', project.version
+    inputs.property 'mc_range', mc_range
     filteringCharset 'UTF-8'
     from('LICENSE')
     from('NOTICE.md')
-    filesMatching('fabric.mod.json') {
-        expand 'mod_version': project.version
+    // Diagnostics for other Minecraft versions: -Pmixin_lenient=true logs failing mixins instead of stopping the game
+    // (the harness option mixinAudit=true then loads every mixin target once).
+    if (project.hasProperty('mixin_lenient')) {
+        inputs.property 'mixin_lenient', true
+        filesMatching('ysm.mixins.json') {
+            filter { line -> line.replace('"required": true', '"required": false').replace('"defaultRequire": 1', '"defaultRequire": 0') }
+        }
     }
 }
 
@@ -224,6 +242,45 @@ tasks.named('shadowJar') {
     relocate 'org.codehaus.commons.compiler', 'com.elfmcys.ysm.internal.expression.commonscompiler'
     relocate 'org.yaml.snakeyaml', 'com.elfmcys.ysm.internal.snakeyaml'
     relocate 'org.apache.maven.artifact', 'com.elfmcys.ysm.internal.mavenartifact'
+    // Every bundled library goes under com.elfmcys: Forge ships maven-artifact as a module, and two modules exporting
+    // one package (org.apache.maven.repository) stopped a real Forge server; plexus-utils / nullanalysis likewise.
+    relocate 'org.apache.maven.repository', 'com.elfmcys.ysm.internal.mavenrepository'
+    relocate 'org.codehaus.plexus', 'com.elfmcys.ysm.internal.plexus'
+    relocate 'org.codehaus.commons.nullanalysis', 'com.elfmcys.ysm.internal.expression.nullanalysis'
+    // Loom writes the nested-jar list ("jars") into fabric.mod.json while building the plain jar. Keep that copy, not
+    // the unprocessed resource (EXCLUDE keeps the first duplicate and the main output comes first): without the list
+    // Fabric never loads the bundled Forge Config API Port and a real install fails (IConfigSpec missing).
+    def mainResources = sourceSets.main.output.resourcesDir.toPath().toAbsolutePath().normalize()
+    eachFile { details ->
+        if (details.path == 'fabric.mod.json' && details.file.toPath().toAbsolutePath().normalize().startsWith(mainResources))
+            details.exclude()
+    }
+    doLast {
+        // no class outside com.elfmcys (META-INF aside): an unrelocated library package can collide with the loader's
+        // or another mod's module (split package) and stop the game
+        def shaded = new java.util.zip.ZipFile(archiveFile.get().asFile)
+        try {
+            def foreign = shaded.entries().toList().collect { it.name }
+                .findAll { it.endsWith('.class') && !it.startsWith('com/elfmcys/') && !it.startsWith('META-INF/') }
+                .collect { it.substring(0, it.lastIndexOf('/') + 1) }.unique()
+            if (!foreign.isEmpty())
+                throw new GradleException("release jar: classes outside com/elfmcys (relocate them): ${foreign}")
+        } finally {
+            shaded.close()
+        }
+        if (ysmLoader == 'fabric') {
+            def zip = new java.util.zip.ZipFile(archiveFile.get().asFile)
+            try {
+                def text = zip.getInputStream(zip.getEntry('fabric.mod.json')).text
+                def nested = zip.entries().toList().findAll { it.name.startsWith('META-INF/jars/') && it.name.endsWith('.jar') }
+                def unlisted = nested.findAll { !text.contains("\"${it.name}\"") }
+                if (!unlisted.isEmpty())
+                    throw new GradleException("release jar: fabric.mod.json does not list nested jars ${unlisted*.name}")
+            } finally {
+                zip.close()
+            }
+        }
+    }
 }
 
 tasks.named('build') { dependsOn tasks.named('shadowJar') }

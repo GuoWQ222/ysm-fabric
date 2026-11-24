@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.model.domain.Hash256;
 import com.elfmcys.ysm.proto.network.GenPreviewStartProto;
 import com.elfmcys.ysm.proto.network.MissingPreviewFragmentProto;
@@ -538,7 +540,7 @@ public final class ClientSessionRuntime {
             if (player instanceof LocalPlayer)
                 continue;
             try {
-                player.getCapability(PlayerAnimatableCapabilityProvider.CAP)
+                ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP)
                     .ifPresent(capability -> capability.clearRemoteSelection());
             } catch (RuntimeException | Error cleanupFailure) {
                 if (failure == null)

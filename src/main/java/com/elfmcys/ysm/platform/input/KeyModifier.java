@@ -8,13 +8,12 @@ package com.elfmcys.ysm.platform.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
 
 /** Fabric port: Forge's key modifiers. Vanilla key mappings have none, so YSM checks them itself. */
 public enum KeyModifier {
-    CONTROL(GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL),
-    SHIFT(GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT),
-    ALT(GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT),
+    CONTROL(InputConstants.KEY_LCONTROL, InputConstants.KEY_RCONTROL),
+    SHIFT(InputConstants.KEY_LSHIFT, InputConstants.KEY_RSHIFT),
+    ALT(InputConstants.KEY_LALT, InputConstants.KEY_RALT),
     NONE();
 
     private final int[] keys;
@@ -28,7 +27,11 @@ public enum KeyModifier {
             return true;
         var window = Minecraft.getInstance().getWindow();
         for (int key : keys)
+            //#if MC >= 26.3
+            //$$ if (InputConstants.isKeyDown(key))
+            //#else
             if (InputConstants.isKeyDown(window, key))
+            //#endif
                 return true;
         return false;
     }

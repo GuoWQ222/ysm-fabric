@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command.sub;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.gui.overlay.DebugAnimationScreen;
 import com.elfmcys.ysm.expression.aot.TransientExpressionSession;
@@ -71,7 +72,7 @@ public class MolangCommand {
         }
         String expName = StringArgumentType.getString(ctx, EXPRESSION_NAME_NAME);
         String exp = StringArgumentType.getString(ctx, EXPRESSION_NAME);
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player
+        Minecraft.getInstance().execute(() -> com.elfmcys.ysm.platform.capability.ICapabilityHolder.of(Minecraft.getInstance().player)
             .getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                 DebugAnimationScreen.getDebugInfo().add(phase, expName, exp);
             }));
@@ -84,7 +85,7 @@ public class MolangCommand {
             return Command.SINGLE_SUCCESS;
         }
         String expName = StringArgumentType.getString(ctx, EXPRESSION_NAME_NAME);
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player
+        Minecraft.getInstance().execute(() -> com.elfmcys.ysm.platform.capability.ICapabilityHolder.of(Minecraft.getInstance().player)
             .getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                 DebugAnimationScreen.getDebugInfo().remove(expName);
             }));
@@ -96,7 +97,7 @@ public class MolangCommand {
         if (!isClientReady()) {
             return Command.SINGLE_SUCCESS;
         }
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player
+        Minecraft.getInstance().execute(() -> com.elfmcys.ysm.platform.capability.ICapabilityHolder.of(Minecraft.getInstance().player)
             .getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                 DebugAnimationScreen.getDebugInfo().clear();
             }));
@@ -113,7 +114,7 @@ public class MolangCommand {
         var player = minecraft.player;
         var target = DebugAnimationScreen.getTarget();
         if (target == null) {
-            target = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+            target = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
         }
         if (target != null) {
             target.executeTransient(exp, TransientExpressionSession.Privilege.LOCAL_EXECUTE, false, result -> {

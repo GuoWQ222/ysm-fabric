@@ -1,7 +1,6 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat;
 
-import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * First-person Model (tr7zw, Fabric 26.2: mod id {@code firstperson}). As upstream's Forge integration: the camera
@@ -17,7 +16,7 @@ public final class FirstPersonCompat {
     private FirstPersonCompat() {}
 
     public static void init() {
-        installed = FabricLoader.getInstance().isModLoaded(MOD_ID) || FabricLoader.getInstance().isModLoaded(LEGACY_MOD_ID);
+        installed = com.elfmcys.ysm.platform.Platform.isModLoaded(MOD_ID) || com.elfmcys.ysm.platform.Platform.isModLoaded(LEGACY_MOD_ID);
         if (installed) {
             Inner.registerOffset();
             setHeadPos(24);

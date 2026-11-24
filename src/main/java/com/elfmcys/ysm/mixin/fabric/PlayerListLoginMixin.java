@@ -6,7 +6,6 @@
  */
 package com.elfmcys.ysm.mixin.fabric;
 
-import com.elfmcys.ysm.fabric.FabricEventHooks;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
@@ -26,6 +25,7 @@ public abstract class PlayerListLoginMixin {
     @Inject(method = "placeNewPlayer", at = @At("TAIL"))
     private void ysm$afterPlaceNewPlayer(Connection connection, ServerPlayer player, CommonListenerCookie cookie,
         CallbackInfo ci) {
-        FabricEventHooks.postPlayerLoggedIn(player);
+        com.elfmcys.ysm.platform.event.YsmEvents.post(
+            new com.elfmcys.ysm.platform.event.forge.PlayerEvent.PlayerLoggedInEvent(player));
     }
 }

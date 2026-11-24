@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -158,10 +158,14 @@ public class ModelInfoScreen extends ModelScreen {
                 if (!hasCurrentWorld())
                     return;
                 if (yes) {
-                    Util.getPlatform().openUri(homeUrl);
+                    com.elfmcys.ysm.platform.McCompat.openUri(homeUrl);
                 }
                 showScreen(this);
+            //#if MC >= 26.3
+            //$$ }, java.net.URI.create(homeUrl), true));
+            //#else
             }, homeUrl, true));
+            //#endif
         }
     }
 

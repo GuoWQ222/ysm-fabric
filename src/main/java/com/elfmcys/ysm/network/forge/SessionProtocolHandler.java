@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.model.service.ClientModelService;
 
 import com.elfmcys.ysm.proto.network.GenPreviewStartProto;
@@ -408,7 +409,7 @@ public final class SessionProtocolHandler {
             return;
         }
         var previous = session.authority();
-        player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
             session.setGrants(
                 capability.getAuthModels().stream().filter(session::containsModel).collect(Collectors.toSet()));
             if (publish && session.hasPublishedCatalog() && !previous.grants().equals(session.grants())) {
@@ -436,7 +437,7 @@ public final class SessionProtocolHandler {
         session.updateContentPolicy(ServerConfig.RESTRICTED_AUTH.get());
         refreshGrants(player, false);
         var serverCatalog = service.catalog().orElseThrow();
-        player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
             capability.retireProducer(session);
             ModelSelectionService.resolve(capability, serverCatalog);
         });
@@ -471,7 +472,7 @@ public final class SessionProtocolHandler {
             return;
         }
         var requestedGrants = new HashSet<ModelId>();
-        player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP)
+        ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP)
             .ifPresent(capability -> requestedGrants.addAll(capability.getAuthModels()));
         var catalog = SessionCollectionPublication.distributableCatalog(globalCatalog);
         final ServerModelSession.CatalogTransition committed;
@@ -560,7 +561,7 @@ public final class SessionProtocolHandler {
     private static void invalidateSelection(ServerPlayer player, ServerModelSession session, boolean publish) {
         if (session.validateSelection(session.selection()) == ServerModelSession.SelectionResult.ACCEPTED)
             return;
-        player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(capability -> {
             capability.commitSelection(com.elfmcys.ysm.capability.CommittedSelection
                 .appearance(com.elfmcys.ysm.model.domain.PublishedModelId.INTRINSIC_DEFAULT, ""));
             if (publish)

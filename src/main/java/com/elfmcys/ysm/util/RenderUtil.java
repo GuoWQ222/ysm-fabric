@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.util;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.capability.VehicleAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.compat.FirstPersonCompat;
@@ -92,7 +93,7 @@ public final class RenderUtil {
         Entity vehicle = entity.getVehicle();
         if (vehicle == null)
             return;
-        vehicle.getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(vehicleCap -> {
+        ICapabilityHolder.of(vehicle).getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(vehicleCap -> {
             if (!vehicleCap.isAssigned())
                 return;
             vehicleCap.waitForRenderUpdate();
@@ -109,11 +110,11 @@ public final class RenderUtil {
             if (seat == null)
                 return;
             poseStack.mulPose(seat);
-            poseStack.mulPose(Axis.YN.rotationDegrees(seats.seatAngle()));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YN.rotationDegrees(seats.seatAngle()));
             double yOffset = vehicle.position().y - vehicle.getPassengerRidingPosition(entity).y
                 + entity.getVehicleAttachmentPoint(vehicle).y;
             boolean playerHasCap = entity instanceof Player player
-                && player.getCapability(PlayerAnimatableCapabilityProvider.CAP).isPresent();
+                && ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).isPresent();
             if (playerHasCap)
                 yOffset = yOffset - 0.5;
             poseStack.translate(0, yOffset, 0);
@@ -168,7 +169,7 @@ public final class RenderUtil {
         Quaternionf zp = Axis.ZP.rotationDegrees(180.0F);
         Quaternionf xp = Axis.XP.rotationDegrees(-10 + pitch);
         zp.mul(xp);
-        poseStack.mulPose(zp);
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, zp);
 
         float yBodyRot = living.yBodyRot;
         float yBodyRotO = living.yBodyRotO;
@@ -191,7 +192,7 @@ public final class RenderUtil {
             var camera = guiCamera(xp);
             var guiAnim = entity.getPreviewInfo();
             if (guiAnim.hasPreview("sleep")) {
-                poseStack.mulPose(Axis.YP.rotationDegrees(yaw - 90));
+                com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(yaw - 90));
                 poseStack.translate(0.5, 0.5625, 0);
                 living.setPose(Pose.SLEEPING);
             }
@@ -244,20 +245,20 @@ public final class RenderUtil {
         poseStack.translate(0, 0.8, 0);
         Quaternionf zp = Axis.ZP.rotationDegrees(180.0F);
         zp.mul(Axis.XP.rotationDegrees(-10 + pitch));
-        poseStack.mulPose(zp);
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, zp);
         return poseStack;
     }
 
     private static void submitBed(float scale, float pitch, float yaw, SubmitNodeCollector collector) {
         var poseStack = previewBlockPose(scale, pitch);
-        poseStack.mulPose(Axis.YP.rotationDegrees(yaw + 180));
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(yaw + 180));
         poseStack.translate(-0.5, 0, 0.5);
-        submitBlock(Blocks.BED.red().defaultBlockState(), poseStack, collector);
+        submitBlock(com.elfmcys.ysm.platform.McCompat.redBed().defaultBlockState(), poseStack, collector);
     }
 
     private static void submitGround(float scale, float pitch, float yaw, SubmitNodeCollector collector) {
         var poseStack = previewBlockPose(scale, pitch);
-        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(yaw));
         poseStack.translate(-1.5, -1, -2.5);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -288,8 +289,8 @@ public final class RenderUtil {
             return;
         var player = animatableEntity.getEntity();
         var guiAnim = animatableEntity.getPreviewInfo();
-        EntityType<?> type = guiAnim.hasPreview("ride") ? net.minecraft.world.entity.EntityTypes.HORSE
-            : guiAnim.hasPreview("ride_pig") ? net.minecraft.world.entity.EntityTypes.PIG : guiAnim.hasPreview("boat") ? net.minecraft.world.entity.EntityTypes.OAK_BOAT : null;
+        EntityType<?> type = guiAnim.hasPreview("ride") ? com.elfmcys.ysm.platform.McCompat.horse()
+            : guiAnim.hasPreview("ride_pig") ? com.elfmcys.ysm.platform.McCompat.pig() : guiAnim.hasPreview("boat") ? com.elfmcys.ysm.platform.McCompat.oakBoat() : null;
         if (type == null)
             return;
         Entity vehicle = AnimatableCacheUtil.ENTITIES_CACHE.get(EntityType.getKey(type),
@@ -299,7 +300,7 @@ public final class RenderUtil {
         var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         poseStack.pushPose();
         try {
-            poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(yaw));
             var state = dispatcher.extractEntity(vehicle, partialTicks);
             state.lightCoords = GUI_LIGHT;
             state.shadowPieces.clear();
@@ -391,8 +392,8 @@ public final class RenderUtil {
             var zp = Axis.ZP.rotationDegrees(180.0F);
             var xp = Axis.XP.rotationDegrees(input.disableRotation() ? 0 : -10);
             zp.mul(xp);
-            poseStack.mulPose(zp);
-            poseStack.mulPose(Axis.YP.rotationDegrees(input.vehicleRotation()));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, zp);
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(input.vehicleRotation()));
             if (framing != null)
                 framing.begin(width, height);
             var state = guiRenderState(entity.getEntity());
@@ -443,7 +444,7 @@ public final class RenderUtil {
                 Quaternionf yRot =
                     Axis.YP.rotationDegrees(Mth.lerp(partialTicks, player.yBodyRotO, player.yBodyRot) + yawOffset - 180);
                 zRot.mul(yRot);
-                poseStack.mulPose(zRot);
+                com.elfmcys.ysm.platform.McCompat.rotate(poseStack, zRot);
                 var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
                 var state = dispatcher.extractEntity(player, partialTicks);
                 state.lightCoords = 15728880;

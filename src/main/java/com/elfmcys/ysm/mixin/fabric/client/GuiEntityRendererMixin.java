@@ -38,8 +38,12 @@ public abstract class GuiEntityRendererMixin {
     private final float[] ysm$saved = new float[8];
 
     @Inject(method = "renderToTexture", at = @At("HEAD"))
+    //#if MC >= 26.2
     private void ysm$beginInventory(GuiEntityRenderState entityState, PoseStack poseStack,
         SubmitNodeCollector collector, CallbackInfo ci) {
+    //#else
+    //$$ private void ysm$beginInventory(GuiEntityRenderState entityState, PoseStack poseStack, CallbackInfo ci) {
+    //#endif
         RenderUtil.setRenderingInInventory(true);
         ysm$posed = null;
         if (entityState.renderState() instanceof LivingEntityRenderState state
@@ -65,8 +69,12 @@ public abstract class GuiEntityRendererMixin {
     }
 
     @Inject(method = "renderToTexture", at = @At("RETURN"))
+    //#if MC >= 26.2
     private void ysm$endInventory(GuiEntityRenderState entityState, PoseStack poseStack,
         SubmitNodeCollector collector, CallbackInfo ci) {
+    //#else
+    //$$ private void ysm$endInventory(GuiEntityRenderState entityState, PoseStack poseStack, CallbackInfo ci) {
+    //#endif
         var entity = ysm$posed;
         if (entity != null) {
             var s = ysm$saved;

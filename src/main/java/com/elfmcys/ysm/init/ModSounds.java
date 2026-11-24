@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.init;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -19,6 +19,14 @@ public final class ModSounds {
         if (registered)
             return;
         registered = true;
+        //#if LOADER == fabric
         Registry.register(BuiltInRegistries.SOUND_EVENT, CUSTOM.location(), CUSTOM);
+        //#elseif LOADER == neoforge
+        //$$ // NeoForge freezes the vanilla registries; entries go in through its RegisterEvent
+        //$$ com.elfmcys.ysm.neoforge.YsmNeoForge.modBus().addListener((net.neoforged.neoforge.registries.RegisterEvent event) ->
+        //$$     event.register(net.minecraft.core.registries.Registries.SOUND_EVENT, CUSTOM.location(), () -> CUSTOM));
+        //#else
+        //$$ com.elfmcys.ysm.forge.YsmForge.registerSound(CUSTOM);
+        //#endif
     }
 }

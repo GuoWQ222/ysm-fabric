@@ -1,16 +1,13 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.AuthModelsCapability;
 import com.elfmcys.ysm.capability.AuthModelsCapabilityProvider;
-import com.elfmcys.ysm.capability.ClientLazyCapabilityProvider;
 import com.elfmcys.ysm.capability.ModelInfoCapability;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
-import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
-import com.elfmcys.ysm.capability.ProjectileAnimatableCapabilityProvider;
 import com.elfmcys.ysm.capability.ProjectileModelInfoCapabilityProvider;
-import com.elfmcys.ysm.capability.VehicleAnimatableCapabilityProvider;
 import com.elfmcys.ysm.capability.VehicleModelInfoCapabilityProvider;
 import com.elfmcys.ysm.config.ServerConfig;
 import com.elfmcys.ysm.model.ModelRuntime;
@@ -20,7 +17,6 @@ import com.elfmcys.ysm.network.forge.MinecraftStateHandler;
 import com.elfmcys.ysm.network.forge.PlayerStateHandler;
 import com.elfmcys.ysm.network.forge.SessionProtocolHandler;
 
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -62,53 +58,34 @@ public final class CapabilityEvent {
         Entity entity = event.getObject();
         if (entity instanceof Player player) {
             if (!entity.level().isClientSide()
-                && !player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).isPresent()
+                && !ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).isPresent()
                 && !event.getCapabilities().containsKey(MODEL_INFO_CAP)) {
                 event.addCapability(MODEL_INFO_CAP, new ModelInfoCapabilityProvider());
             }
-            if (!player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).isPresent()
+            if (!ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).isPresent()
                 && !event.getCapabilities().containsKey(AUTH_MODELS_CAP)) {
                 event.addCapability(AUTH_MODELS_CAP, new AuthModelsCapabilityProvider());
             }
 
         } else if (entity instanceof Projectile) {
             if (!entity.level().isClientSide()
-                && !entity.getCapability(ProjectileModelInfoCapabilityProvider.CAP).isPresent()
+                && !ICapabilityHolder.of(entity).getCapability(ProjectileModelInfoCapabilityProvider.CAP).isPresent()
                 && !event.getCapabilities().containsKey(PROJECTILE_MODEL_INFO_CAP)) {
                 event.addCapability(PROJECTILE_MODEL_INFO_CAP, new ProjectileModelInfoCapabilityProvider());
             }
         } else {
             if (!entity.level().isClientSide()
-                && !entity.getCapability(VehicleModelInfoCapabilityProvider.CAP).isPresent()
+                && !ICapabilityHolder.of(entity).getCapability(VehicleModelInfoCapabilityProvider.CAP).isPresent()
                 && !event.getCapabilities().containsKey(VEHICLE_MODEL_INFO_CAP)) {
                 event.addCapability(VEHICLE_MODEL_INFO_CAP, new VehicleModelInfoCapabilityProvider());
             }
         }
 
         if (FMLEnvironment.dist == Dist.CLIENT && entity.level().isClientSide()) {
-            // 客户端玩家
-            if (entity instanceof AbstractClientPlayer clientPlayer
-                && !clientPlayer.getCapability(PlayerAnimatableCapabilityProvider.CAP).isPresent()
-                && !event.getCapabilities().containsKey(ANIMATABLE_CAP)) {
-                event.addCapability(ANIMATABLE_CAP, new PlayerAnimatableCapabilityProvider(clientPlayer));
-                return;
-            }
-
-            // 客户端懒加载 cap
-            if (!entity.getCapability(ClientLazyCapabilityProvider.CAP).isPresent()
-                && !event.getCapabilities().containsKey(CLIENT_LAZY_CAP)) {
-                var vehicleAnimatable = new VehicleAnimatableCapabilityProvider(entity);
-                event.addCapability(VEHICLE_ANIMATABLE_CAP, vehicleAnimatable);
-
-                ProjectileAnimatableCapabilityProvider projectileAnimatable = null;
-                if (entity instanceof Projectile projectile) {
-                    projectileAnimatable = new ProjectileAnimatableCapabilityProvider(projectile);
-                    event.addCapability(PROJECTILE_ANIMATABLE_CAP, projectileAnimatable);
-                }
-
-                event.addCapability(CLIENT_LAZY_CAP,
-                    new ClientLazyCapabilityProvider(vehicleAnimatable, projectileAnimatable));
-            }
+            // client-only half in a client class: verifying this common class must not load client types (a
+            // dedicated server has none)
+            com.elfmcys.ysm.client.event.ClientCapabilityAttach.attach(event, entity, ANIMATABLE_CAP,
+                PROJECTILE_ANIMATABLE_CAP, VEHICLE_ANIMATABLE_CAP, CLIENT_LAZY_CAP);
         }
     }
 
@@ -117,10 +94,10 @@ public final class CapabilityEvent {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        event.getOriginal().reviveCaps();
+        ICapabilityHolder.of(event.getOriginal()).reviveYsmCaps();
         LazyOptional<ModelInfoCapability> oldModelInfoCap = getModelInfoCap(event.getOriginal());
         LazyOptional<AuthModelsCapability> oldAuthModelsCap = getAuthModelsCap(event.getOriginal());
-        event.getOriginal().invalidateCaps();
+        ICapabilityHolder.of(event.getOriginal()).invalidateYsmCaps();
 
         LazyOptional<ModelInfoCapability> newModelInfoCap = getModelInfoCap(event.getEntity());
         LazyOptional<AuthModelsCapability> newAuthModelsCap = getAuthModelsCap(event.getEntity());
@@ -138,14 +115,14 @@ public final class CapabilityEvent {
             if (event.getEntity() instanceof ServerPlayer observer)
                 ServerModelService.current().ifPresent(service -> service.sendTrackingInitial(trackPlayer, observer));
         } else if (event.getTarget() instanceof Projectile projectile) {
-            projectile.getCapability(ProjectileModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(projectile).getCapability(ProjectileModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
                 if (cap.isInitialized()) {
                     NetworkHandler.sendToClientPlayer(MinecraftStateHandler.projectile(projectile.getId(), cap),
                         event.getEntity());
                 }
             });
         } else if (event.getTarget() != null) {
-            event.getTarget().getCapability(VehicleModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(event.getTarget()).getCapability(VehicleModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
                 if (cap.isInitialized()) {
                     NetworkHandler.sendToClientPlayer(MinecraftStateHandler.vehicle(event.getTarget().getId(), cap),
                         event.getEntity());
@@ -215,11 +192,11 @@ public final class CapabilityEvent {
     }
 
     public static void onProjectileSetOwner(Projectile projectile, ServerPlayer owner) {
-        owner.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(ownerCap -> {
+        ICapabilityHolder.of(owner).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(ownerCap -> {
             if (!NetworkHandler.isPlayerChannelPresent(owner) && !ownerCap.isMandatory()) {
                 return;
             }
-            projectile.getCapability(ProjectileModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(projectile).getCapability(ProjectileModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
                 ownerCap.executeWithMolangVars(molangVars -> {
                     cap.init(ownerCap.getModelId(), molangVars);
                     NetworkHandler.broadcastToVisiblePlayers(MinecraftStateHandler.projectile(projectile.getId(), cap),
@@ -230,11 +207,11 @@ public final class CapabilityEvent {
     }
 
     public static void onVehicleSetModel(Entity vehicle, ServerPlayer owner) {
-        owner.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(ownerCap -> {
+        ICapabilityHolder.of(owner).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(ownerCap -> {
             if (!NetworkHandler.isPlayerChannelPresent(owner) && !ownerCap.isMandatory()) {
                 return;
             }
-            vehicle.getCapability(VehicleModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(vehicle).getCapability(VehicleModelInfoCapabilityProvider.CAP).ifPresent(cap -> {
                 // 失败就丢弃
                 ownerCap.getMolangVars().ifPresent(molangVars -> {
                     cap.update(ownerCap.getModelId(), molangVars);
@@ -246,11 +223,11 @@ public final class CapabilityEvent {
     }
 
     private static LazyOptional<ModelInfoCapability> getModelInfoCap(Player player) {
-        return player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
+        return ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP);
     }
 
     private static LazyOptional<AuthModelsCapability> getAuthModelsCap(Player player) {
-        return player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP);
+        return ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP);
     }
 
 }

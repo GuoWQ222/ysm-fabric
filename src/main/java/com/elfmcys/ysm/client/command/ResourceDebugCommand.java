@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command;
 
 import com.elfmcys.ysm.util.ResourceDiagnostics;
@@ -19,7 +19,7 @@ public final class ResourceDebugCommand {
         for (var kind : ResourceDiagnostics.Kind.values()) {
             dump.then(ClientCommands.literal(kind.name().toLowerCase(Locale.ROOT)).executes(context -> {
                 var count = ResourceDiagnostics.dump(kind);
-                context.getSource().sendFeedback(Component.literal("YSM resource dump "
+                ClientFeedback.success(context.getSource(), Component.literal("YSM resource dump "
                     + kind.name().toLowerCase(Locale.ROOT) + ": " + count + " live resources; see log"));
                 return Command.SINGLE_SUCCESS;
             }));
@@ -28,7 +28,7 @@ public final class ResourceDebugCommand {
             .then(ClientCommands.argument("enabled", BoolArgumentType.bool()).executes(context -> {
                 var enabled = BoolArgumentType.getBool(context, "enabled");
                 ResourceDiagnostics.setEnabled(enabled);
-                context.getSource().sendFeedback(Component.literal("YSM resource logging: " + enabled));
+                ClientFeedback.success(context.getSource(), Component.literal("YSM resource logging: " + enabled));
                 return Command.SINGLE_SUCCESS;
             })).then(dump)));
     }

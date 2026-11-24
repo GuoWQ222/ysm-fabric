@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
@@ -312,7 +312,7 @@ public class PlayerTextureScreen extends ModelScreen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key(), scanCode = event.scancode(), modifiers = event.modifiers();
+        int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
         var handled = super.keyPressed(event);
         updateKeyboardPointer();
         return handled;

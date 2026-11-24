@@ -1,0 +1,32 @@
+# Minecraft 26.3 moved the GPU API from com.mojang.blaze3d to com.mojang.renderpearl (api + OpenGL/Vulkan backends).
+# Applied by the build's preprocessor to the 26.3 copy of the sources (whole names only; a trailing '.' = package).
+com.mojang.blaze3d.GpuFormat com.mojang.renderpearl.api.GpuFormat
+com.mojang.blaze3d.buffers.GpuBuffer com.mojang.renderpearl.api.buffers.GpuBuffer
+com.mojang.blaze3d.buffers.GpuBufferSlice com.mojang.renderpearl.api.buffers.GpuBufferSlice
+com.mojang.blaze3d.buffers.GpuFence com.mojang.renderpearl.api.commands.GpuFence
+com.mojang.blaze3d.systems.TransientMemory com.mojang.renderpearl.api.buffers.TransientMemory
+com.mojang.blaze3d.textures. com.mojang.renderpearl.api.textures.
+com.mojang.blaze3d.vertex.VertexFormat com.mojang.renderpearl.api.vertex.VertexFormat
+com.mojang.blaze3d.vertex.VertexFormatElement com.mojang.renderpearl.api.vertex.VertexFormatElement
+com.mojang.blaze3d.pipeline.RenderPipeline com.mojang.renderpearl.api.pipeline.RenderPipeline
+com.mojang.blaze3d.pipeline.CompiledRenderPipeline com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline
+com.mojang.blaze3d.pipeline.BindGroupLayout com.mojang.renderpearl.api.pipeline.BindGroupLayout
+com.mojang.blaze3d.pipeline.BlendEquation com.mojang.renderpearl.api.pipeline.BlendEquation
+com.mojang.blaze3d.pipeline.BlendFunction com.mojang.renderpearl.api.pipeline.BlendFunction
+com.mojang.blaze3d.pipeline.ColorTargetState com.mojang.renderpearl.api.pipeline.ColorTargetState
+com.mojang.blaze3d.pipeline.DepthStencilState com.mojang.renderpearl.api.pipeline.DepthStencilState
+com.mojang.blaze3d.systems.GpuDevice com.mojang.renderpearl.api.device.GpuDevice
+com.mojang.blaze3d.systems.GpuBackend com.mojang.renderpearl.api.device.GpuBackend
+com.mojang.blaze3d.systems.DeviceInfo com.mojang.renderpearl.api.device.DeviceInfo
+com.mojang.blaze3d.systems.DeviceType com.mojang.renderpearl.api.device.DeviceType
+com.mojang.blaze3d.systems.DeviceFeatures com.mojang.renderpearl.api.device.DeviceFeatures
+com.mojang.blaze3d.systems.DeviceLimits com.mojang.renderpearl.api.device.DeviceLimits
+com.mojang.blaze3d.systems.CommandEncoder com.mojang.renderpearl.api.commands.CommandEncoder
+com.mojang.blaze3d.systems.RenderPass com.mojang.renderpearl.api.commands.RenderPass
+com.mojang.blaze3d.systems.RenderPassDescriptor com.mojang.renderpearl.api.commands.RenderPassDescriptor
+com.mojang.blaze3d.systems.GpuQuery com.mojang.renderpearl.api.commands.GpuQuery
+com.mojang.blaze3d.opengl.GlTexture com.mojang.renderpearl.backend.opengl.GlTexture
+com.mojang.blaze3d.opengl.GlTextureView com.mojang.renderpearl.backend.opengl.GlTextureView
+com.mojang.blaze3d.opengl.GlDevice com.mojang.renderpearl.backend.opengl.GlDevice
+# 26.3 input: InputConstants.Type.KEYSYM became KEYBOARD (SDL)
+InputConstants.Type.KEYSYM InputConstants.Type.KEYBOARD

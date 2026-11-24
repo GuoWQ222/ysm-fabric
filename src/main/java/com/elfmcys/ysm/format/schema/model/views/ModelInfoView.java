@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.format.schema.model.views;
 
 import com.elfmcys.ysm.format.schema.model.ModelOriginVersion;
@@ -72,8 +73,11 @@ public final class ModelInfoView {
         var buttons = new LinkedHashMap<String, ExtraAnimationButtonProto>();
         for (var button : settings.extraAnimationButtons()) {
             for (var form : button.configForms()) {
+                // Fabric port (2.6.5 parity): a form of an unknown type is ignored (no widget, no programs) instead
+                // of rejecting the whole model; 2.6.5 loads such community models.
                 if (!form.type().equals("checkbox") && !form.type().equals("radio") && !form.type().equals("range")) {
-                    throw new IllegalArgumentException("Unknown extra-animation form type: " + form.type());
+                    com.elfmcys.ysm.YesSteveModel.LOGGER.warn("Ignoring extra-animation form of unknown type '{}' in {}",
+                        form.type(), button.id());
                 }
             }
             buttons.put(button.id(), button);

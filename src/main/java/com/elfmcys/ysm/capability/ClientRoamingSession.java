@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.capability;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.model.domain.ModelId;
 import com.elfmcys.ysm.model.domain.PublishedModelId;
 import com.elfmcys.ysm.expression.aot.EntityExpressionRuntime;
@@ -275,7 +277,7 @@ final class ClientRoamingSession {
         var operation = currentOperation;
         var vehicle = player == null ? null : player.getVehicle();
         var target =
-            vehicle == null ? null : vehicle.getCapability(VehicleAnimatableCapabilityProvider.CAP).orElse(null);
+            vehicle == null ? null : ICapabilityHolder.of(vehicle).getCapability(VehicleAnimatableCapabilityProvider.CAP).orElse(null);
         var installation = target == null ? null : target.projectionIdentity();
         return new EntityExpressionRuntime.ProjectionSink() {
             private boolean localApplied;
@@ -335,7 +337,7 @@ final class ClientRoamingSession {
     private void updateVehicle(RoamingPayload delta) {
         if (player == null || player.getVehicle() == null || player.getVehicle().getFirstPassenger() != player)
             return;
-        player.getVehicle().getCapability(VehicleAnimatableCapabilityProvider.CAP)
+        ICapabilityHolder.of(player.getVehicle()).getCapability(VehicleAnimatableCapabilityProvider.CAP)
             .ifPresent(capability -> capability.adoptRoamingChanges(delta, currentFields));
     }
 }

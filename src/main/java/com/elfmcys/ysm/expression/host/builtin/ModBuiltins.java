@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host.builtin;
 
 import com.elfmcys.ysm.api.molang.MolangContextView;
@@ -14,7 +14,6 @@ public final class ModBuiltins implements EntityComponent<Entity> {
 
     @BuiltinFunction(value = "mod_version", alwaysOrigin = true)
     public String modVersion(MolangContextView<Entity> context, String modId) {
-        return net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer(modId)
-            .map(container -> container.getMetadata().getVersion().getFriendlyString()).orElse("");
+        return com.elfmcys.ysm.platform.Platform.modVersion(modId).orElse("");
     }
 }

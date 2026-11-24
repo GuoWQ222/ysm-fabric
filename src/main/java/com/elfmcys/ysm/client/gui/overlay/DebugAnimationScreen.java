@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui.overlay;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.client.gui.GuiDraw;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.capability.ProjectileAnimatableCapabilityProvider;
@@ -36,7 +37,7 @@ public class DebugAnimationScreen {
     private static final ReplacementNoticeTracker REPLACEMENT_NOTICES = new ReplacementNoticeTracker();
     private static volatile WeakReference<AnimatableEntity<?>> TARGET = null;
 
-    public static net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement getGuiOverlay() {
+    public static HudLayer getGuiOverlay() {
         return (graphics, deltaTracker) -> renderCustom(graphics, graphics.guiWidth(), graphics.guiHeight());
     }
 
@@ -58,7 +59,7 @@ public class DebugAnimationScreen {
     public static boolean enableForLocalPlayer() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(DebugAnimationScreen::enable);
+            ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(DebugAnimationScreen::enable);
             return true;
         }
         disable();
@@ -68,11 +69,11 @@ public class DebugAnimationScreen {
     public static boolean enable(Entity entity) {
         LazyOptional<? extends AnimatableEntity<?>> opt;
         if (entity instanceof Player) {
-            opt = entity.getCapability(PlayerAnimatableCapabilityProvider.CAP);
+            opt = ICapabilityHolder.of(entity).getCapability(PlayerAnimatableCapabilityProvider.CAP);
         } else if (entity instanceof Projectile) {
-            opt = entity.getCapability(ProjectileAnimatableCapabilityProvider.CAP);
+            opt = ICapabilityHolder.of(entity).getCapability(ProjectileAnimatableCapabilityProvider.CAP);
         } else {
-            opt = entity.getCapability(VehicleAnimatableCapabilityProvider.CAP);
+            opt = ICapabilityHolder.of(entity).getCapability(VehicleAnimatableCapabilityProvider.CAP);
         }
         return opt.map(cap -> {
             DebugAnimationScreen.enable(cap);

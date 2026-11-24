@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.ClientLazyCapabilityProvider;
 import com.elfmcys.ysm.capability.ProjectileModelInfoCapability;
 import com.elfmcys.ysm.capability.VehicleModelInfoCapability;
@@ -86,7 +87,7 @@ public final class MinecraftStateHandler {
     @OnlyIn(Dist.CLIENT)
     @SuppressWarnings("DataFlowIssue")
     private static void applyProjectile(Entity entity, ModelId modelHash, Int2FloatOpenHashMap variables) {
-        entity.getCapability(ClientLazyCapabilityProvider.CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(entity).getCapability(ClientLazyCapabilityProvider.CAP).ifPresent(capability -> {
             var animatable = capability.getProjectileAnimatableCapabilityProvider().initialize();
             animatable.init(modelHash);
             animatable.initRoamingVars(variables);
@@ -98,7 +99,7 @@ public final class MinecraftStateHandler {
         if (com.elfmcys.ysm.network.NetworkDiagnostics.isEnabled())
             com.elfmcys.ysm.network.NetworkDiagnostics.trace("vehicle-model-apply", "vehicleId=" + entity.getId(),
                 "modelId=" + modelHash, "variables=" + variables.size());
-        entity.getCapability(ClientLazyCapabilityProvider.CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(entity).getCapability(ClientLazyCapabilityProvider.CAP).ifPresent(capability -> {
             var animatable = capability.getVehicleAnimatableCapabilityProvider().initialize();
             animatable.init(modelHash);
             animatable.initRoamingVars(variables);

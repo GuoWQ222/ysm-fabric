@@ -17,7 +17,7 @@ Built-in model assets have their own licenses (see NOTICE.md). The models includ
 
 ## All Rights Reserved
 
-The 112 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
+The 135 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
 All Rights Reserved, and are **not** licensed under the Apache License 2.0. Each one says so in its header.
 
 You may view them on GitHub, and GitHub's Terms of Service let you fork the repository on GitHub. Beyond that, no
@@ -27,11 +27,18 @@ written permission from GuoWQ222.
 Section 4 of the Apache License 2.0 allows separate terms for modifications like these. The upstream code itself
 stays under the Apache License 2.0 and can be used under that license.
 
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/PreprocessTask.java`
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/Preprocessor.java`
 - `src/localtest/java/com/elfmcys/ysm/localtest/VisualTestHarness.java`
 - `src/main/java/com/elfmcys/ysm/buffer/Memory.java`
+- `src/main/java/com/elfmcys/ysm/client/command/ClientFeedback.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/ModelInfoTooltip.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/jade/YsmJadePlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitCommonPlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitPlugin.java`
+- `src/main/java/com/elfmcys/ysm/client/event/ClientCapabilityAttach.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/GuiDraw.java`
+- `src/main/java/com/elfmcys/ysm/client/gui/overlay/HudLayer.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiQuadRenderState.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiScissor.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModelRenderState.java`
@@ -43,6 +50,11 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabric.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabricClient.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmModMenu.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeClientEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeNetwork.java`
+- `src/main/java/com/elfmcys/ysm/forge/YsmForge.java`
+- `src/main/java/com/elfmcys/ysm/forge/mixin/SoundEngineStreamMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/AbstractArrowExtraInfoMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ArrowPotionAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ConnectionAccessor.java`
@@ -54,10 +66,12 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ProjectileOwnerMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ServerCommonPacketListenerAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ServerPlayerRidingMixin.java`
+- `src/main/java/com/elfmcys/ysm/mixin/fabric/YsmMixinConfigPlugin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/BufferBuilderDirectWriteMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ByteBufferBuilderAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ClientRespawnCloneMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRenderDispatcherReloadMixin.java`
+- `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRenderStateDataMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRendererStateMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/GameRendererProfileMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/GuiEntityRendererMixin.java`
@@ -76,6 +90,10 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ScreenAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/platform/EntityCapabilityMixin.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/SoundAcceptance.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeClientEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeNetwork.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/YsmNeoForge.java`
 - `src/main/java/com/elfmcys/ysm/network/NetworkHandlerClient.java`
 - `src/main/java/com/elfmcys/ysm/network/SoundPolicyPayload.java`
 - `src/main/java/com/elfmcys/ysm/network/YsmFramePayload.java`
@@ -84,6 +102,7 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/platform/DistExecutor.java`
 - `src/main/java/com/elfmcys/ysm/platform/EntityWalkDistance.java`
 - `src/main/java/com/elfmcys/ysm/platform/FMLPaths.java`
+- `src/main/java/com/elfmcys/ysm/platform/McCompat.java`
 - `src/main/java/com/elfmcys/ysm/platform/OnlyIn.java`
 - `src/main/java/com/elfmcys/ysm/platform/PermissionHelper.java`
 - `src/main/java/com/elfmcys/ysm/platform/Platform.java`
@@ -107,6 +126,7 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/platform/event/Mod.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/SubscribeEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/Subscribers.java`
+- `src/main/java/com/elfmcys/ysm/platform/event/YsmEvents.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/AddReloadListenerEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ClientPlayerNetworkEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/EntityJoinLevelEvent.java`
@@ -127,14 +147,17 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ServerStoppingEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ShieldBlockEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/TickEvent.java`
+- `src/main/java/com/elfmcys/ysm/platform/input/KeyCodes.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/KeyConflictContext.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/KeyModifier.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/YsmKeyMapping.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/NetworkDirection.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/NetworkEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/PacketTarget.java`
+- `src/main/java/com/elfmcys/ysm/platform/network/Payloads.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/EntitySubmitHelper.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderMatrices.java`
+- `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateData.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateKeys.java`
 - `src/verification/test/java/com/elfmcys/ysm/expression/host/OptionalLinkageVerifierTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`

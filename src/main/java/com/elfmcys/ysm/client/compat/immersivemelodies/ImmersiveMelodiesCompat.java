@@ -1,7 +1,6 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat.immersivemelodies;
 
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
@@ -16,7 +15,7 @@ public final class ImmersiveMelodiesCompat {
     private ImmersiveMelodiesCompat() {}
 
     public static void init() {
-        loaded = FabricLoader.getInstance().isModLoaded(MOD_ID);
+        loaded = com.elfmcys.ysm.platform.Platform.isModLoaded(MOD_ID);
     }
 
     public static boolean isLoaded() {

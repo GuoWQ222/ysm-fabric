@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.animation.predicate;
 
 import com.elfmcys.ysm.client.animation.condition.ConditionalHold;
@@ -74,7 +75,7 @@ public class MainhandPredicate implements IAnimationPredicate<CustomHumanoidEnti
     }
 
     private boolean checkSwingAndUse(LivingEntity entity, InteractionHand hand) {
-        if (entity.swinging && entity.swingingArm == hand) {
+        if (com.elfmcys.ysm.platform.McCompat.isSwinging(entity) && com.elfmcys.ysm.platform.McCompat.swingingArm(entity) == hand) {
             return false;
         }
         return !entity.isUsingItem() || entity.getUsedItemHand() != hand;

@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.catalog.source;
 
 import com.elfmcys.ysm.AssetPaths;
@@ -35,6 +36,11 @@ public final class ModelCatalogSources {
             sources.add(new ModelCatalogSource(CatalogRoot.GLOBAL, global.modelsRoot(), false));
         });
         sources.add(new ModelCatalogSource(CatalogRoot.LOCAL, paths.modelsRoot(), true));
+        // Fabric port (2.6.5 parity): 2.6.5's folders, only when present (never created or moved).
+        if (java.nio.file.Files.isDirectory(paths.legacyCustomRoot()))
+            sources.add(new ModelCatalogSource(CatalogRoot.CUSTOM, paths.legacyCustomRoot(), false));
+        if (java.nio.file.Files.isDirectory(paths.legacyAuthRoot()))
+            sources.add(new ModelCatalogSource(CatalogRoot.AUTH, paths.legacyAuthRoot(), false));
         return List.copyOf(sources);
     }
 

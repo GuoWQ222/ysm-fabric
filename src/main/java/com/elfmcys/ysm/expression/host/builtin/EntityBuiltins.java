@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host.builtin;
 
 import com.elfmcys.ysm.api.molang.MolangContextView;
@@ -316,22 +316,22 @@ public final class EntityBuiltins implements EntityComponent<Entity> {
 
     @BuiltinFunction(value = "swinging", namespace = "ysm")
     public static boolean ysmSwinging(MolangContextView<LivingEntity> context) {
-        return context.subject().swinging;
+        return com.elfmcys.ysm.platform.McCompat.isSwinging(context.subject());
     }
 
     @BuiltinFunction(value = "swing_time", namespace = "ysm")
     public static float ysmSwingTime(MolangContextView<LivingEntity> context) {
-        return context.subject().swingTime;
+        return com.elfmcys.ysm.platform.McCompat.swingTime(context.subject());
     }
 
     @BuiltinFunction(value = "swinging_arm", namespace = "ysm")
     public static float ysmSwingingArm(MolangContextView<LivingEntity> context) {
-        return context.subject().swingingArm == net.minecraft.world.InteractionHand.MAIN_HAND ? 0 : 1;
+        return com.elfmcys.ysm.platform.McCompat.swingingArm(context.subject()) == net.minecraft.world.InteractionHand.MAIN_HAND ? 0 : 1;
     }
 
     @BuiltinFunction(value = "attack_time", namespace = "ysm")
     public static float ysmAttackTime(MolangContextView<LivingEntity> context) {
-        return context.subject().getAttackAnim(context.inputs().partialTick());
+        return com.elfmcys.ysm.platform.McCompat.attackAnim(context.subject(), context.inputs().partialTick());
     }
 
     @BuiltinFunction(value = "time_delta", namespace = "ysm")

@@ -6,7 +6,6 @@
  */
 package com.elfmcys.ysm.mixin.fabric.client;
 
-import com.elfmcys.ysm.fabric.FabricEventHooks;
 import com.elfmcys.ysm.platform.event.forge.InputEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -22,7 +21,7 @@ public abstract class MouseButtonEventsMixin {
     @Inject(method = "onButton", at = @At("TAIL"))
     private void ysm$afterButton(long handle, MouseButtonInfo rawButtonInfo, int action, CallbackInfo ci) {
         if (handle == Minecraft.getInstance().getWindow().handle())
-            FabricEventHooks.post(
+            com.elfmcys.ysm.platform.event.YsmEvents.post(
                 new InputEvent.MouseButton.Post(rawButtonInfo.button(), action, rawButtonInfo.modifiers()));
     }
 }

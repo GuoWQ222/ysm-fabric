@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.entity;
 
 import java.io.UncheckedIOException;
@@ -1412,6 +1412,17 @@ public abstract class AnimatableEntity<TEntity extends Entity>
             && data.installation == modelBinding.resourceHolder() && data.modelState.isValid()
             && context.equals(data.ctx) && getLoadedGeoModel() != null
             && data.modelState.getModel() == getLoadedGeoModel().getModel();
+    }
+
+    /** Dev diagnostics (YSM_DEBUG_PIP): which consumption condition fails for a skipped deferred draw. */
+    public final String consumptionDebug(GeoRenderData data) {
+        if (data == null)
+            return "data=null";
+        var loaded = getLoadedGeoModel();
+        return "task=" + lifecycle.hasTask() + " owner=" + (data.owner == this) + " prepare=" + canPrepare(data.ctx)
+            + " installation=" + (data.installation == modelBinding.resourceHolder()) + " stateValid="
+            + data.modelState.isValid() + " model=" + (loaded != null && data.modelState.getModel() == loaded.getModel())
+            + " ctx=" + data.ctx + " block=" + getPreparationBlockReason(data.ctx);
     }
 
     public final BlockReason getConsumptionBlockReason(GeoRenderData data, RenderContext context) {

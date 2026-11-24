@@ -1,0 +1,106 @@
+// Forge loader (ForgeGradle 7): dependencies, dev runs and mods.toml. Applied by build.gradle for -Ploader=forge.
+// Versions come from versions/<mc>.properties (forge_version, forge_range).
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+}
+
+minecraft {
+    runs {
+        configureEach {
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+            // Forge reads mixin configs from the jar manifest (MixinConfigs); dev runs load classes from directories
+            args '--mixin.config', 'ysm.mixins.json', '--mixin.config', 'ysm.forge.mixins.json'
+            if (ysmNativeLibraryPathOrNull != null)
+                environment 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
+            if (project.hasProperty('mixin_count'))
+                jvmArgs '-Dmixin.debug.countInjections=true'
+            if (project.hasProperty('mixin_skip'))
+                jvmArgs "-Dysm.mixin.skip=${project.property('mixin_skip')}"
+        }
+        // -Pysm_client2: the same client as the second test player (two-client tests). ForgeGradle 7 only has launch
+        // settings for its own run names, so a separate 'client2' run cannot start ("no value for mainClass").
+        register('client') {
+            def second = project.hasProperty('ysm_client2')
+            workingDir = project.file(second ? 'run/client2' : 'run/client')
+            args '--username', second ? 'YsmObserver' : 'YsmTester'
+        }
+        register('server') {
+            workingDir = project.file('run/server')
+            args '--nogui'
+        }
+    }
+}
+
+// ForgeGradle's launcher task (SlimeLauncherExec, a JavaExec) resolves a Java 8 toolchain when it is created (the
+// build machine needs a JDK 8 listed for that); the game itself runs on the project's Java 25.
+tasks.withType(JavaExec).configureEach {
+    if (name.startsWith('run'))
+        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+    // Iris has no Forge build: its API compiles from the Fabric jar and is only touched when Iris is loaded
+    compileOnly "maven.modrinth:iris:${iris_version}"
+}
+
+sourceSets.main.resources.srcDir 'src/loader/forge/resources'
+processResources {
+    exclude 'fabric.mod.json'
+    filesMatching('META-INF/mods.toml') {
+        expand 'mod_version': project.version, 'forge_range': forge_range, 'mc_range_maven': mc_range_maven
+    }
+    // Forge bundles Sponge Mixin 0.8.7: compatibility levels end at JAVA_21 (an unknown level is a fatal config error)
+    filesMatching('ysm.mixins.json') {
+        filter { line -> line.replace('"compatibilityLevel": "JAVA_25"', '"compatibilityLevel": "JAVA_21"') }
+    }
+}
+
+jar {
+    manifest.attributes('MixinConfigs': 'ysm.mixins.json,ysm.forge.mixins.json')
+}
+
+// Test harness (dev runs): its own Forge mod metadata instead of fabric.mod.json
+sourceSets.localtest.resources.srcDir 'src/loader/forge/localtest'
+tasks.named('processLocaltestResources') {
+    exclude 'fabric.mod.json'
+}
+
+// Dev runs: Forge's dev loader treats every classpath folder without META-INF/mods.toml as a separate module, and
+// YSM's classes come from two source sets sharing packages (main + declaration), with mods.toml in the resources
+// folder. Runs get one folder per mod, assembled like the release jar (and the test harness likewise).
+def forgeRunYsm = layout.buildDirectory.dir('forgeRun/ysm')
+def forgeRunHarness = layout.buildDirectory.dir('forgeRun/ysm_localtest')
+def assembleForgeRunMods = tasks.register('assembleForgeRunMods') {
+    dependsOn tasks.named('classes'), tasks.named('declarationClasses'), tasks.named('localtestClasses')
+    def mainOutput = sourceSets.main.output
+    def declarationOutput = sourceSets.declaration.output
+    def harnessOutput = sourceSets.localtest.output
+    inputs.files(mainOutput, declarationOutput, harnessOutput)
+    outputs.dirs(forgeRunYsm, forgeRunHarness)
+    doLast {
+        project.sync {
+            into forgeRunYsm
+            from mainOutput
+            from(declarationOutput) { exclude 'META-INF/services/javax.annotation.processing.Processor' }
+        }
+        project.sync {
+            into forgeRunHarness
+            from harnessOutput
+        }
+    }
+}
+tasks.withType(JavaExec).configureEach {
+    if (name.startsWith('run')) {
+        dependsOn assembleForgeRunMods
+        doFirst {
+            def separate = (sourceSets.main.output + sourceSets.declaration.output + sourceSets.localtest.output).files
+            // the test harness (ysm_localtest) is a client mod; the dedicated server run leaves it out
+            def runMods = name == 'runServer' ? files(forgeRunYsm) : files(forgeRunYsm, forgeRunHarness)
+            classpath = runMods + classpath.filter { !separate.contains(it) }
+        }
+    }
+}

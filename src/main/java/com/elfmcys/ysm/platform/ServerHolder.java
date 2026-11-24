@@ -25,7 +25,21 @@ public final class ServerHolder {
 
     /** Called from the Fabric lifecycle hooks. */
     public static void register() {
+        //#if LOADER == fabric
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTING.register(ServerHolder::set);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> set(null));
+        //#elseif LOADER == neoforge
+        //$$ net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+        //$$     (net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) -> set(event.getServer()));
+        //$$ net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+        //$$     (net.neoforged.neoforge.event.server.ServerStoppedEvent event) -> set(null));
+        //#else
+        //$$ net.minecraftforge.event.server.ServerAboutToStartEvent.BUS.addListener(event -> {
+        //$$     set(event.getServer());
+        //$$ });
+        //$$ net.minecraftforge.event.server.ServerStoppedEvent.BUS.addListener(event -> {
+        //$$     set(null);
+        //$$ });
+        //#endif
     }
 }

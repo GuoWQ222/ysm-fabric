@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.renderer.layer;
 
 import com.elfmcys.ysm.client.compat.slashblade.SlashBladeCompat;
@@ -72,7 +72,7 @@ public class CustomPlayerItemInHandLayer extends GeoLayerRenderer<CustomPlayerEn
             return;
         data.modelState.visitLocatorGroup(locator, poseStack, locatorPose -> {
             locatorPose.translate(0, -0.0625, -0.1);
-            locatorPose.mulPose(Axis.XP.rotationDegrees(-90.0F));
+            com.elfmcys.ysm.platform.McCompat.rotate(locatorPose, Axis.XP.rotationDegrees(-90.0F));
             if (SWarfareCompat.isGun(itemStack)) {
                 locatorPose.translate(0.1, 0, 0);
                 locatorPose.scale(1.25f, 1.25f, 1.25f);

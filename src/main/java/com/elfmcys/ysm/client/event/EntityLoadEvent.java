@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.client.animation.AnimationParallelTicker;
 import com.elfmcys.ysm.client.gui.ModelScreen;
@@ -53,10 +54,10 @@ public class EntityLoadEvent {
             RegisterEntityRenderersEvent.releaseFirstPersonArm(player);
         }
         if (entity instanceof Player) {
-            entity.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
+            ICapabilityHolder.of(entity).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
         }
-        entity.getCapability(ProjectileAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
-        entity.getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
+        ICapabilityHolder.of(entity).getCapability(ProjectileAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
+        ICapabilityHolder.of(entity).getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(capability -> capability.retire());
         CACHE.invalidate(entity.getId());
     }
 

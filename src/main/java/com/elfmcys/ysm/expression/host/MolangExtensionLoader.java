@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -34,15 +34,14 @@ public final class MolangExtensionLoader {
      * @throws IllegalStateException if collection has already been sealed; failure does not reopen collection
      */
     public static ExpressionHost createHost(HostAvailability availability) {
-        var loader = net.fabricmc.loader.api.FabricLoader.getInstance();
         var admitted = com.elfmcys.ysm.api.internal.MolangDeclarationBootstrap.freeze(
             Objects.requireNonNull(availability, "availability"),
             discover(MolangExtensionLoader.class.getClassLoader()),
             new MolangExtensions.Qualification() {
                 public boolean dependency(String id, String range) {
-                    var mod = loader.getModContainer(id);
-                    return mod.isPresent() && (range.isEmpty() || MolangExtensions
-                        .versionMatches(mod.get().getMetadata().getVersion().getFriendlyString(), range));
+                    var version = com.elfmcys.ysm.platform.Platform.modVersion(id);
+                    return version.isPresent() && (range.isEmpty() || MolangExtensions
+                        .versionMatches(version.get(), range));
                 }
 
                 public boolean checker(MolangExtensions.Source source,

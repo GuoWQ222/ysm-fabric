@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.*;
 import com.elfmcys.ysm.config.ServerConfig;
 import com.elfmcys.ysm.model.domain.PublishedModelId;
@@ -45,7 +46,7 @@ public final class PlayerStateHandler {
                 NetworkDiagnostics.message("dropped", MessageDirection.CLIENT_TO_SERVER, message, "subject-or-intent");
                 return;
             }
-            var capability = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
+            var capability = ICapabilityHolder.of(sender).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
             if (capability == null) {
                 NetworkDiagnostics.message("dropped", MessageDirection.CLIENT_TO_SERVER, message, "missing-capability");
                 return;
@@ -86,7 +87,7 @@ public final class PlayerStateHandler {
             return;
         }
         enqueue(context, sender, message, session -> {
-            var capability = sender.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
+            var capability = ICapabilityHolder.of(sender).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
             var selection = capability == null ? null : capability.selection();
             if (selection == null || !selection.accepts(session, message.intentId())) {
                 NetworkDiagnostics.message("dropped", MessageDirection.CLIENT_TO_SERVER, message,
@@ -176,7 +177,7 @@ public final class PlayerStateHandler {
     }
 
     public static boolean publishSelection(ServerPlayer player) {
-        var capability = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
+        var capability = ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
         var catalog = ServerModelService.current().flatMap(ServerModelService::catalog).orElse(null);
         if (capability == null || catalog == null || ModelSelectionService.resolve(capability, catalog).isEmpty())
             return false;
@@ -189,7 +190,7 @@ public final class PlayerStateHandler {
     public static EntityStateSyncProto entityInitial(ServerPlayer player) {
         return EntityStateSyncProto.newBuilder().setEntityId(player.getId())
             .setState(java.util.Objects
-                .requireNonNull(player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null))
+                .requireNonNull(ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null))
                 .getPropertiesTracker().snapshot(player))
             .build();
     }
@@ -199,7 +200,7 @@ public final class PlayerStateHandler {
     }
 
     public static PlayerFlagsProto flags(ServerPlayer player) {
-        var capability = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
+        var capability = ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
         return PlayerFlagsProto.newBuilder().setEntityId(player.getId())
             .setState(
                 PlayerFlagsStateProto.newBuilder().setDisabled(capability != null && capability.isDisabled()).build())

@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.buffer.SharedArrayBuffer;
@@ -9,20 +10,31 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 final class PreferenceCodec {
+    // Stored roaming format: version 1 = one-byte field count (written by upstream builds), version 2 (Fabric port)
+    // = two-byte count for more than 255 fields; each name length is one unsigned byte.
+    private static final byte ROAMING_FORMAT = 2;
+    private static final int MAX_FIELDS = com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES;
+    private static final int MAX_NAME_BYTES = com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES;
+
+    static {
+        if (MAX_FIELDS > 0xffff || MAX_NAME_BYTES > 255)
+            throw new ExceptionInInitializerError("roaming limits exceed the stored format");
+    }
+
     private PreferenceCodec() {}
 
     static NamedRoamingSnapshot snapshot(NamedRoamingSnapshot payload) {
         if (payload.names() == null || payload.values() == null || payload.names().length != payload.values().length)
             throw new IllegalArgumentException("Roaming arrays must have equal lengths");
-        if (payload.names().length > 64)
-            throw new IllegalArgumentException("Roaming payload exceeds 64 fields");
+        if (payload.names().length > MAX_FIELDS)
+            throw new IllegalArgumentException("Roaming payload exceeds " + MAX_FIELDS + " fields");
         var names = new java.util.HashSet<String>();
         for (int index = 0; index < payload.names().length; index++) {
             var name = payload.names()[index];
             if (name == null)
                 throw new IllegalArgumentException("Invalid roaming field");
             var bytes = utf8(name);
-            if (name.isEmpty() || bytes.length > 32 || !names.add(name))
+            if (name.isEmpty() || bytes.length > MAX_NAME_BYTES || !names.add(name))
                 throw new IllegalArgumentException("Invalid roaming field");
             if (!Float.isFinite(payload.values()[index]))
                 throw new IllegalArgumentException("Roaming values must be finite");
@@ -31,8 +43,8 @@ final class PreferenceCodec {
     }
 
     static byte[] roaming(NamedRoamingSnapshot value) {
-        var bytes = ByteBuffer.allocate(2 + value.names().length * 37);
-        bytes.put((byte)1).put((byte)value.names().length);
+        var bytes = ByteBuffer.allocate(3 + value.names().length * (1 + MAX_NAME_BYTES + 4));
+        bytes.put(ROAMING_FORMAT).putShort((short)value.names().length);
         for (int index = 0; index < value.names().length; index++) {
             var text = utf8(value.names()[index]);
             bytes.put((byte)text.length).put(text).putFloat(value.values()[index]);
@@ -42,16 +54,18 @@ final class PreferenceCodec {
 
     static NamedRoamingSnapshot roaming(SharedArrayBuffer value) {
         var bytes = value.nio().order(ByteOrder.BIG_ENDIAN);
-        version(bytes);
-        var count = Byte.toUnsignedInt(bytes.get());
-        if (count > 64)
-            throw new IllegalArgumentException("Roaming payload exceeds 64 fields");
+        var format = bytes.get();
+        if (format != 1 && format != ROAMING_FORMAT)
+            throw new IllegalArgumentException("Unknown preference value format");
+        var count = format == 1 ? Byte.toUnsignedInt(bytes.get()) : Short.toUnsignedInt(bytes.getShort());
+        if (count > MAX_FIELDS)
+            throw new IllegalArgumentException("Roaming payload exceeds " + MAX_FIELDS + " fields");
         var names = new String[count];
         var values = new float[count];
         var seen = new java.util.HashSet<String>();
         for (var index = 0; index < count; index++) {
             var length = Byte.toUnsignedInt(bytes.get());
-            if (length == 0 || length > 32)
+            if (length == 0 || length > MAX_NAME_BYTES)
                 throw new IllegalArgumentException("Invalid roaming field");
             names[index] = text(bytes, length);
             if (!seen.add(names[index]))

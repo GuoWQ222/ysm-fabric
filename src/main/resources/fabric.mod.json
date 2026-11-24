@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "ysm",
   "version": "${mod_version}",
-  "name": "YSM for Fabric 26.2 (unofficial)",
-  "description": "Unofficial Fabric 26.2 port of the open-source Yes Steve Model 3.0-dev (Apache-2.0). Not affiliated with or endorsed by the Yes Steve Model authors.",
+  "name": "YSM for Minecraft 26.x (unofficial)",
+  "description": "Unofficial port of the open-source Yes Steve Model 3.0-dev (Apache-2.0) to Minecraft 26.1-26.3 (Fabric, NeoForge, Forge). Not affiliated with or endorsed by the Yes Steve Model authors.",
   "authors": [
     "YS Group",
     "TartaricAcid",
@@ -29,6 +29,9 @@
     ],
     "modmenu": [
       "com.elfmcys.ysm.fabric.YsmModMenu"
+    ],
+    "jade": [
+      "com.elfmcys.ysm.client.compat.jade.YsmJadePlugin"
     ]
   },
   "mixins": [
@@ -36,18 +39,11 @@
   ],
   "depends": {
     "fabricloader": ">=0.20.1",
-    "minecraft": "~26.2",
+    "minecraft": "${mc_range}",
     "java": ">=25",
     "fabric-api": "*"
   },
-  "custom": {
-    "loom:injected_interfaces": {
-      "net/minecraft/world/entity/Entity": [
-        "com/elfmcys/ysm/platform/capability/ICapabilityHolder"
-      ]
-    }
-  },
   "contributors": [
-    "GuoWQ222 (Fabric 26.2 port)"
+    "GuoWQ222 (26.x port)"
   ]
 }

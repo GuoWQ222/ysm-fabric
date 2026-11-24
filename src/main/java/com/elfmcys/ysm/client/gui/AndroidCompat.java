@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.config.ClientConfig;
@@ -31,15 +32,15 @@ public class AndroidCompat {
             Component skinName = Component.translatable("gui.yes_steve_model.skin");
             Button skinButton = Button.builder(skinName, button -> {
                 if (ClientConfig.DISCLAIMER_SHOW.get()) {
-                    mc.gui.setScreen(new DisclaimerScreen());
+                    com.elfmcys.ysm.platform.McCompat.setScreen(new DisclaimerScreen());
                 } else {
-                    mc.gui.setScreen(new PlayerModelScreen());
+                    com.elfmcys.ysm.platform.McCompat.setScreen(new PlayerModelScreen());
                 }
             }).bounds(screen.width / 2 - 69, screen.height - 35, 138, 30).build();
             skinButton.setTooltip(Tooltip.create(Component.translatable("key.yes_steve_model.player_model.desc")));
 
             Component configIcon = Component.literal("\uD83D\uDD27");
-            Button extraPlayerButton = Button.builder(configIcon, button -> mc.gui.setScreen(new ExtraPlayerConfigScreen()))
+            Button extraPlayerButton = Button.builder(configIcon, button -> com.elfmcys.ysm.platform.McCompat.setScreen(new ExtraPlayerConfigScreen()))
                 .bounds(screen.width / 2 - 120, screen.height - 35, 50, 30).build();
             extraPlayerButton.setTooltip(
                 Tooltip.create(Component.translatable("key.yes_steve_model.open_extra_player_render.desc")));
@@ -47,11 +48,11 @@ public class AndroidCompat {
             Component icon = Component.literal("\uD83D\uDE04");
             Button rouletteButton = Button.builder(icon, button -> {
                 if (mc.player != null) {
-                    mc.player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+                    ICapabilityHolder.of(mc.player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                         String modelId = cap.getModelId();
                         var model = cap.getModelRenderTarget();
                         if (model != null && !model.info().getExtraAnimations().isEmpty()) {
-                            mc.gui.setScreen(new AnimationRouletteScreen(modelId, model, cap));
+                            com.elfmcys.ysm.platform.McCompat.setScreen(new AnimationRouletteScreen(modelId, model, cap));
                         }
                     });
                 }

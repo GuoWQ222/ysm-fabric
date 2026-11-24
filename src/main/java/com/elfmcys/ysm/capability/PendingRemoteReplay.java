@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.capability;
 
 import com.elfmcys.ysm.expression.aot.EntityExpressionRuntime;
@@ -102,34 +103,36 @@ final class PendingRemoteReplay implements AutoCloseable {
     static final class State implements Input {
         private final float[] values;
         // A same-value network write must still overwrite any preceding sync side effect.
-        private long written;
+        // Fabric port: ids may exceed 63 (see ProtocolLimits), so no 64-bit mask
+        private final java.util.BitSet written;
         private boolean full;
 
         private State(int fieldCount, RoamingValues payload, boolean full) {
             values = new float[fieldCount];
+            written = new java.util.BitSet(fieldCount);
             apply(payload, full);
         }
 
         private void apply(RoamingValues payload, boolean full) {
             if (full) {
                 Arrays.fill(values, 0.0f);
-                written = 0;
+                written.clear();
                 this.full = true;
             }
             for (int index = 0; index < payload.ids().length; index++) {
                 int id = payload.ids()[index];
                 values[id] = payload.values()[index];
-                written |= 1L << id;
+                written.set(id);
             }
         }
 
         RoamingValues values() {
-            int count = full ? values.length : Long.bitCount(written);
+            int count = full ? values.length : written.cardinality();
             var ids = new short[count];
             var snapshot = new float[count];
             int next = 0;
             for (short id = 0; id < values.length; id++) {
-                if (full || (written & 1L << id) != 0) {
+                if (full || written.get(id)) {
                     ids[next] = id;
                     snapshot[next++] = values[id];
                 }

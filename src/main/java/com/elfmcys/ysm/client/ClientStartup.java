@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -50,8 +50,7 @@ public final class ClientStartup {
         AnimationRegister.registerAnimationState();
         var mods = ModList.get();
         var versions = new TreeMap<String, String>();
-        net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods().forEach(mod -> versions
-            .put(mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString()));
+        com.elfmcys.ysm.platform.Platform.mods().forEach(mod -> versions.put(mod.id(), mod.version()));
         var builtinAdmission = new OptionalCapabilityAdmission(mods::isLoaded, versions,
             ClientStartup.class.getClassLoader(), !FMLEnvironment.production);
 
@@ -114,7 +113,7 @@ public final class ClientStartup {
     }
 
     private static void informIncompatible(String modId, String modName) {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(modId))
+        if (com.elfmcys.ysm.platform.Platform.isModLoaded(modId))
             YesSteveModel.LOGGER.warn("Incompatible mod detected: {}", modName);
     }
 

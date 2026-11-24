@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client;
 
 import com.elfmcys.ysm.client.demand.ClientDemandCoordinator;
@@ -48,6 +49,11 @@ public final class ClientDemandResources implements ClientDemandCoordinator.Reso
     @Override
     public boolean permitsAcquisition(ResourceRequest request) {
         return service.permitsAcquisition(request);
+    }
+
+    @Override
+    public boolean awaitsAcquisition(ResourceRequest request) {
+        return service.awaitsAcquisition(request);
     }
 
     @Override

@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.protocol;
 
 import dev.semaweave.RoamingPayload;
@@ -19,7 +20,7 @@ public final class RoamingDictionary {
     public RoamingDictionary(String[] names) {
         Objects.requireNonNull(names, "names");
         if (names.length > ProtocolLimits.MAX_ROAMING_VARIABLES)
-            throw new IllegalArgumentException("Roaming dictionary exceeds 64 names");
+            throw new IllegalArgumentException("Roaming dictionary exceeds " + ProtocolLimits.MAX_ROAMING_VARIABLES + " names");
         var ids = new Object2ShortOpenHashMap<String>(names.length);
         ids.defaultReturnValue((short)-1);
         for (short index = 0; index < names.length; index++) {
@@ -28,6 +29,8 @@ public final class RoamingDictionary {
             if (ids.put(name, index) != -1)
                 throw new IllegalArgumentException("Duplicate roaming name");
         }
+        if (ProtocolLimits.utf8Bytes(List.of(names)) > ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES)
+            throw new IllegalArgumentException("Roaming dictionary names exceed " + ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES + " bytes");
         this.names = names;
     }
 

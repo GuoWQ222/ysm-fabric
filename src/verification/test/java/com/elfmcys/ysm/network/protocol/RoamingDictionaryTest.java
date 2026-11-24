@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.protocol;
 
 import static com.elfmcys.ysm.expression.TestRoamingPayloads.named;
@@ -78,17 +79,19 @@ final class RoamingDictionaryTest {
             () -> SelectionCodec.read(RoamingStateProto.newBuilder().addIds(0).build()));
         assertThrows(IllegalArgumentException.class,
             () -> SelectionCodec.read(RoamingStateProto.newBuilder().addIds(0, 0).addValues(1F, 2F).build()));
-        for (int invalid : new int[] {-1, 64, 65536})
+        for (int invalid : new int[] {-1, ProtocolLimits.MAX_ROAMING_VARIABLES, 65536})
             assertThrows(IllegalArgumentException.class,
                 () -> SelectionCodec.read(RoamingStateProto.newBuilder().addIds(invalid).addValues(1F).build()));
         for (float invalid : new float[] {Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY})
             assertThrows(IllegalArgumentException.class,
                 () -> SelectionCodec.read(RoamingStateProto.newBuilder().addIds(0).addValues(invalid).build()));
         assertThrows(IllegalArgumentException.class, () -> SelectionCodec
-            .read(RoamingStateProto.newBuilder().addIds(new int[65]).addValues(new float[65]).build()));
-        var names = new String[64];
-        var ids = new short[64];
-        var values = new float[64];
+            .read(RoamingStateProto.newBuilder().addIds(new int[ProtocolLimits.MAX_ROAMING_VARIABLES + 1])
+                .addValues(new float[ProtocolLimits.MAX_ROAMING_VARIABLES + 1]).build()));
+        // the whole range, including ids above 63
+        var names = new String[ProtocolLimits.MAX_ROAMING_VARIABLES];
+        var ids = new short[ProtocolLimits.MAX_ROAMING_VARIABLES];
+        var values = new float[ProtocolLimits.MAX_ROAMING_VARIABLES];
         for (short index = 0; index < names.length; index++) {
             names[index] = "field" + index;
             ids[index] = index;
@@ -96,16 +99,23 @@ final class RoamingDictionaryTest {
         }
         var dictionary = new RoamingDictionary(names);
         var decoded = SelectionCodec.read(SelectionCodec.write(new RoamingValues(ids, values)), dictionary);
-        assertEquals(64, new RoamingProjection(dictionary, decoded).snapshot().ids().length);
+        assertEquals(ProtocolLimits.MAX_ROAMING_VARIABLES, new RoamingProjection(dictionary, decoded).snapshot().ids().length);
     }
 
     @Test
     void dictionaryRejectsInvalidNamesAndLimitsUtf8Bytes() {
         assertThrows(IllegalArgumentException.class, () -> new RoamingDictionary(new String[] {"alpha", "alpha"}));
-        for (var invalid : new String[] {"", "x".repeat(33), "中".repeat(11), "\uD800"})
+        for (var invalid : new String[] {"", "x".repeat(ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES + 1),
+            "中".repeat(ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES / 3 + 1), "\uD800"})
             assertThrows(IllegalArgumentException.class, () -> new RoamingDictionary(new String[] {invalid}));
         assertThrows(NullPointerException.class, () -> new RoamingDictionary(new String[] {null}));
-        assertThrows(IllegalArgumentException.class, () -> new RoamingDictionary(new String[65]));
-        assertEquals(1, new RoamingDictionary(new String[] {"中".repeat(10) + "ab"}).size());
+        assertThrows(IllegalArgumentException.class, () -> new RoamingDictionary(new String[ProtocolLimits.MAX_ROAMING_VARIABLES + 1]));
+        assertEquals(1, new RoamingDictionary(new String[] {"中".repeat(21) + "a"}).size());
+        // Fabric port: all names of a dictionary together are bounded too
+        var longNames = new String[ProtocolLimits.MAX_ROAMING_DICTIONARY_BYTES
+            / ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES + 1];
+        for (int index = 0; index < longNames.length; index++)
+            longNames[index] = String.format("%0" + ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES + "d", index);
+        assertThrows(IllegalArgumentException.class, () -> new RoamingDictionary(longNames));
     }
 }

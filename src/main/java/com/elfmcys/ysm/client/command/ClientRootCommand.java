@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.command.sub.DebugCommand;
@@ -101,7 +102,7 @@ public class ClientRootCommand {
         if (target == null) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player != null) {
-                target = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+                target = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
             }
         }
         return Optional.ofNullable(target);

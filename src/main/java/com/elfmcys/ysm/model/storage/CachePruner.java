@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.compatibility.AbiVersion;
@@ -147,7 +148,7 @@ public final class CachePruner {
                 if (cache.coordinator().retained(pool, location))
                     continue;
                 if (!(scopes.contains(object.scope()) && !associations.contains(location))
-                    && !(removeOtherSchemas && !AbiVersion.MODEL_SCHEMA.equals(object.cacheVersion())))
+                    && !(removeOtherSchemas && !ConvertedScope.CURRENT_VERSION.equals(object.cacheVersion())))
                     continue;
                 phase = Phase.REVOKE;
                 checkpoint.reached(phase, pool, location);

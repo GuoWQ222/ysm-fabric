@@ -1,7 +1,6 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat.realcamera;
 
-import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Real Camera (Fabric 26.2, mod id {@code realcamera}). As upstream's Forge integration: while Real Camera binds the
@@ -14,7 +13,7 @@ public final class RealCameraCompat {
     private RealCameraCompat() {}
 
     public static void init() {
-        installed = FabricLoader.getInstance().isModLoaded(MOD_ID);
+        installed = com.elfmcys.ysm.platform.Platform.isModLoaded(MOD_ID);
     }
 
     public static boolean isActive() {

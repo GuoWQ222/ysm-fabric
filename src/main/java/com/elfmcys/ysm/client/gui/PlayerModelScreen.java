@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.AuthModelsCapabilityProvider;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
@@ -54,7 +55,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import com.elfmcys.ysm.platform.ModList;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.jetbrains.annotations.Nullable;
 
 public class PlayerModelScreen extends ModelScreen {
@@ -158,7 +159,7 @@ public class PlayerModelScreen extends ModelScreen {
 
     protected boolean showTextureScreen(PlayerTextureScreen screen) {
         showScreen(screen);
-        return Minecraft.getInstance().gui.screen() == screen;
+        return com.elfmcys.ysm.platform.McCompat.screen() == screen;
     }
 
     @Override
@@ -223,7 +224,7 @@ public class PlayerModelScreen extends ModelScreen {
         addRenderableWidget(new FlatIconButton(x + 5, y + 5, 20, 20, 80, 16, ignored -> {
             var player = Minecraft.getInstance().player;
             if (player != null) {
-                player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> {
+                ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> {
                     var model = capability.getModelRenderTarget();
                     if (model != null && model.info().hasMetadata()) {
                         showScreen(getModelInfoScreen(this, model));
@@ -335,7 +336,7 @@ public class PlayerModelScreen extends ModelScreen {
             return false;
         var player = minecraft == null ? null : minecraft.player;
         var auth =
-            player == null ? null : player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).orElse(null);
+            player == null ? null : ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).orElse(null);
         return ClientSessionRuntime.authoritativeGrants().map(grants -> !grants.contains(entry.modelHash()))
             .orElseGet(() -> auth == null || !auth.containModel(entry.modelHash()));
     }
@@ -343,7 +344,7 @@ public class PlayerModelScreen extends ModelScreen {
     private void calculateModelList() {
         var player = minecraft == null ? null : minecraft.player;
         var auth = player == null ? null
-            : player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).resolve().orElse(null);
+            : ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).resolve().orElse(null);
         var sessionGrants = ClientSessionRuntime.authoritativeGrants();
         browser.filter(textField == null ? "" : textField.getValue(), locale(), clientNotDisplayModels,
             hash -> sessionGrants.map(grants -> grants.contains(hash))
@@ -390,7 +391,7 @@ public class PlayerModelScreen extends ModelScreen {
         var page = "%d/%d".formatted(browser.page() + 1, browser.maxPage() + 1);
         GuiDraw.drawString(graphics, font, page, x + 138 + (282 - font.width(page)) / 2, y + 223 - font.lineHeight / 2, 0xF3EFE0);
         var version = com.elfmcys.ysm.platform.Platform.ownVersion();
-        GuiDraw.drawString(graphics, font, version, x + 2, y + 226, net.minecraft.network.chat.TextColor.DARK_GRAY.getValue());
+        GuiDraw.drawString(graphics, font, version, x + 2, y + 226, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.DARK_GRAY));
         if (!browser.currentPack().isBlank()) {
             GuiDraw.drawString(graphics, font, Component
                     .literal("\uD83D\uDCC2 "
@@ -400,7 +401,7 @@ public class PlayerModelScreen extends ModelScreen {
         var progress = service.catalogProgress();
         if (progress != null) {
             var loading = CatalogProgressText.of(progress);
-            GuiDraw.drawString(graphics, font, loading, x + 414 - font.width(loading), y + 215 + Math.round((14 - font.lineHeight) / 2f), net.minecraft.network.chat.TextColor.DARK_GRAY.getValue());
+            GuiDraw.drawString(graphics, font, loading, x + 414 - font.width(loading), y + 215 + Math.round((14 - font.lineHeight) / 2f), com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.DARK_GRAY));
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -421,7 +422,7 @@ public class PlayerModelScreen extends ModelScreen {
         InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, x + 5, y + 29, x + 130, y + 200, 70, 0.0625F,
             mouseX, mouseY, player);
 
-        player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> {
+        ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(capability -> {
             var renderTarget = capability.getModelRenderTarget();
             var fallback =
                 capability.getModelHash() == null ? "default" : service.displayPath(capability.getModelHash());
@@ -463,7 +464,7 @@ public class PlayerModelScreen extends ModelScreen {
             textField.setFocused(false);
         }
         var handled = super.mouseClicked(event, doubleClick);
-        if (!handled && button == GLFW.GLFW_MOUSE_BUTTON_RIGHT && !browser.currentPack().isBlank()) {
+        if (!handled && button == InputConstants.MOUSE_BUTTON_RIGHT && !browser.currentPack().isBlank()) {
             this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
             backToParent();
             return true;
@@ -488,7 +489,7 @@ public class PlayerModelScreen extends ModelScreen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key(), scanCode = event.scancode(), modifiers = event.modifiers();
+        int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
         if (PlayerModelScreenKey.PLAYER_MODEL_KEY.matches(keyCode, scanCode) && !textField.isFocused()) {
             onClose();
             return true;
@@ -501,8 +502,8 @@ public class PlayerModelScreen extends ModelScreen {
             }
             return true;
         }
-        var handled = textField.isFocused() && textField.isVisible() && keyCode != GLFW.GLFW_KEY_ESCAPE
-            && keyCode != GLFW.GLFW_KEY_TAB || super.keyPressed(event);
+        var handled = textField.isFocused() && textField.isVisible() && keyCode != InputConstants.KEY_ESCAPE
+            && keyCode != InputConstants.KEY_TAB || super.keyPressed(event);
         updateKeyboardPointer();
         return handled;
     }

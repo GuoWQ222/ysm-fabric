@@ -6,6 +6,7 @@
  */
 package com.elfmcys.ysm.localtest;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.gui.PlayerModelScreen;
 import java.io.IOException;
@@ -16,9 +17,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Locale;
+//#if LOADER == fabric
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+//#endif
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -37,7 +40,35 @@ import net.minecraft.world.level.levelgen.presets.WorldPresets;
  * front and back screenshots, screenshots the model screen, then runs a timed model-switching soak with memory samples
  * and quits. Trigger file options: prefix=, soakTicks=, shots=, only=a,b.
  */
+//#if LOADER == fabric
 public final class VisualTestHarness implements ClientModInitializer {
+//#elseif LOADER == neoforge
+//$$ @net.neoforged.fml.common.Mod(value = "ysm_localtest", dist = net.neoforged.api.distmarker.Dist.CLIENT)
+//$$ public final class VisualTestHarness {
+//$$     public VisualTestHarness() {
+//$$         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+//$$             (net.neoforged.neoforge.client.event.ClientTickEvent.Post event) -> onTick(Minecraft.getInstance()));
+//$$         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+//$$             (net.neoforged.neoforge.client.event.ClientChatReceivedEvent event) -> {
+//$$                 if (enabled())
+//$$                     log("chat: " + event.getMessage().getString());
+//$$             });
+//$$     }
+//#else
+//$$ @net.minecraftforge.fml.common.Mod("ysm_localtest")
+//$$ public final class VisualTestHarness {
+//$$     public VisualTestHarness() {
+//$$         if (!com.elfmcys.ysm.platform.Platform.isClient())
+//$$             return;
+//$$         net.minecraftforge.event.TickEvent.ClientTickEvent.Post.BUS.addListener(event -> {
+//$$             onTick(Minecraft.getInstance());
+//$$         });
+//$$         net.minecraftforge.client.event.ClientChatReceivedEvent.BUS.addListener(event -> {
+//$$             if (enabled())
+//$$                 log("chat: " + event.getMessage().getString());
+//$$         });
+//$$     }
+//#endif
     private static final String WORLD = "ysmtest";
     private static final List<String> MODELS = List.of("default", "misc/1_alex", "misc/2_steve",
         "misc/3_default_boy", "misc/4_default_controllers", "wine_fox/01_taisho_maid", "wine_fox/02_new_year",
@@ -65,6 +96,7 @@ public final class VisualTestHarness implements ClientModInitializer {
     private static int soakIndex;
     private static final long STARTED = System.nanoTime();
 
+    //#if LOADER == fabric
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(VisualTestHarness::onTick);
@@ -72,6 +104,16 @@ public final class VisualTestHarness implements ClientModInitializer {
             if (enabled())
                 log("chat: " + message.getString());
         });
+    }
+    //#endif
+
+    /** The physical key a mapping is bound to (loader-specific accessor). */
+    static com.mojang.blaze3d.platform.InputConstants.Key boundKey(net.minecraft.client.KeyMapping mapping) {
+        //#if LOADER == fabric
+        return net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping);
+        //#else
+        //$$ return mapping.getKey();
+        //#endif
     }
 
     private static boolean enabled() {
@@ -94,6 +136,16 @@ public final class VisualTestHarness implements ClientModInitializer {
                             }
                             case "scenarios" -> scenarioFile = kv[1].trim();
                             case "scenarioModels" -> scenarioModels = List.of(kv[1].trim().split(","));
+                            case "mixinAudit" -> mixinAudit = Boolean.parseBoolean(kv[1].trim());
+                            case "scenarioModelsFile" -> {
+                                try {
+                                    scenarioModels = java.nio.file.Files.readAllLines(
+                                        dir().getParent().resolve(kv[1].trim()), java.nio.charset.StandardCharsets.UTF_8)
+                                        .stream().map(String::trim).filter(entry -> !entry.isEmpty()).toList();
+                                } catch (java.io.IOException error) {
+                                    log("scenarioModelsFile unreadable: " + error);
+                                }
+                            }
                             case "server" -> serverAddress = kv[1].trim();
                             case "observe" -> observeTarget = kv[1].trim();
                             case "observeEvery" -> observeEvery = Integer.parseInt(kv[1].trim());
@@ -148,7 +200,7 @@ public final class VisualTestHarness implements ClientModInitializer {
 
     private static void shot(String name) {
         var mc = Minecraft.getInstance();
-        Screenshot.grab(mc.gameDirectory, "ysmtest_" + shotPrefix + name + ".png", mc.gameRenderer.mainRenderTarget(), 1,
+        Screenshot.grab(mc.gameDirectory, "ysmtest_" + shotPrefix + name + ".png", com.elfmcys.ysm.localtest.VisualTestHarness.mainTarget(mc), 1,
             message -> {});
         log("screenshot " + name);
     }
@@ -213,7 +265,14 @@ public final class VisualTestHarness implements ClientModInitializer {
                 return;
             }
             var model = scenarioModels.get(scenarioModel);
-            command("ysm model set @s " + (model.contains(":") ? model : prefix + model) + " -");
+            // "id#texture" selects a texture; plain ids use the model's default ("-")
+            var texture = "-";
+            var hashIndex = model.lastIndexOf('#');
+            if (hashIndex > 0) {
+                texture = quoted(model.substring(hashIndex + 1));
+                model = model.substring(0, hashIndex);
+            }
+            command("ysm model set @s " + quoted(model.contains(":") ? model : prefix + model) + " " + texture);
             wait = LOAD_TICKS;
             return;
         }
@@ -226,7 +285,10 @@ public final class VisualTestHarness implements ClientModInitializer {
     }
 
     private static String modelTag() {
-        return scenarioModels.get(scenarioModel).replace('/', '_').replace(':', '_');
+        var id = scenarioModels.get(scenarioModel);
+        var tag = id.replaceAll("[^0-9A-Za-z_.+-]", "_");
+        // non-ASCII names would collide once replaced ("万敌", "风堇" -> "__"): keep them apart with a hash
+        return id.matches("[0-9A-Za-z_.+:/#-]*") ? tag : tag + "_" + Integer.toHexString(id.hashCode());
     }
 
     private static void runStep(Minecraft mc, String step) {
@@ -243,12 +305,12 @@ public final class VisualTestHarness implements ClientModInitializer {
             case "shot" -> {
                 shot(modelTag() + "__" + arg);
                 logState(mc);
-                var ysm = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+                var ysm = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
                 if (ysm != null)
                     log("  ysm: extra=" + ysm.isPlayingExtraAnimation() + " name=" + ysm.getExtraAnimationName());
                 var vehicle = player.getVehicle();
                 if (vehicle != null) {
-                    var v = vehicle.getCapability(com.elfmcys.ysm.capability.VehicleAnimatableCapabilityProvider.CAP)
+                    var v = ICapabilityHolder.of(vehicle).getCapability(com.elfmcys.ysm.capability.VehicleAnimatableCapabilityProvider.CAP)
                         .orElse(null);
                     if (v == null) {
                         log("  vehicle model: no capability");
@@ -261,14 +323,23 @@ public final class VisualTestHarness implements ClientModInitializer {
                             log("    failure: " + c);
                     }
                 }
-                var cap = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+                var cap = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
                 var failure = cap == null ? null : cap.modelLoadFailure();
                 if (failure != null)
                     log("  model failure: " + failure);
             }
+            case "melody" -> startMelody(mc, arg);
+            case "vehicle" -> logVehicle(mc, arg);
+            case "catalog" -> {
+                // repeat this step every second until the server model catalog is settled
+                if (!catalogSettled(arg)) {
+                    scenarioStep--;
+                    wait = 20;
+                }
+            }
             case "click" -> {
                 var mapping = "attack".equals(arg) ? mc.options.keyAttack : mc.options.keyUse;
-                net.minecraft.client.KeyMapping.click(net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping));
+                net.minecraft.client.KeyMapping.click(boundKey(mapping));
                 log("  clicked " + arg);
             }
             case "key" -> {
@@ -289,13 +360,18 @@ public final class VisualTestHarness implements ClientModInitializer {
                 // Press the physical key: every binding on it activates, as with real input (e.g. Carry On's own
                 // carry key shares Shift with sneak).
                 net.minecraft.client.KeyMapping.set(
-                    net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping), down);
+                    boundKey(mapping), down);
                 if (down)
                     net.minecraft.client.KeyMapping.click(
-                        net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping));
+                        boundKey(mapping));
             }
+            //#if MC >= 26.3
+            //$$ case "swing" -> player.swing("off".equals(arg) ? net.minecraft.world.InteractionHand.OFF_HAND
+            //$$     : net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
+            //#else
             case "swing" -> player.swing("off".equals(arg) ? net.minecraft.world.InteractionHand.OFF_HAND
                 : net.minecraft.world.InteractionHand.MAIN_HAND);
+            //#endif
             case "camera" -> mc.options.setCameraType(switch (arg) {
                 case "first" -> CameraType.FIRST_PERSON;
                 case "back" -> CameraType.THIRD_PERSON_BACK;
@@ -325,7 +401,7 @@ public final class VisualTestHarness implements ClientModInitializer {
                 });
             }
             case "respawn" -> player.respawn();
-            case "screen" -> mc.gui.setScreen(null);
+            case "screen" -> com.elfmcys.ysm.platform.McCompat.setScreen(null);
             case "press" -> {
                 if (arg.matches("\\d+"))
                     pressKeyCode(mc, Integer.parseInt(arg), "key code " + arg);
@@ -334,9 +410,9 @@ public final class VisualTestHarness implements ClientModInitializer {
             }
             case "hud" -> setHudHidden(mc, !"show".equals(arg));
             case "log" -> log(String.format(java.util.Locale.ROOT,
-                "%s: flying=%b mayfly=%b ground=%b y=%.3f dy=%.3f mode=%s",
+                "%s: flying=%b mayfly=%b ground=%b y=%.3f dy=%.3f mode=%s camera=%s",
                 arg, player.getAbilities().flying, player.getAbilities().mayfly, player.onGround(), player.getY(),
-                player.getDeltaMovement().y, mc.gameMode.getPlayerMode()));
+                player.getDeltaMovement().y, mc.gameMode.getPlayerMode(), mc.options.getCameraType()));
             default -> log("unknown step: " + step);
         }
     }
@@ -391,7 +467,7 @@ private static void logState(Minecraft mc) {
         for (var mapping : mc.options.keyMappings) {
             if (!mapping.getName().equals(name))
                 continue;
-            var key = net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mapping);
+            var key = boundKey(mapping);
             pressKeyCode(mc, key.getValue(), name + " (" + key.getName() + ")");
             return;
         }
@@ -417,7 +493,11 @@ private static void logState(Minecraft mc) {
 
     /** Integration state, only for mods that are present. */
     private static void logIntegrations(net.minecraft.client.player.LocalPlayer player) {
-        var loader = net.fabricmc.loader.api.FabricLoader.getInstance();
+        var loader = new Object() {
+            boolean isModLoaded(String id) {
+                return com.elfmcys.ysm.platform.Platform.isModLoaded(id);
+            }
+        };
         if (loader.isModLoaded("carryon")) {
             try {
                 var manager = Class.forName("tschipp.carryon.common.carry.CarryOnDataManager");
@@ -431,15 +511,155 @@ private static void logState(Minecraft mc) {
         }
         if (loader.isModLoaded("bettercombat"))
             log("  bettercombat: attack='" + com.elfmcys.ysm.client.compat.bettercombat.BetterCombatCompat
-                .getAttackAnimation(player) + "' swinging=" + player.swinging);
+                .getAttackAnimation(player) + "' swinging=" + com.elfmcys.ysm.platform.McCompat.isSwinging(player));
         if (loader.isModLoaded("player_animation_library"))
             log("  playeranim: thirdPersonModelInFirstPerson="
                 + com.elfmcys.ysm.client.compat.PlayerAnimatorCompat.hasThirdPersonModelAnim(player));
         if (loader.isModLoaded("firstperson"))
             log("  firstperson: enabled=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isEnabled()
                 + " renderingPlayer=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isRenderingPlayer());
+        log("  gui: hud calls=" + com.elfmcys.ysm.client.gui.overlay.ExtraPlayerScreen.calls + " pip draws="
+            + com.elfmcys.ysm.client.gui.pip.YsmGuiModelRenderer.draws);
+        if (loader.isModLoaded("immersive_melodies")) {
+            var data = new com.elfmcys.ysm.client.compat.immersivemelodies.ImmersiveMelodiesCompat.ImmersiveMelodiesData();
+            com.elfmcys.ysm.client.compat.immersivemelodies.ImmersiveMelodiesCompat.updateMelodyProgress(player, data);
+            log(String.format(java.util.Locale.ROOT, "  melodies: pitch=%.3f volume=%.3f current=%.3f delta=%.0f time=%.0f",
+                data.pitch, data.volume, data.current, data.delta, data.time));
+            // Immersive Melodies' own state (reflection: the mod is optional for this source set)
+            try {
+                var manager = Class.forName("immersive_melodies.client.MelodyProgressManager").getField("INSTANCE").get(null);
+                var progress = manager.getClass().getMethod("getProgress", net.minecraft.world.entity.Entity.class)
+                    .invoke(manager, player);
+                var playing = progress.getClass().getMethod("getCurrentlyPlaying").invoke(progress);
+                var melody = progress.getClass().getMethod("getMelody").invoke(progress);
+                String notes = "no melody";
+                if (melody != null) {
+                    var tracks = (java.util.List<?>)melody.getClass().getMethod("getTracks").invoke(melody);
+                    int count = 0;
+                    int first = Integer.MAX_VALUE;
+                    for (var track : tracks) {
+                        var list = (java.util.List<?>)track.getClass().getMethod("getNotes").invoke(track);
+                        count += list.size();
+                        if (!list.isEmpty())
+                            first = Math.min(first, (int)list.get(0).getClass().getMethod("getTime").invoke(list.get(0)));
+                    }
+                    notes = tracks.size() + " tracks, " + count + " notes, first at " + first + " ms";
+                }
+                log("  melodies state: playing=" + playing + " isPlaying="
+                    + progress.getClass().getMethod("isPlaying").invoke(progress) + " " + notes);
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                log("  melodies state unavailable: " + error);
+            }
+        }
+        if (player.getVehicle() != null)
+        {
+            var vehicle = player.getVehicle();
+            String roll = "";
+            try {
+                roll = String.format(java.util.Locale.ROOT, " roll=%.1f",
+                    (float)vehicle.getClass().getMethod("getRoll", float.class).invoke(vehicle, 1.0f));
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                // not an aircraft
+            }
+            log(String.format(java.util.Locale.ROOT, "  vehicle: %s xRot=%.1f yRot=%.1f y=%.1f ground=%s%s",
+                net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(vehicle.getType()),
+                vehicle.getXRot(), vehicle.getYRot(), vehicle.getY(), vehicle.onGround(), roll));
+        }
         if (loader.isModLoaded("realcamera"))
             log("  realcamera: active=" + com.elfmcys.ysm.client.compat.realcamera.RealCameraCompat.isActive());
+    }
+
+    /** Quotes a command argument unless it is a plain token (as the 2.6.5 harness). */
+    private static String quoted(String value) {
+        return value.matches("[0-9A-Za-z_.+:/-]+") ? value
+            : "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    /** Immersive Melodies: starts a melody on the instrument the player holds (server side, singleplayer). */
+    private static boolean loadingErrorSeen;
+    private static int giveUpTicks;
+    private static int noWorldTicks;
+    private static int catalogLastCount = -1;
+    private static int catalogStableTicks;
+    private static int catalogWaitedTicks;
+
+    /**
+     * "catalog [timeoutTicks]": the integrated server's model catalog (all scanned and converted models, e.g. a
+     * community collection in ysm/models). Settled once its model count stays unchanged for 20 s (or at the timeout);
+     * then logs the count, warnings and every scan error. Reads the private catalog by reflection (test only).
+     */
+    private static boolean catalogSettled(String arg) {
+        // "catalog <timeoutTicks> [expectedModels]": with an expected count, settled only once it is reached (a busy
+        // PC can pause the scan for longer than any stability window); without one, after 60 s without change
+        var parts = arg.isBlank() ? new String[0] : arg.trim().split("\\s+");
+        int timeout = parts.length > 0 ? Integer.parseInt(parts[0]) : 12000;
+        int expected = parts.length > 1 ? Integer.parseInt(parts[1]) : -1;
+        try {
+            var service = com.elfmcys.ysm.model.service.ServerModelService.instance();
+            var field = service.getClass().getDeclaredField("catalog");
+            field.setAccessible(true);
+            var snapshot = ((com.elfmcys.ysm.model.catalog.ReloadableModelCatalog)field.get(service)).current();
+            int count = snapshot.byModelId().size();
+            if (count != catalogLastCount) {
+                catalogLastCount = count;
+                catalogStableTicks = 0;
+            } else {
+                catalogStableTicks += 20;
+            }
+            catalogWaitedTicks += 20;
+            boolean settled = expected > 0 ? count >= expected && catalogStableTicks >= 400 : catalogStableTicks >= 1200;
+            if (!settled && catalogWaitedTicks < timeout)
+                return false;
+            var report = snapshot.report();
+            log("  catalog: " + count + " models, " + report.errorCount() + " errors, " + report.warningCount()
+                + " warnings (waited " + catalogWaitedTicks + " ticks" + (settled ? "" : ", TIMEOUT") + ")");
+            for (var error : report.errors())
+                log("  catalog error [" + error.rootKind() + "] " + error.source() + ": " + error.message());
+        } catch (ReflectiveOperationException | RuntimeException failure) {
+            log("  catalog failed: " + failure);
+        }
+        return true;
+    }
+
+    /** Logs the ridden vehicle's own pitch, yaw and roll (Immersive Aircraft getRoll(float), if present). */
+    private static void logVehicle(Minecraft mc, String label) {
+        var vehicle = mc.player.getVehicle();
+        if (vehicle == null) {
+            log("  vehicle " + label + ": none");
+            return;
+        }
+        String roll = "-";
+        try {
+            roll = String.valueOf(vehicle.getClass().getMethod("getRoll", float.class).invoke(vehicle, 1.0F));
+        } catch (ReflectiveOperationException ignored) {
+        }
+        log(String.format(Locale.ROOT, "  vehicle %s: %s pitch=%.1f yaw=%.1f roll=%s y=%.1f", label,
+            vehicle.getType(), vehicle.getXRot(), vehicle.getYRot(), roll, vehicle.getY()));
+    }
+
+    private static void startMelody(Minecraft mc, String melodyId) {
+        var server = mc.getSingleplayerServer();
+        var id = mc.player.getUUID();
+        server.execute(() -> {
+            try {
+                var player = server.getPlayerList().getPlayer(id);
+                var stack = player.getMainHandItem();
+                var item = stack.getItem();
+                java.lang.reflect.Method play = null;
+                for (var method : item.getClass().getMethods())
+                    if (method.getName().equals("play") && method.getParameterCount() == 4
+                        && method.getParameterTypes()[2] == net.minecraft.world.level.Level.class)
+                        play = method;
+                if (play == null) {
+                    log("  melody: held item is not an instrument: " + item);
+                    return;
+                }
+                play.invoke(item, stack, net.minecraft.resources.Identifier.parse(melodyId), player.level(), player);
+                log("  melody: started " + melodyId);
+            } catch (ReflectiveOperationException | RuntimeException error) {
+                log("  melody failed: " + error);
+            }
+        });
     }
 
     /** In-game config persistence probe (see configProbe option). */
@@ -456,7 +676,7 @@ private static void logState(Minecraft mc) {
                     // Drive the real config screen: press its "disable self hands" checkbox, move its volume slider.
                     var screen = new com.elfmcys.ysm.client.gui.ConfigScreen(
                         (com.elfmcys.ysm.client.gui.PlayerModelScreen)null);
-                    mc.gui.setScreen(screen);
+                    com.elfmcys.ysm.platform.McCompat.setScreen(screen);
                     boolean pressed = false, slid = false;
                     for (var child : screen.children()) {
                         if (child instanceof net.minecraft.client.gui.components.Checkbox box
@@ -472,7 +692,7 @@ private static void logState(Minecraft mc) {
                             slid = true;
                         }
                     }
-                    mc.gui.setScreen(null);
+                    com.elfmcys.ysm.platform.McCompat.setScreen(null);
                     log("configProbe set via ConfigScreen widgets: checkbox pressed=" + pressed + " slider moved=" + slid
                         + " -> SoundVolume=" + volume.get() + " DisableSelfHands=" + hands.get());
                 } else {
@@ -552,7 +772,7 @@ private static void logState(Minecraft mc) {
             target.getGameProfile().name(), target.getPose(), target.onGround(), target.getX(), target.getY(),
             target.getZ(), vehicle == null ? "none" : vehicle.getType().toShortString(),
             target.getMainHandItem().getItem()));
-        var ysm = target.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        var ysm = ICapabilityHolder.of(target).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
         if (ysm == null) {
             log("  remote ysm: no capability");
             return;
@@ -566,15 +786,77 @@ private static void logState(Minecraft mc) {
                 : selection.model() + " texture=" + selection.texture() + " animation=" + selection.animation()));
     }
 
+    static com.mojang.blaze3d.pipeline.RenderTarget mainTarget(Minecraft mc) {
+        //#if MC >= 26.2
+        return mc.gameRenderer.mainRenderTarget();
+        //#else
+        //$$ return mc.getMainRenderTarget();
+        //#endif
+    }
+
     private static void setHudHidden(Minecraft mc, boolean hidden) {
+        //#if MC >= 26.2
         if (mc.gui.hud.isHidden() != hidden)
             mc.gui.hud.toggle();
+        //#else
+        //$$ mc.options.hideGui = hidden;
+        //#endif
     }
+
+    private static boolean loadingScreenHandled;
+    private static boolean mixinAudit;
+    private static boolean mixinAudited;
 
     private static void onTick(Minecraft mc) {
         if (!enabled())
             return;
-        if (!worldRequested && mc.gui.screen() instanceof TitleScreen title) {
+        if (mixinAudit && !mixinAudited) {
+            // Loads every mixin target once (with -Pmixin_lenient failures are logged, not fatal)
+            mixinAudited = true;
+            log("mixin audit start");
+            try {
+                org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();
+                log("mixin audit done");
+            } catch (Throwable failure) {
+                log("mixin audit failed: " + failure);
+            }
+        }
+        // NeoForge/Forge show loading warnings on a screen that waits for "Proceed": continue past warnings-only
+        // screens (as the button does), but never past a loading error
+        var startScreen = com.elfmcys.ysm.platform.McCompat.screen();
+        if (!worldRequested && startScreen != null && startScreen.getClass().getSimpleName().equals("LoadingErrorScreen")
+            && !loadingScreenHandled) {
+            loadingScreenHandled = true;
+            boolean warningsOnly = startScreen.children().stream().anyMatch(child ->
+                child instanceof net.minecraft.client.gui.components.AbstractButton button && button.getMessage().getString()
+                    .toLowerCase(java.util.Locale.ROOT).matches(".*(proceed|continue).*"));
+            log("loading " + (warningsOnly ? "warnings screen: continuing" : "ERROR screen: quitting in 10 s"));
+            if (warningsOnly)
+                com.elfmcys.ysm.platform.McCompat.setScreen(null);
+            else
+                loadingErrorSeen = true;
+        }
+        // Never leave a client behind (user 11-24: disconnected clients stayed open): a loading error, a lost or
+        // refused server connection, or no world 2 min after connecting ends the client instead of waiting forever
+        if (loadingErrorSeen && ++giveUpTicks == 200) {
+            log("loading error: quitting");
+            mc.stop();
+            return;
+        }
+        if (worldRequested && serverAddress != null && mc.level == null) {
+            var current = com.elfmcys.ysm.platform.McCompat.screen();
+            String screenName = current == null ? "none" : current.getClass().getSimpleName();
+            if ((screenName.equals("DisconnectedScreen") || ++noWorldTicks > 2400) && ++giveUpTicks == 100) {
+                log("connection lost or refused (" + screenName + "): quitting");
+                mc.stop();
+                return;
+            }
+        } else if (mc.level != null) {
+            noWorldTicks = 0;
+            if (!loadingErrorSeen)
+                giveUpTicks = 0;
+        }
+        if (!worldRequested && com.elfmcys.ysm.platform.McCompat.screen() instanceof TitleScreen title) {
             worldRequested = true;
             if (serverAddress != null) {
                 log("connecting to server " + serverAddress);
@@ -663,7 +945,7 @@ private static void logState(Minecraft mc) {
                 var name = String.format(Locale.ROOT, "%02d_%s", index, models.get(index).replace('/', '_'));
                 shot(name + "_front");
                 sample("model " + models.get(index), false);
-                var cap = mc.player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+                var cap = ICapabilityHolder.of(mc.player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
                 if (cap != null) {
                     var failure = cap.modelLoadFailure();
                     log("installed=" + cap.getInstalledModelId() + " failure=" + (failure == null ? "none" : failure));
@@ -693,14 +975,14 @@ private static void logState(Minecraft mc) {
             }
             case 5 -> {
                 setHudHidden(mc, false);
-                mc.gui.setScreen(new PlayerModelScreen());
+                com.elfmcys.ysm.platform.McCompat.setScreen(new PlayerModelScreen());
                 log("opened PlayerModelScreen");
                 wait = 100;
                 stage = 6;
             }
             case 6 -> {
                 shot("model_screen");
-                mc.gui.setScreen(null);
+                com.elfmcys.ysm.platform.McCompat.setScreen(null);
                 setHudHidden(mc, true);
                 sample("soak-start", true);
                 log("in-game soak: switching every " + SOAK_SWITCH_TICKS + " ticks for " + soakTicks + " ticks");

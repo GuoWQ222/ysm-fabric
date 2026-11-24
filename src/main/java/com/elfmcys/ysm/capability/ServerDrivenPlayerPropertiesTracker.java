@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.capability;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.model.domain.ModelId;
 import com.elfmcys.ysm.event.LivingShieldBlockEvent;
 import com.elfmcys.ysm.network.forge.PlayerStateHandler;
@@ -118,7 +119,7 @@ public final class ServerDrivenPlayerPropertiesTracker {
     }
 
     public void setExtraAnimation(ServerPlayer player, boolean sync, String animation) {
-        var capability = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
+        var capability = ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).orElse(null);
         var selection = capability == null ? null : capability.selection();
         if (selection == null || selection.animation().equals(animation))
             return;

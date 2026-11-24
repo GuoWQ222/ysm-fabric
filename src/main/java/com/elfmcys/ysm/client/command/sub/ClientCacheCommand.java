@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.command.sub;
 
 import com.elfmcys.ysm.command.sub.CacheCommand;
@@ -14,7 +14,7 @@ public final class ClientCacheCommand {
     private ClientCacheCommand() {}
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> get() {
-        return CacheCommand.<FabricClientCommandSource>tree("ysmclient", FabricClientCommandSource::sendFeedback, (source, all) -> {
+        return CacheCommand.<FabricClientCommandSource>tree("ysmclient", com.elfmcys.ysm.client.command.ClientFeedback::success, (source, all) -> {
             var minecraft = Minecraft.getInstance();
             var player = minecraft.player;
             if (player == null)

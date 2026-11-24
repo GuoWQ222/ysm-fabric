@@ -1,0 +1,64 @@
+// Fabric loader (Loom): dependencies, dev runs and fabric.mod.json. Applied by build.gradle for -Ploader=fabric
+// (the default).
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // Forge-style config API on Fabric (provides net.minecraftforge.common.ForgeConfigSpec); bundled.
+    implementation "maven.modrinth:forge-config-api-port:${fcap_version}"
+    include "maven.modrinth:forge-config-api-port:${fcap_version}"
+    // Mod Menu API for the "Configure" entry point; Mod Menu itself stays optional at runtime.
+    compileOnly "maven.modrinth:modmenu:${modmenu_version}"
+    // Iris API for the shader integration (client/compat/IrisCompat); Iris stays optional at runtime.
+    compileOnly "maven.modrinth:iris:${iris_version}"
+}
+
+loom {
+    mods {
+        register('ysm') {
+            sourceSet sourceSets.main
+            // Packaged into the jar with main; in dev runs Knot only sees mod-group directories.
+            sourceSet sourceSets.declaration
+        }
+        register('ysm_localtest') {
+            sourceSet sourceSets.localtest
+        }
+    }
+    runs {
+        configureEach {
+            if (ysmNativeLibraryPathOrNull != null)
+                environmentVariable 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
+            // Diagnostics for other Minecraft versions: report injectors that matched fewer targets than expected
+            // (with -Pmixin_lenient=true they are skipped silently otherwise).
+            if (project.hasProperty('mixin_count'))
+                vmArgs '-Dmixin.debug.countInjections=true'
+            // -Pmixin_skip=NameA+NameB: leave these mixins out (bisecting a fault on another version)
+            if (project.hasProperty('mixin_skip'))
+                vmArgs "-Dysm.mixin.skip=${project.property('mixin_skip')}"
+        }
+        client {
+            runDir 'run/client'
+            source sourceSets.localtest
+            // Fixed offline name (as the 2.6.5 harness) so the test server can list it in ops.json.
+            programArgs '--username', 'YsmTester'
+        }
+        // Second dev client for the two-client multiplayer test (observer mode of the harness).
+        client2 {
+            client()
+            runDir 'run/client2'
+            source sourceSets.localtest
+            programArgs '--username', 'YsmObserver'
+        }
+        server {
+            runDir 'run/server'
+        }
+    }
+}
+
+processResources {
+    filesMatching('fabric.mod.json') {
+        expand 'mod_version': project.version, 'mc_range': mc_range
+    }
+}

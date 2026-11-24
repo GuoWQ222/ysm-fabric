@@ -6,7 +6,6 @@
  */
 package com.elfmcys.ysm.mixin.fabric.client;
 
-import com.elfmcys.ysm.fabric.FabricEventHooks;
 import com.elfmcys.ysm.platform.event.forge.ClientPlayerNetworkEvent;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.Minecraft;
@@ -26,7 +25,7 @@ public abstract class ClientRespawnCloneMixin {
         @Local(ordinal = 0) LocalPlayer oldPlayer) {
         var newPlayer = Minecraft.getInstance().player;
         if (newPlayer != null && newPlayer != oldPlayer)
-            FabricEventHooks.post(
+            com.elfmcys.ysm.platform.event.YsmEvents.post(
                 new ClientPlayerNetworkEvent.Clone(oldPlayer, newPlayer, (ClientPacketListener)(Object)this));
     }
 }

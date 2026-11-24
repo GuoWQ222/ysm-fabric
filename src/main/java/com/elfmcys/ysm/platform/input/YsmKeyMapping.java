@@ -28,11 +28,12 @@ public class YsmKeyMapping extends KeyMapping {
         this.modifier = modifier;
     }
 
-    public KeyConflictContext getKeyConflictContext() {
+    /** Named apart from NeoForge/Forge's KeyMapping extension (which returns their own types). */
+    public KeyConflictContext ysmConflictContext() {
         return context;
     }
 
-    public KeyModifier getKeyModifier() {
+    public KeyModifier ysmKeyModifier() {
         return modifier;
     }
 

@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.protocol;
 
 import com.elfmcys.ysm.proto.network.*;
@@ -16,7 +17,7 @@ class PlayerStateValidatorTest {
 
     @Test
     void numericBatchIsValidatedBeforeNarrowingAndAsAWhole() {
-        for (int id : new int[] {-1, 64, 65536})
+        for (int id : new int[] {-1, com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES, 65536})
             assertThrows(IllegalArgumentException.class,
                 () -> SelectionCodec.read(RoamingStateProto.newBuilder().addIds(id).addValues(1F).build()));
         assertThrows(IllegalArgumentException.class,

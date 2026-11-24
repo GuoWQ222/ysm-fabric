@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.client.animation.AnimationRegister;
@@ -70,7 +70,11 @@ public final class PreviewRenderHost {
             GUI_SCALE, painter);
         RenderSystem.backupProjectionMatrix();
         try {
-            renderer.prepare(state, null, minecraft.gameRenderer.featureRenderDispatcher(), GUI_SCALE);
+            //#if MC >= 26.2
+            renderer.prepare(state, null, com.elfmcys.ysm.platform.McCompat.featureRenderDispatcher(), GUI_SCALE);
+            //#else
+            //$$ renderer.prepare(state, null, GUI_SCALE);
+            //#endif
         } finally {
             RenderSystem.restoreProjectionMatrix();
         }
@@ -81,12 +85,20 @@ public final class PreviewRenderHost {
         if (texture == null)
             throw new IllegalStateException("Preview framebuffer was not created");
         var device = RenderSystem.getDevice();
+        //#if MC >= 26.2
         int blockSize = texture.getFormat().blockSize();
+        //#else
+        //$$ int blockSize = texture.getFormat().pixelSize();
+        //#endif
         var buffer = device.createBuffer(() -> "YSM preview readback", 9, (long)WIDTH * HEIGHT * blockSize);
         device.createCommandEncoder().copyTextureToBuffer(texture, buffer, 0L, () -> {
             NativeImage pixels = null;
             Throwable failure = null;
+            //#if MC >= 26.2
             try (var view = buffer.map(true, false)) {
+            //#else
+            //$$ try (var view = device.createCommandEncoder().mapBuffer(buffer, true, false)) {
+            //#endif
                 pixels = new NativeImage(WIDTH, HEIGHT, false);
                 var data = view.data();
                 // Framebuffer rows are bottom-up; alpha is kept (transparent background).
@@ -115,6 +127,12 @@ public final class PreviewRenderHost {
 
     /** The GUI picture renderer without the blit into a GUI (the picture is read back instead). */
     private static final class PreviewRenderer extends YsmGuiModelRenderer {
+        //#if MC < 26.2
+        //$$ PreviewRenderer() {
+        //$$     super(Minecraft.getInstance().renderBuffers().bufferSource());
+        //$$ }
+        //$$
+        //#endif
         @Override
         protected void blitTexture(YsmGuiModelRenderState renderState, GuiRenderState guiRenderState) {}
 

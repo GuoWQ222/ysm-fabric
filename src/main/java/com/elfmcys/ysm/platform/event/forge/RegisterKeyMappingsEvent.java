@@ -7,12 +7,18 @@
 package com.elfmcys.ysm.platform.event.forge;
 
 import com.elfmcys.ysm.platform.event.Event;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 
 /** Fabric port: posted during client init; registers through Fabric's key mapping API. */
 public class RegisterKeyMappingsEvent extends Event implements IModBusEvent {
+    /** NeoForge / Forge: mappings collected here are registered in the loader's own key mapping event. */
+    public static final java.util.List<KeyMapping> COLLECTED = new java.util.ArrayList<>();
+
     public void register(KeyMapping mapping) {
-        KeyMappingHelper.registerKeyMapping(mapping);
+        //#if LOADER == fabric
+        net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(mapping);
+        //#else
+        //$$ COLLECTED.add(mapping);
+        //#endif
     }
 }

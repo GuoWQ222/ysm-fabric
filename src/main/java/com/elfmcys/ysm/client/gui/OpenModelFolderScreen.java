@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.model.catalog.source.ModelCatalogSources;
@@ -22,7 +22,7 @@ public class OpenModelFolderScreen extends ModelScreen {
         this.clearWidgets();
         this.addRenderableWidget(
             Button.builder(Component.translatable("gui.yes_steve_model.open_model_folder.open"), b -> {
-                Util.getPlatform().openFile(ModelCatalogSources.modelsPath().toFile());
+                com.elfmcys.ysm.platform.McCompat.openPath(ModelCatalogSources.modelsPath());
             }).bounds(x, y, 150, 20).build());
         this.addRenderableWidget(Button.builder(Component.translatable("gui.yes_steve_model.model.return"), b -> {
             showScreen(this.screen);

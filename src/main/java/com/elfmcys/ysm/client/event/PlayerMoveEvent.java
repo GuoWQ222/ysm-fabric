@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.network.NetworkHandler;
@@ -12,7 +13,7 @@ import com.elfmcys.ysm.platform.event.forge.InputEvent;
 import com.elfmcys.ysm.platform.event.forge.TickEvent;
 import com.elfmcys.ysm.platform.event.SubscribeEvent;
 import com.elfmcys.ysm.platform.event.Mod;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import static com.elfmcys.ysm.client.input.AnimationRouletteKey.LOCK_ROULETTE_KEY;
 
@@ -25,7 +26,7 @@ public class PlayerMoveEvent {
         if (!YesSteveModel.isAvailable()) {
             return;
         }
-        if (event.getAction() == GLFW.GLFW_PRESS && LOCK_ROULETTE_KEY.matches(event.getKey(), event.getScanCode())) {
+        if (event.getAction() == InputConstants.PRESS && LOCK_ROULETTE_KEY.matches(event.getKey(), event.getScanCode())) {
             LOCK_EXTRA_ANIMATION = !LOCK_EXTRA_ANIMATION;
         }
     }
@@ -46,7 +47,7 @@ public class PlayerMoveEvent {
         }
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null && isMoveKey(player)) {
-            player.getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+            ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                 cap.waitForAsyncUpdate();
                 if (cap.isPlayingExtraAnimation()) {
                     cap.stopExtraAnimation();

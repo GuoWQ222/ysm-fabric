@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.AssetPaths;
@@ -29,7 +30,7 @@ class ModelStorageInfraTest {
                 storage.scope(new CatalogRootIdentity(CatalogRootKind.BUILTIN, paths.builtinModelsResource()));
             assertSame(local, builtin);
             for (var scope : storage.scopes()) {
-                assertEquals(AbiVersion.MODEL_SCHEMA, scope.identity().version());
+                assertEquals(ConvertedScope.CURRENT_VERSION, scope.identity().version());
                 assertSame(scope.region().consumers(), scope.consumers());
             }
         }

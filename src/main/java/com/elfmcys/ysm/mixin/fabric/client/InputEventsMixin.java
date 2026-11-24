@@ -6,7 +6,6 @@
  */
 package com.elfmcys.ysm.mixin.fabric.client;
 
-import com.elfmcys.ysm.fabric.FabricEventHooks;
 import com.elfmcys.ysm.platform.event.forge.InputEvent;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
@@ -25,6 +24,6 @@ public abstract class InputEventsMixin {
     @Inject(method = "keyPress", at = @At("TAIL"))
     private void ysm$afterKeyPress(long handle, int action, KeyEvent event, CallbackInfo ci) {
         if (handle == Minecraft.getInstance().getWindow().handle())
-            FabricEventHooks.post(new InputEvent.Key(event.key(), event.scancode(), action, event.modifiers()));
+            com.elfmcys.ysm.platform.event.YsmEvents.post(new InputEvent.Key(event.key(), com.elfmcys.ysm.platform.McCompat.scancode(event), action, event.modifiers()));
     }
 }

@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.animation.predicate;
 
 import com.elfmcys.ysm.client.compat.swarfare.SWarfareCompat;
@@ -19,7 +20,7 @@ public class GunFirePredicate implements IAnimationPredicate<CustomHumanoidEntit
         if (entity == null || event.getAnimatableEntity() instanceof IPreviewEntity) {
             return PlayState.STOP;
         }
-        if (!entity.swinging && !entity.isUsingItem()) {
+        if (!com.elfmcys.ysm.platform.McCompat.isSwinging(entity) && !entity.isUsingItem()) {
             ItemStack mainHandItem = entity.getItemInHand(InteractionHand.MAIN_HAND);
             PlayState result = TACZCompat.playGunOnceAnimation(mainHandItem, event);
             if (result == null) {

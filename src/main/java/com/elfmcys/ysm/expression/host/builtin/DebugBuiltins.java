@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host.builtin;
 
 import com.elfmcys.ysm.api.molang.MolangContextView;
@@ -41,10 +41,10 @@ public final class DebugBuiltins implements EntityComponent<Entity> {
     public void dumpMods(MolangContextView<Entity> context) {
         if (debug == null)
             return;
-        net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods().stream().map(mod -> mod.getMetadata())
-            .sorted(Comparator.comparing(meta -> meta.getName()))
-            .forEach(meta -> debug.print(Component.literal("Mod: display ").append(copy(meta.getName()))
-                .append(Component.literal("  id ").append(copy(meta.getId())))));
+        com.elfmcys.ysm.platform.Platform.mods().stream()
+            .sorted(Comparator.comparing(meta -> meta.name()))
+            .forEach(meta -> debug.print(Component.literal("Mod: display ").append(copy(meta.name()))
+                .append(Component.literal("  id ").append(copy(meta.id())))));
     }
 
     @BuiltinFunction(value = "dump_effects", alwaysOrigin = true, action = true)

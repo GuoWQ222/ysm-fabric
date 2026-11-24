@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.util;
 
 import net.minecraft.client.KeyMapping;
@@ -10,17 +10,17 @@ public class InputCheckUtil {
     @SuppressWarnings("removal")
     public static boolean keyIsMatch(InputEvent.Key event, com.elfmcys.ysm.platform.input.YsmKeyMapping keyMapping) {
         return keyMapping.matches(event.getKey(), event.getScanCode())
-            && keyMapping.getKeyModifier().equals(KeyModifier.getActiveModifier());
+            && keyMapping.ysmKeyModifier().equals(KeyModifier.getActiveModifier());
     }
 
     public static boolean isInGame() {
         Minecraft mc = Minecraft.getInstance();
         // 不能是加载界面
-        if (mc.gui.overlay() != null) {
+        if (com.elfmcys.ysm.platform.McCompat.overlay() != null) {
             return false;
         }
         // 不能打开任何 GUI
-        if (mc.gui.screen() != null) {
+        if (com.elfmcys.ysm.platform.McCompat.screen() != null) {
             return false;
         }
         // 当前窗口捕获鼠标操作

@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.renderer.layer;
 
 import com.elfmcys.ysm.client.entity.CustomPlayerEntity;
@@ -53,7 +53,7 @@ public class CustomPlayerElytraLayer extends GeoLayerRenderer<CustomPlayerEntity
         renderData.modelState.visitLocatorGroup(PlayerLocator.get().elytra, poseStack, locatorPose -> {
             // 2.6.5 (26.x) draws the 26.x elytra model at the locator, only flipped; the 1.20.1 offset and 2x scale
             // made the wings twice as large on 26.x.
-            locatorPose.mulPose(Axis.ZP.rotationDegrees(180));
+            com.elfmcys.ysm.platform.McCompat.rotate(locatorPose, Axis.ZP.rotationDegrees(180));
             equipmentRenderer.renderLayers(EquipmentClientInfo.LayerType.WINGS, asset, model, humanoid, wings,
                 locatorPose, collector, packedLight, texture, state.outlineColor, 0);
         });

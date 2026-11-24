@@ -1,7 +1,6 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.resources.Identifier;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.client.ClientStartup;
@@ -47,16 +46,18 @@ public class ClientSetupEvent {
         ExtraAnimationKey.registerKeyBinding(event);
     }
 
-    /** Fabric port: HUD overlays are Fabric HUD elements drawn after the vanilla HUD (Forge: above the debug text). */
-    public static void registerHudElements() {
+    /**
+     * YSM's HUD layers in drawing order, drawn after the vanilla HUD (Forge: above the debug text); each loader's
+     * client glue registers them with its HUD API. Empty when YSM is unavailable.
+     */
+    public static java.util.LinkedHashMap<Identifier, com.elfmcys.ysm.client.gui.overlay.HudLayer> hudLayers() {
+        var layers = new java.util.LinkedHashMap<Identifier, com.elfmcys.ysm.client.gui.overlay.HudLayer>();
         if (!YesSteveModel.isAvailable())
-            return;
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "debug_info"),
-            DebugAnimationScreen.getGuiOverlay());
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "extra_player"),
-            new ExtraPlayerScreen());
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "loading_state"),
-            new LoadingStateScreen());
+            return layers;
+        layers.put(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "debug_info"), DebugAnimationScreen.getGuiOverlay());
+        layers.put(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "extra_player"), new ExtraPlayerScreen());
+        layers.put(Identifier.fromNamespaceAndPath(YesSteveModel.MOD_ID, "loading_state"), new LoadingStateScreen());
+        return layers;
     }
 
 }

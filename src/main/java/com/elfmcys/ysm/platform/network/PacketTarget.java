@@ -36,8 +36,7 @@ public final class PacketTarget {
 
     /** Wraps a payload in the vanilla custom-payload packet for this target's direction. */
     public Packet<?> packet(CustomPacketPayload payload) {
-        return direction == NetworkDirection.PLAY_TO_SERVER ? new ServerboundCustomPayloadPacket(payload)
-            : new ClientboundCustomPayloadPacket(payload);
+        return direction == NetworkDirection.PLAY_TO_SERVER ? Payloads.toServer(payload) : Payloads.toClient(payload);
     }
 
     public static PacketTarget server() {

@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.expression.host.builtin;
 
 import com.elfmcys.ysm.api.molang.MolangContextView;
@@ -68,14 +68,14 @@ public final class RenderBuiltins implements EntityComponent<Entity> {
     public static float rotationToCamera(MolangContextView<Entity> context, int axis) {
         if (axis < 0 || axis > 1)
             return 0;
-        var camera = Minecraft.getInstance().gameRenderer.mainCamera();
+        var camera = com.elfmcys.ysm.platform.McCompat.mainCamera();
         float result = axis == 0 ? -camera.xRot() : 180 + camera.yRot();
         return Float.isFinite(result) ? result : 0;
     }
 
     @BuiltinFunction(value = "distance_from_camera", namespace = "query")
     public static float distanceFromCamera(MolangContextView<Entity> context) {
-        float result = (float)Minecraft.getInstance().gameRenderer.mainCamera().position()
+        float result = (float)com.elfmcys.ysm.platform.McCompat.mainCamera().position()
             .distanceTo(context.subject().position());
         return Float.isFinite(result) ? result : 0;
     }

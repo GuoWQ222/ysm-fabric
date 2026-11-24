@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.input;
 
 import com.elfmcys.ysm.platform.input.YsmKeyMapping;
@@ -19,33 +19,32 @@ import com.elfmcys.ysm.platform.input.KeyConflictContext;
 import com.elfmcys.ysm.platform.input.KeyModifier;
 import com.elfmcys.ysm.platform.event.SubscribeEvent;
 import com.elfmcys.ysm.platform.event.Mod;
-import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class PlayerModelScreenKey {
     public static final YsmKeyMapping PLAYER_MODEL_KEY =
         new YsmKeyMapping("key.yes_steve_model.player_model.desc", KeyConflictContext.IN_GAME, KeyModifier.ALT,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.category.yes_steve_model");
+            InputConstants.Type.KEYSYM, InputConstants.KEY_Y, "key.category.yes_steve_model");
 
     @SubscribeEvent
     public static void onKeyboardInput(InputEvent.Key event) {
         if (!InputCheckUtil.isInGame()) {
             return;
         }
-        if (event.getAction() == GLFW.GLFW_PRESS && InputCheckUtil.keyIsMatch(event, PLAYER_MODEL_KEY)) {
+        if (event.getAction() == InputConstants.PRESS && InputCheckUtil.keyIsMatch(event, PLAYER_MODEL_KEY)) {
             if (!YesSteveModel.isAvailable()) {
                 YesSteveModel.sendUnavailableMessage();
                 return;
             }
             if (NetworkHandler.isRemoteChannelPresent()
                 && !com.elfmcys.ysm.model.service.ClientModelService.instance().preferences().canSwitchModel()) {
-                Minecraft.getInstance().gui.setScreen(new ConfigScreen(null));
+                com.elfmcys.ysm.platform.McCompat.setScreen(new ConfigScreen(null));
                 return;
             }
             if (ClientConfig.DISCLAIMER_SHOW.get()) {
-                Minecraft.getInstance().gui.setScreen(new DisclaimerScreen());
+                com.elfmcys.ysm.platform.McCompat.setScreen(new DisclaimerScreen());
             } else {
-                Minecraft.getInstance().gui.setScreen(new PlayerModelScreen());
+                com.elfmcys.ysm.platform.McCompat.setScreen(new PlayerModelScreen());
             }
         }
     }

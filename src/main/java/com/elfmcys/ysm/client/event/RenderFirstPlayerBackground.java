@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.client.entity.FirstPersonPart;
@@ -35,7 +36,7 @@ public final class RenderFirstPlayerBackground {
         var player = Minecraft.getInstance().player;
         if (player == null || renderedPlayer == player)
             return;
-        var cap = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        var cap = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
         if (cap == null)
             return;
         var renderer = RegisterEntityRenderersEvent.getFirstPersonArmRenderer();
@@ -59,7 +60,7 @@ public final class RenderFirstPlayerBackground {
         float bob = avatar.getInterpolatedBob(partialTick);
         poseStack.translate(-Mth.sin(phase * (float)Math.PI) * bob * 0.5F,
             Math.abs(Mth.cos(phase * (float)Math.PI) * bob), 0);
-        poseStack.mulPose(Axis.ZN.rotationDegrees(Mth.sin(phase * (float)Math.PI) * bob * 3));
-        poseStack.mulPose(Axis.XN.rotationDegrees(Math.abs(Mth.cos(phase * (float)Math.PI - 0.2F) * bob) * 5));
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZN.rotationDegrees(Mth.sin(phase * (float)Math.PI) * bob * 3));
+        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.XN.rotationDegrees(Math.abs(Mth.cos(phase * (float)Math.PI - 0.2F) * bob) * 5));
     }
 }

@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapability;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
@@ -139,7 +140,7 @@ public final class ClientPlayerPreferences implements AutoCloseable {
 
     private PlayerAnimatableCapability player() {
         var player = Minecraft.getInstance().player;
-        return player == null ? null : player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        return player == null ? null : ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
     }
 
     public void commitSelection(ClientDemandCoordinator.SelectionContext context, ClientDemandCoordinator.Target target,

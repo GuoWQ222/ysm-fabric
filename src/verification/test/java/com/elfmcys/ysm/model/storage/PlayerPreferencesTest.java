@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import static com.elfmcys.ysm.model.storage.TestNamedRoamingSnapshots.named;
@@ -166,7 +167,7 @@ class PlayerPreferencesTest {
         try (var work = new DatabaseWork()) {
             var prefs = new PlayerPreferences(temp, work);
             var values = new TreeMap<String, Float>();
-            for (int index = 0; index < 64; index++)
+            for (int index = 0; index < com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLES; index++)
                 values.put("field" + index, (float)index);
             values.remove("field0");
             values.put("中".repeat(10) + "ab", 1f);
@@ -183,7 +184,7 @@ class PlayerPreferencesTest {
             values.put("extra", 1f);
             assertThrows(IllegalArgumentException.class, () -> prefs.writeRoaming(U, id("1.0.0"), fromMap(values)));
             assertThrows(IllegalArgumentException.class,
-                () -> prefs.writeRoaming(U, id("1.0.0"), fromMap(Map.of("中".repeat(11), 1f))));
+                () -> prefs.writeRoaming(U, id("1.0.0"), fromMap(Map.of("中".repeat(com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES / 3 + 1), 1f))));
             assertThrows(IllegalArgumentException.class,
                 () -> prefs.writeRoaming(U, id("1.0.0"), fromMap(Map.of("value", Float.NaN))));
             assertThrows(IllegalArgumentException.class, () -> prefs.writeRoaming(U, id("1.0.0"),
@@ -250,8 +251,9 @@ class PlayerPreferencesTest {
     }
 
     private static byte[] longName() {
-        return ByteBuffer.allocate(2 + 1 + 33 + 4).put((byte)1).put((byte)1).put((byte)33)
-            .put("x".repeat(33).getBytes(java.nio.charset.StandardCharsets.UTF_8)).putFloat(1).array();
+        int length = com.elfmcys.ysm.network.protocol.ProtocolLimits.MAX_ROAMING_VARIABLE_NAME_BYTES + 1;
+        return ByteBuffer.allocate(2 + 1 + length + 4).put((byte)1).put((byte)1).put((byte)length)
+            .put("x".repeat(length).getBytes(java.nio.charset.StandardCharsets.UTF_8)).putFloat(1).array();
     }
 
     private static void raw(Path path, PublishedModelId identity, byte[] bytes) {

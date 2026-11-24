@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.buffer.ArrayBuffer;
@@ -33,10 +34,10 @@ class CachePrunerTest {
     @Test
     void localSchemaPolicyIsIndependentOfSourcesAndPreservesUnscannedScope() throws Exception {
         authorities(true);
-        var expired = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
-        var unscanned = converted(2, "other", AbiVersion.MODEL_SCHEMA, false);
+        var expired = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
+        var unscanned = converted(2, "other", ConvertedScope.CURRENT_VERSION, false);
         var oldSchema = converted(3, "other", "old-schema", true);
-        var current = converted(4, "scanned", AbiVersion.MODEL_SCHEMA, true);
+        var current = converted(4, "scanned", ConvertedScope.CURRENT_VERSION, true);
         var referenced = identity(9);
         source("direct", "direct/model", referenced);
         var unsupported = bake(10, BakeKind.GEOMETRY, AbiVersion.CACHE_GEOMETRY, "9.0.0", referenced);
@@ -253,7 +254,7 @@ class CachePrunerTest {
     @Test
     void partialFailurePreservesOwnershipAndReportsBothPoolProgress() throws Exception {
         authorities(true);
-        var converted = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+        var converted = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
         var bake = bake(2, BakeKind.GEOMETRY, AbiVersion.CACHE_GEOMETRY, "", identity(2));
         try (var cache = new AtomicSharedCache(temp)) {
             var failure = new IOException("injected physical delete failure");
@@ -279,7 +280,7 @@ class CachePrunerTest {
     @Test
     void accessDenialReportsTheFailedRoundAndKeepsOwnership() throws Exception {
         authorities(true);
-        var object = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+        var object = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
         try (var cache = new AtomicSharedCache(temp)) {
             var denied = new SecurityException("injected access denial");
             var pruner = new CachePruner(cache, (phase, pool, location) -> {
@@ -301,7 +302,7 @@ class CachePrunerTest {
         for (var pool : List.of(Pool.CONVERTED, Pool.BAKE)) {
             temp = base.resolve(pool.directory());
             authorities(true);
-            var old = pool == Pool.CONVERTED ? converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false).location()
+            var old = pool == Pool.CONVERTED ? converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false).location()
                 : bake(1, BakeKind.GEOMETRY, AbiVersion.CACHE_GEOMETRY, "", identity(1)).file().location();
             try (var cache = new AtomicSharedCache(temp)) {
                 var pruner = new CachePruner(cache, (phase, selectedPool, location) -> {
@@ -334,7 +335,7 @@ class CachePrunerTest {
     void observeRevokeAndForgetFailuresNeverBecomeSuccessfulRounds() throws Exception {
         for (var stop : List.of(CachePruner.Phase.OBSERVE, CachePruner.Phase.REVOKE, CachePruner.Phase.FORGET)) {
             authorities(true);
-            var object = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+            var object = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
             try (var cache = new AtomicSharedCache(temp)) {
                 var pruner = new CachePruner(cache, (phase, pool, location) -> {
                     if (phase == stop)
@@ -353,7 +354,7 @@ class CachePrunerTest {
     @Test
     void sourcePublicationCannotEnterBetweenQualificationAndDeletion() throws Exception {
         authorities(true);
-        var old = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+        var old = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
         try (var cache = new AtomicSharedCache(temp)) {
             var entered = new java.util.concurrent.CountDownLatch(1);
             var release = new java.util.concurrent.CountDownLatch(1);
@@ -423,7 +424,7 @@ class CachePrunerTest {
     @Test
     void lastReferenceBatchFailureStillPrecedesAllDeletion() throws Exception {
         authorities(true);
-        var object = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+        var object = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
         for (int id = 1; id <= 65; id++)
             bake(id, BakeKind.ANIMATION, "old-schema", "9.0.0", identity(id));
         try (var cache = new AtomicSharedCache(temp)) {
@@ -476,7 +477,7 @@ class CachePrunerTest {
     @Test
     void incompleteObservationAndCancellationDoNotReportCompletion() throws Exception {
         authorities(true);
-        var object = converted(1, "scanned", AbiVersion.MODEL_SCHEMA, false);
+        var object = converted(1, "scanned", ConvertedScope.CURRENT_VERSION, false);
         try (var cache = new AtomicSharedCache(temp)) {
             var pruner = new CachePruner(cache);
             var incomplete = cache.coordinator().cleanup(() -> pruner.prune(Set.of(), false), null);

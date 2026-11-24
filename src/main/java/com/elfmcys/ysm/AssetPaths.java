@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm;
 
 import com.elfmcys.ysm.model.storage.CacheDirectoryGuard;
@@ -50,6 +51,15 @@ public final class AssetPaths {
 
     public Path configRoot() {
         return configDirectory.resolve("ysm");
+    }
+
+    /** 2.6.5's model folders (config/yes_steve_model/custom and /auth); read only if they exist. */
+    public Path legacyCustomRoot() {
+        return configDirectory.resolve("yes_steve_model").resolve("custom");
+    }
+
+    public Path legacyAuthRoot() {
+        return configDirectory.resolve("yes_steve_model").resolve("auth");
     }
 
     public Path exportRoot() {

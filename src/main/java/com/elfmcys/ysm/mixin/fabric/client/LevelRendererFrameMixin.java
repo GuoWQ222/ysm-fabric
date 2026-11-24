@@ -18,7 +18,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Fabric port of LevelRendererMixin (end): the level pass, including YSM's deferred draws, is finished. */
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererFrameMixin {
+    //#if MC >= 26.2
     @Inject(method = "render", at = @At("HEAD"))
+    //#else
+    //$$ @Inject(method = "renderLevel", at = @At("HEAD"))
+    //#endif
     private void ysm$beginLevel(CallbackInfo ci) {
         if (YesSteveModel.isAvailable()) {
             RenderUtil.setRenderingLevel(true);
@@ -27,7 +31,11 @@ public abstract class LevelRendererFrameMixin {
         }
     }
 
+    //#if MC >= 26.2
     @Inject(method = "render", at = @At("RETURN"))
+    //#else
+    //$$ @Inject(method = "renderLevel", at = @At("RETURN"))
+    //#endif
     private void ysm$endLevel(CallbackInfo ci) {
         if (YesSteveModel.isAvailable()) {
             AnimationParallelTicker.waitAll();

@@ -1,0 +1,78 @@
+// NeoForge loader (ModDevGradle): dependencies, dev runs and neoforge.mods.toml. Applied by build.gradle for
+// -Ploader=neoforge. Versions come from versions/<mc>.properties (neoforge_version, fcap_neoforge_maven).
+
+neoForge {
+    version = neoforge_version
+    mods {
+        ysm {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.declaration
+        }
+        ysm_localtest {
+            sourceSet sourceSets.localtest
+        }
+    }
+    runs {
+        configureEach {
+            if (ysmNativeLibraryPathOrNull != null)
+                environment 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
+            if (project.hasProperty('mixin_count'))
+                jvmArgument '-Dmixin.debug.countInjections=true'
+            if (project.hasProperty('mixin_skip'))
+                jvmArgument "-Dysm.mixin.skip=${project.property('mixin_skip')}"
+        }
+        client {
+            client()
+            gameDirectory = project.file('run/client')
+            programArguments.addAll('--username', 'YsmTester')
+            // -Pysm_vanilla: the same client WITHOUT YSM and the test harness (no mod of this project loaded), opening
+            // the test world directly - to tell whether a problem with another mod involves YSM at all
+            if (project.hasProperty('ysm_vanilla')) {
+                loadedMods = []
+                programArguments.addAll('--quickPlaySingleplayer', 'ysmtest')
+            }
+        }
+        client2 {
+            client()
+            gameDirectory = project.file('run/client2')
+            programArguments.addAll('--username', 'YsmObserver')
+        }
+        server {
+            server()
+            gameDirectory = project.file('run/server')
+            programArgument '--nogui'
+            // the test harness (ysm_localtest) is a client mod; a dedicated server must not load it
+            loadedMods = [neoForge.mods.ysm]
+        }
+    }
+}
+
+repositories {
+    maven {
+        name = 'Fuzs'
+        url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/'
+        content { includeGroup 'fuzs.forgeconfigapiport' }
+    }
+}
+
+dependencies {
+    // Forge-style config API on NeoForge (net.minecraftforge.common.ForgeConfigSpec)
+    // Bundled (NeoForge jar-in-jar), so players need nothing besides YSM, as with official YSM. From FCAP's own Maven:
+    // jar-in-jar metadata needs real versions (Modrinth version ids are not ordered).
+    jarJar(implementation("fuzs.forgeconfigapiport:forgeconfigapiport-neoforge:${fcap_neoforge_maven}"))
+    compileOnly "maven.modrinth:iris:${iris_neoforge_version}"
+}
+
+sourceSets.main.resources.srcDir 'src/loader/neoforge/resources'
+processResources {
+    exclude 'fabric.mod.json'
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand 'mod_version': project.version, 'neoforge_range': neoforge_range, 'mc_range_maven': mc_range_maven
+    }
+}
+
+// Test harness (dev runs): its own NeoForge mod metadata instead of fabric.mod.json
+sourceSets.localtest.resources.srcDir 'src/loader/neoforge/localtest'
+tasks.named('processLocaltestResources') {
+    exclude 'fabric.mod.json'
+}

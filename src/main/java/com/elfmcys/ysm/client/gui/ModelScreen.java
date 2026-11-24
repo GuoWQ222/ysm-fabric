@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -48,10 +48,10 @@ public abstract class ModelScreen extends Screen {
         }
         var minecraft = Minecraft.getInstance();
         try {
-            minecraft.gui.setScreen(screen);
+            com.elfmcys.ysm.platform.McCompat.setScreen(screen);
         } finally {
             // A cancelled opening keeps the source in the same world-bound flow.
-            if (lifetime != null && lifetime.isCurrent() && minecraft.gui.screen() == this)
+            if (lifetime != null && lifetime.isCurrent() && com.elfmcys.ysm.platform.McCompat.screen() == this)
                 lifetime.displayed = new WeakReference<>(this);
         }
     }
@@ -98,8 +98,8 @@ public abstract class ModelScreen extends Screen {
             return;
         var screen = closing.displayed.get();
         closing.retire();
-        if (screen != null && Minecraft.getInstance().gui.screen() == screen)
-            Minecraft.getInstance().gui.setScreen(null);
+        if (screen != null && com.elfmcys.ysm.platform.McCompat.screen() == screen)
+            com.elfmcys.ysm.platform.McCompat.setScreen(null);
         ResourceDiagnostics.log("model GUI world retired: world={}", System.identityHashCode(level));
     }
 

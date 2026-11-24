@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.event;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider;
 import com.elfmcys.ysm.model.service.ClientModelService;
@@ -30,14 +31,14 @@ public class ClientTickEvent {
         tickCount++;
         CustomTextureManager.tick();
         ClientModelService.current().ifPresent(ClientModelService::tick);
-        refreshRate = Minecraft.getInstance().getWindow().getRefreshRate();
+        refreshRate = com.elfmcys.ysm.platform.McCompat.refreshRate();
 
         var player = Minecraft.getInstance().player;
         if (player == null || ClientConfig.DISABLE_SELF_MODEL.get() || ClientConfig.DISABLE_SELF_HANDS.get()) {
             RegisterEntityRenderersEvent.releaseFirstPersonArm();
         }
         if (player != null) {
-            var capability = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+            var capability = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
             if (capability == null || !capability.isPresentationAllowed()) {
                 RegisterEntityRenderersEvent.releaseFirstPersonArm();
             }

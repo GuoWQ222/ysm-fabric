@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.service;
 
 import com.elfmcys.ysm.model.storage.PreviewStorage;
@@ -130,6 +130,8 @@ public final class ModelExportService {
         var directory = switch (location.root()) {
             case GLOBAL -> "global";
             case LOCAL -> "local";
+            case CUSTOM -> "custom";
+            case AUTH -> "auth";
             case BUILTIN -> throw new IOException("Builtin models cannot be exported");
         };
         var path = directory + "/" + location.entry();

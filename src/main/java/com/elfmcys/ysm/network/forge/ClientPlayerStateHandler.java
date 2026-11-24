@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.*;
 import com.elfmcys.ysm.client.demand.ClientDemandCoordinator;
 import com.elfmcys.ysm.expression.host.EventArguments;
@@ -47,7 +48,7 @@ final class ClientPlayerStateHandler {
             NetworkDiagnostics.message("self-ignored", MessageDirection.SERVER_TO_CLIENT, message, "local-player");
             return;
         }
-        var capability = player.getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
+        var capability = ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).orElse(null);
         if (capability == null) {
             NetworkDiagnostics.message("dropped", MessageDirection.SERVER_TO_CLIENT, message, "missing-capability");
             return;
@@ -102,7 +103,7 @@ final class ClientPlayerStateHandler {
                 var player = Minecraft.getInstance().player;
                 if (player == null || player.getId() != message.entityId())
                     return;
-                player.getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+                ICapabilityHolder.of(player).getCapability(com.elfmcys.ysm.capability.PlayerAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                     cap.waitForAsyncUpdate();
                     if (stopped) {
                         if (cap.isPlayingExtraAnimation())

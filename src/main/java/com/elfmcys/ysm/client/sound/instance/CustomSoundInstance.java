@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.sound.instance;
 
 import com.elfmcys.ysm.client.sound.stream.CustomAudioStream;
@@ -18,7 +18,11 @@ import java.util.concurrent.CompletableFuture;
 
 /** A prepared stream adapter. Playback ownership remains in the default YSM backend. */
 public final class CustomSoundInstance extends MinecraftSoundInstance
+    //#if LOADER == fabric
     implements AudioHost.HostPlayback, net.fabricmc.fabric.api.client.sound.v1.FabricSoundInstance {
+    //#else
+    //$$ implements AudioHost.HostPlayback {
+    //#endif
     private final CustomAudioStream stream;
 
     public CustomSoundInstance(SoundEvent soundEvent, CustomAudioStream stream, Entity entity) {
@@ -26,11 +30,25 @@ public final class CustomSoundInstance extends MinecraftSoundInstance
         this.stream = Objects.requireNonNull(stream, "stream");
     }
 
+    //#if LOADER == fabric
     @Override
     public CompletableFuture<AudioStream> getAudioStream(SoundBufferLibrary soundBuffers,
         net.minecraft.resources.Identifier id, boolean looping) {
         return CompletableFuture.completedFuture(new MinecraftAudioStreamAdapter(stream));
     }
+    //#elseif LOADER == neoforge
+    //$$ // NeoForge: SoundInstance extension (custom stream instead of a sound file)
+    //$$ @Override
+    //$$ public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers,
+    //$$     net.minecraft.client.resources.sounds.Sound sound, boolean looping) {
+    //$$     return CompletableFuture.completedFuture(new MinecraftAudioStreamAdapter(stream));
+    //$$ }
+    //#else
+    //$$ // Forge 26 has no stream hook on SoundInstance: forge.mixin.SoundEngineStreamMixin calls this instead
+    //$$ public CompletableFuture<AudioStream> ysmStream() {
+    //$$     return CompletableFuture.completedFuture(new MinecraftAudioStreamAdapter(stream));
+    //$$ }
+    //#endif
 
     @Override
     public boolean active() {

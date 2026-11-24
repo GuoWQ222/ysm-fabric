@@ -9,7 +9,11 @@ package com.elfmcys.ysm.client.texture;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
+//#if MC >= 26.2
 import com.mojang.blaze3d.GpuFormat;
+//#else
+//$$ import com.mojang.blaze3d.textures.TextureFormat;
+//#endif
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import net.minecraft.client.Minecraft;
@@ -34,10 +38,26 @@ public abstract class YsmTexture extends AbstractTexture {
     protected final void uploadPixels(NativeImage pixels, String label) {
         RenderSystem.assertOnRenderThread();
         if (texture == null || width != pixels.getWidth() || height != pixels.getHeight()) {
+            //#if MC >= 26.2
             releaseTextures();
+            //#else
+            //$$ if (texture != null) {
+            //$$     texture.close();
+            //$$     texture = null;
+            //$$ }
+            //$$ if (textureView != null) {
+            //$$     textureView.close();
+            //$$     textureView = null;
+            //$$ }
+            //#endif
             var device = RenderSystem.getDevice();
+            //#if MC >= 26.2
             texture = device.createTexture(() -> label, USAGE, GpuFormat.RGBA8_UNORM, pixels.getWidth(),
                 pixels.getHeight(), 1, 1);
+            //#else
+            //$$ texture = device.createTexture(() -> label, USAGE, TextureFormat.RGBA8, pixels.getWidth(),
+            //$$     pixels.getHeight(), 1, 1);
+            //#endif
             textureView = device.createTextureView(texture);
             sampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
             width = pixels.getWidth();

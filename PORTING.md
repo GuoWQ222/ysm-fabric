@@ -1,4 +1,4 @@
-# Porting notes: Yes Steve Model 3.0-dev to Fabric 26.2
+# Porting notes: Yes Steve Model 3.0-dev to Minecraft 26.x (Fabric, NeoForge, Forge)
 
 The base is [YesSteveModel/YesSteveModel](https://github.com/YesSteveModel/YesSteveModel) `dev/1.20` at
 `3ec7068136f9a6a07d0eb227d69b20b8bcc00d85` (Forge 1.20.1, Apache-2.0). This file describes what the port changes and lists every file that differs
@@ -6,13 +6,47 @@ from that commit.
 
 ## Build
 
-- Fabric Loom replaces LegacyForge ModDev.
-- Targets Minecraft 26.2, Fabric Loader 0.20.1, Fabric API 0.161.0+26.2 and Java 25.
-- Forge Config API Port provides `ForgeConfigSpec` and is bundled in the jar.
+- One Gradle build makes all 15 jars: `-Pmc=26.1|26.1.1|26.1.2|26.2|26.3` and `-Ploader=fabric|neoforge|forge`. The
+  default is Fabric 26.2.
+  - `versions/<mc>.properties` holds each version's dependency versions and ranges. They are applied over
+    `gradle.properties`.
+  - `gradle/loader-<loader>.gradle` holds each loader's setup.
+- Loader plugins:
+  - Fabric: Fabric Loom;
+  - NeoForge: ModDevGradle;
+  - Forge: ForgeGradle 7.
+- Java 25 on every version and loader.
+- The checked-in sources are the 26.2 variant. Other versions compile a copy made by a line-preserving preprocessor
+  (`buildSrc`, `PreprocessTask`):
+  - `//#if MC < 26.2` blocks select version-specific code, and inactive lines carry a `//$$ ` marker;
+  - `versions/*.remap` rename tables map moved classes per version and loader.
+- `ForgeConfigSpec`:
+  - on Fabric and NeoForge it comes from Forge Config API Port, which is bundled in the jar;
+  - Forge has it built in.
+- Release jars relocate every bundled library under `com.elfmcys`. A build check fails on any class outside it, and on
+  Fabric also on a nested jar not listed in `fabric.mod.json`.
 - The `declaration` source set is part of the mod in dev runs.
-- A dev-only harness mod lives in `src/localtest`. It takes screenshots of each model and runs a model-switching soak.
+- A dev-only harness mod lives in `src/localtest`. It drives scripted scenarios, takes screenshots, and runs
+  model-switching soaks, multiplayer, integration and model-collection checks.
 - Upstream tests that need Forge-era Minecraft APIs or the Wine Fox models are listed in
   `gradle/test-exclusions.txt`.
+
+## Loaders
+
+Fabric, NeoForge and Forge each have a small glue package. Each one posts the same Forge-shaped platform events at the
+same points in the game loop, so the YSM code above them is shared:
+
+- `fabric/` is the original target;
+- `neoforge/` and `forge/` hold an entry point, event hooks, client event hooks and a network channel.
+
+Code that differs only slightly between loaders uses branches in the platform layer (`Platform`).
+
+- **Mixins:** the mixins are shared, except for a few loader-only ones:
+  - Fabric event mixins;
+  - Forge's sound-stream mixin, because Forge 26 has no stream hook on `SoundInstance`.
+- **Client code on dedicated servers:** classes used on both sides never reference client classes. A dedicated
+  server's JVM loads the types a method uses when it verifies the class, so client-only code lives in client classes
+  such as `client/event/ClientCapabilityAttach`.
 
 ## Platform layer (`com.elfmcys.ysm.platform`)
 
@@ -23,17 +57,22 @@ The upstream code is written against Forge. Instead of rewriting every caller, t
 - `DistExecutor`;
 - network contexts and packet targets.
 
-`fabric/FabricEventHooks` and the event mixins post these events from Fabric API callbacks. Each one is posted at the
-same point in the game loop where Forge posts it:
+On Fabric, `fabric/FabricEventHooks` and the event mixins post these events from Fabric API callbacks. On NeoForge and
+Forge, the `neoforge/` and `forge/` event hooks translate the loader's own events. Each one is posted at the same
+point in the game loop where Forge 1.20 posts it:
 
-- **Client setup:** runs when the client has started. Fabric client initializers run inside the `Minecraft`
-  constructor, before the window and GPU device exist.
+- **Client setup:**
+  - Fabric: runs when the client has started. Fabric client initializers run inside the `Minecraft` constructor,
+    before the window and GPU device exist.
+  - NeoForge and Forge: runs once after the first frame. Work queued during their setup events was never run.
 - **Player login:** posted at the end of `PlayerList.placeNewPlayer`, after the player joined its level.
 - **Key and mouse-button input, screen opening and client respawn:** posted from mixins at the same places as Forge.
 
 ## Networking
 
-YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
+YSM's own frames travel in one custom payload, `YsmFramePayload`:
+- on Fabric through Fabric's networking API;
+- on NeoForge and Forge through an optional channel, so vanilla clients and servers can still connect.
 
 ## Rendering
 
@@ -54,6 +93,9 @@ YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
 - Model previews are picture-in-picture renderers. Thumbnails are read back asynchronously.
 - Entity previews such as the inventory and the model screen get their inventory angles applied to the entity during
   the draw, as 1.20 did.
+- 26.1.x picture-in-picture renderers flush their buffers only after the model has been drawn and its GUI transform
+  removed. YSM draws its own batch while the transform still applies; otherwise the HUD player preview was drawn off
+  the picture in third-person view.
 
 ## Behaviour aligned with YSM 2.6.5
 
@@ -68,13 +110,17 @@ YSM's own frames travel in one Fabric custom payload, `YsmFramePayload`.
   - vehicle and projectile models are drawn at scale 1.0 (3.0-dev used 0.7);
   - the 1.20 ids `minecraft:boat` and `minecraft:chest_boat` match every 26.x boat and chest boat type.
 - Server settings `AcceptSoundFX` and `PlayerSyncTimeout` exist again.
-- WTHIT shows the YSM model of the player or vehicle you look at. 2.6.5 did this through Jade and The One Probe.
+- WTHIT and Jade show the YSM model of the player or vehicle you look at. 2.6.5 did this through Jade and The One
+  Probe.
 
-## Integrations (26.2 Fabric)
+## Integrations
 
-Ported from upstream's Forge integrations to the mods' 26.2 Fabric APIs. Each mod's classes are only used from inner
-classes that load when Fabric Loader reports the mod.
+Ported from upstream's Forge integrations to the mods' 26.x APIs, on every loader where the mod exists. Each mod's
+classes are only used from inner classes that load when the loader reports the mod. README.md lists the builds on
+which each integration was tested.
 
+- Iris: YSM writes Iris's entity vertex layout (`IRIS_56_V2`) from the native renderer, so models get shaders.
+- WTHIT and Jade: a `YSM Model` tooltip line for players and vehicles.
 - First-person Model: the camera follows the model's head height; the model's body is drawn in first person.
 - Real Camera: while it is active, the full model is drawn in first person. Its default binding mode looks for the
   vanilla player model, so with a YSM model use its classic mode.
@@ -94,13 +140,16 @@ classes that load when Fabric Loader reports the mod.
 - The optional-mod linkage check (`OptionalLinkageVerifier`, upstream) rejected methods that a compat class
   inherits instead of declaring, such as an enum's `name()`. That switched the whole Carry On integration off. It
   now resolves methods through superclasses and interfaces, as the JVM does.
+- A published model that is still being converted when a player joins counts as pending, not denied.
 
 ## Not included or not yet working
 
 - The Wine Fox built-in models. They are CC BY-NC-SA 4.0 or All Rights Reserved and are not redistributed.
 - The jars of Forge mods that upstream compiled against (FirstPerson, NotEnoughAnimations, Oculus, Superb Warfare).
-- Integrations whose mods have no 26.2 Fabric version (Elytra Slot, Trinkets, Accessories and the Forge-only mods).
+- Integrations whose mods have no 26.x version (Elytra Slot, Trinkets, Accessories and the Forge 1.20-only mods).
   Their compat modules remain as declared Molang stand-ins.
+- On Forge, when another mod fails to load, the game can crash in a YSM mixin instead of showing Forge's error
+  screen (seen in development runs).
 
 ## Tests
 
@@ -139,6 +188,10 @@ Java, Gradle and properties files in this list carry a notice on their first lin
 here.
 
 - `build.gradle`
+- `buildSrc/build.gradle`
+- `docs/architecture/model-management/storage/preferences.md`
+- `docs/architecture/network/player-state.md`
+- `docs/standards/protocol-v1/README.md`
 - `gradle.properties`
 - `gradle/builtin-index.gradle`
 - `gradle/declaration.gradle`
@@ -147,6 +200,7 @@ here.
 - `gradle/wrapper/gradle-wrapper.properties`
 - `settings.gradle`
 - `src/forge-compat-reference/com/elfmcys/ysm/event/InterModMsg.java`
+- `src/main/java/com/elfmcys/ysm/AssetPaths.java`
 - `src/main/java/com/elfmcys/ysm/YesSteveModel.java`
 - `src/main/java/com/elfmcys/ysm/accessor/IArrowExtraInfo.java`
 - `src/main/java/com/elfmcys/ysm/api/internal/event/ExtensionEventHandlerLoader.java`
@@ -160,8 +214,10 @@ here.
 - `src/main/java/com/elfmcys/ysm/capability/AuthModelsCapability.java`
 - `src/main/java/com/elfmcys/ysm/capability/AuthModelsCapabilityProvider.java`
 - `src/main/java/com/elfmcys/ysm/capability/ClientLazyCapabilityProvider.java`
+- `src/main/java/com/elfmcys/ysm/capability/ClientRoamingSession.java`
 - `src/main/java/com/elfmcys/ysm/capability/ModelInfoCapability.java`
 - `src/main/java/com/elfmcys/ysm/capability/ModelInfoCapabilityProvider.java`
+- `src/main/java/com/elfmcys/ysm/capability/PendingRemoteReplay.java`
 - `src/main/java/com/elfmcys/ysm/capability/PlayerAnimatableCapability.java`
 - `src/main/java/com/elfmcys/ysm/capability/PlayerAnimatableCapabilityProvider.java`
 - `src/main/java/com/elfmcys/ysm/capability/PlayerStateTracker.java`
@@ -184,7 +240,11 @@ here.
 - `src/main/java/com/elfmcys/ysm/client/animation/condition/ConditionalUse.java`
 - `src/main/java/com/elfmcys/ysm/client/animation/condition/ConditionalVehicle.java`
 - `src/main/java/com/elfmcys/ysm/client/animation/condition/InnerClassify.java`
+- `src/main/java/com/elfmcys/ysm/client/animation/predicate/GunFirePredicate.java`
+- `src/main/java/com/elfmcys/ysm/client/animation/predicate/MainhandPredicate.java`
+- `src/main/java/com/elfmcys/ysm/client/animation/predicate/OffhandPredicate.java`
 - `src/main/java/com/elfmcys/ysm/client/animation/predicate/ProjectileMainPredicate.java`
+- `src/main/java/com/elfmcys/ysm/client/animation/predicate/SwingPredicate.java`
 - `src/main/java/com/elfmcys/ysm/client/animation/predicate/VehiclePredicate.java`
 - `src/main/java/com/elfmcys/ysm/client/command/ClientRootCommand.java`
 - `src/main/java/com/elfmcys/ysm/client/command/ResourceDebugCommand.java`
@@ -206,6 +266,7 @@ here.
 - `src/main/java/com/elfmcys/ysm/client/compat/backpack/sophisticated/SophisticatedCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/BetterCombatCompatInner.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/bettercombat/event/PlayerAttackEvent.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/carryon/CarryOnCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/create/CreateBuiltinComponent.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/create/CreateCompat.java`
@@ -227,6 +288,8 @@ here.
 - `src/main/java/com/elfmcys/ysm/client/compat/tacz/TACZCompat.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/tacz/TaczBuiltinComponent.java`
 - `src/main/java/com/elfmcys/ysm/client/controller/ArmorControllerDiscovery.java`
+- `src/main/java/com/elfmcys/ysm/client/demand/ClientDemandCoordinator.java`
+- `src/main/java/com/elfmcys/ysm/client/demand/ModelResourceDemand.java`
 - `src/main/java/com/elfmcys/ysm/client/entity/AnimatableEntity.java`
 - `src/main/java/com/elfmcys/ysm/client/entity/CustomFirstPersonArmEntity.java`
 - `src/main/java/com/elfmcys/ysm/client/entity/CustomHumanoidEntity.java`
@@ -304,10 +367,12 @@ here.
 - `src/main/java/com/elfmcys/ysm/client/texture/CustomTextureManager.java`
 - `src/main/java/com/elfmcys/ysm/client/texture/TextureHolder.java`
 - `src/main/java/com/elfmcys/ysm/command/CommandArguments.java`
+- `src/main/java/com/elfmcys/ysm/command/sub/AuthCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/CacheCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/ExportCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/ModelCommand.java`
 - `src/main/java/com/elfmcys/ysm/command/sub/PingCommand.java`
+- `src/main/java/com/elfmcys/ysm/command/sub/PlayAnimationCommand.java`
 - `src/main/java/com/elfmcys/ysm/config/ServerConfig.java`
 - `src/main/java/com/elfmcys/ysm/event/CapabilityEvent.java`
 - `src/main/java/com/elfmcys/ysm/event/CommandRegistry.java`
@@ -318,21 +383,25 @@ here.
 - `src/main/java/com/elfmcys/ysm/event/MobEffectSyncEvent.java`
 - `src/main/java/com/elfmcys/ysm/event/ServerStartingEvent.java`
 - `src/main/java/com/elfmcys/ysm/event/api/SpecialPlayerRenderEvent.java`
+- `src/main/java/com/elfmcys/ysm/expression/aot/RenderTargetExpressionModuleFactory.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/MolangExtensionLoader.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/OptionalLinkageVerifier.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/ControllerPredicateBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/DebugBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/EntityBuiltins.java`
+- `src/main/java/com/elfmcys/ysm/expression/host/builtin/InputBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/LivingBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/ModBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/ProjectileBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/RenderBuiltins.java`
 - `src/main/java/com/elfmcys/ysm/expression/host/builtin/WorldBuiltins.java`
+- `src/main/java/com/elfmcys/ysm/expression/inventory/ModelProgramInventory.java`
 - `src/main/java/com/elfmcys/ysm/format/parser/CapturedModel.java`
 - `src/main/java/com/elfmcys/ysm/format/parser/ModelParser.java`
 - `src/main/java/com/elfmcys/ysm/format/parser/RawModelAssembler.java`
 - `src/main/java/com/elfmcys/ysm/format/schema/model/ModelFileWriter.java`
 - `src/main/java/com/elfmcys/ysm/format/schema/model/ModelOriginVersion.java`
+- `src/main/java/com/elfmcys/ysm/format/schema/model/views/ModelInfoView.java`
 - `src/main/java/com/elfmcys/ysm/geckolib3/geo/CustomTranslucentRenderType.java`
 - `src/main/java/com/elfmcys/ysm/geckolib3/geo/GeoEntityRenderer.java`
 - `src/main/java/com/elfmcys/ysm/geckolib3/geo/GeoLayerRenderer.java`
@@ -357,6 +426,11 @@ here.
 - `src/main/java/com/elfmcys/ysm/model/ModelRuntime.java`
 - `src/main/java/com/elfmcys/ysm/model/catalog/RawModelImporter.java`
 - `src/main/java/com/elfmcys/ysm/model/catalog/client/ClientCatalogManager.java`
+- `src/main/java/com/elfmcys/ysm/model/catalog/client/ClientCatalogSnapshot.java`
+- `src/main/java/com/elfmcys/ysm/model/catalog/source/CatalogRoot.java`
+- `src/main/java/com/elfmcys/ysm/model/catalog/source/ModelCatalogSources.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/ClientDemandResources.java`
+- `src/main/java/com/elfmcys/ysm/model/resource/client/ClientModelRenderTargetManager.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/ModelRenderTarget.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/TargetSoundResources.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/preview/ClientPreviewGenerator.java`
@@ -366,10 +440,16 @@ here.
 - `src/main/java/com/elfmcys/ysm/model/service/GameTrackingView.java`
 - `src/main/java/com/elfmcys/ysm/model/service/ModelExportService.java`
 - `src/main/java/com/elfmcys/ysm/model/service/ServerModelService.java`
+- `src/main/java/com/elfmcys/ysm/model/session/server/RestrictedModelPolicy.java`
 - `src/main/java/com/elfmcys/ysm/model/session/server/ServerModelSession.java`
+- `src/main/java/com/elfmcys/ysm/model/storage/CachePruner.java`
+- `src/main/java/com/elfmcys/ysm/model/storage/ConvertedScope.java`
+- `src/main/java/com/elfmcys/ysm/model/storage/ModelStorageInfra.java`
+- `src/main/java/com/elfmcys/ysm/model/storage/PreferenceCodec.java`
 - `src/main/java/com/elfmcys/ysm/natives/buffer/NativeHeapBuffer.java`
 - `src/main/java/com/elfmcys/ysm/natives/image/Image.java`
 - `src/main/java/com/elfmcys/ysm/natives/image/ImageEncoder.java`
+- `src/main/java/com/elfmcys/ysm/natives/legacy/LegacyModelImporter.java`
 - `src/main/java/com/elfmcys/ysm/natives/legacy/LegacyPayloadBuffer.java`
 - `src/main/java/com/elfmcys/ysm/natives/legacy/NativeLegacyProtocol.java`
 - `src/main/java/com/elfmcys/ysm/natives/render/BonePoseView.java`
@@ -382,16 +462,22 @@ here.
 - `src/main/java/com/elfmcys/ysm/network/forge/ChannelCompressionBypass.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ClientAssetTransfer.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ClientControlHandler.java`
+- `src/main/java/com/elfmcys/ysm/network/forge/ClientDemandSelections.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ClientPlayerPreferences.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ClientPlayerStateHandler.java`
+- `src/main/java/com/elfmcys/ysm/network/forge/ClientProtocolGateway.java`
+- `src/main/java/com/elfmcys/ysm/network/forge/ClientSessionRuntime.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ControlHandler.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ForgeTransportPort.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/ForgeUniBufferIO.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/MinecraftStateHandler.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/PlayerStateHandler.java`
 - `src/main/java/com/elfmcys/ysm/network/forge/SessionProtocolHandler.java`
+- `src/main/java/com/elfmcys/ysm/network/protocol/ProtocolLimits.java`
 - `src/main/java/com/elfmcys/ysm/network/protocol/ProtocolMessageSpec.java`
 - `src/main/java/com/elfmcys/ysm/network/protocol/ProtocolMessages.java`
+- `src/main/java/com/elfmcys/ysm/network/protocol/RoamingDictionary.java`
+- `src/main/java/com/elfmcys/ysm/network/protocol/SelectionCodec.java`
 - `src/main/java/com/elfmcys/ysm/util/AnimatableCacheUtil.java`
 - `src/main/java/com/elfmcys/ysm/util/CommandUtil.java`
 - `src/main/java/com/elfmcys/ysm/util/EnumUtil.java`
@@ -413,11 +499,14 @@ here.
 - `src/main/resources/data/ysm/tags/item/tridents.json`
 - `src/main/resources/ysm.mixins.json`
 - `src/verification/test/java/com/elfmcys/ysm/capability/ModelInfoCapabilityTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/capability/RoamingPayloadsTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/command/ClientRootCommandTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/client/demand/ModelResourceDemandTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/gui/PlayerModelNavigationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/client/texture/CustomTextureTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/config/ClientConfigDeviceDefaultsTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/config/ServerConfigSpecTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/format/schema/model/views/ModelViewPresenceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/catalog/RawModelImporterTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/catalog/ReloadableModelCatalogTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/catalog/source/CatalogSourceReuseTest.java`
@@ -426,10 +515,16 @@ here.
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/ModelTextureLifecycleVerificationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/PreparedTextureSetTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/render/PreviewResourceFixture.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/CachePrunerTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/storage/ConvertedObjectStoreTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/model/storage/ModelExporterTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/ModelStorageInfraTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/PlayerPreferencesTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/model/storage/SharedStorageProcessTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/natives/NativeRuntimeDeviceIntegrationTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/network/ServerSideIsolationTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/network/protocol/PlayerStateValidatorTest.java`
+- `src/verification/test/java/com/elfmcys/ysm/network/protocol/RoamingDictionaryTest.java`
 
 ## Renamed or moved files
 
@@ -467,6 +562,11 @@ here.
 
 The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.md](LICENSE-PORT.md) lists them. Copies or moves of upstream files stay Apache-2.0.
 
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/PreprocessTask.java`
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/Preprocessor.java`
+- `gradle/loader-fabric.gradle`
+- `gradle/loader-forge.gradle`
+- `gradle/loader-neoforge.gradle`
 - `gradle/test-exclusions-winefox.txt`
 - `gradle/test-exclusions.txt`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/ARCompat.java`
@@ -508,12 +608,23 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/swem/SwemCompat.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/tacz/TACZCompat.java`
 - `src/forge-compat-reference/com/elfmcys/ysm/client/compat/tacz/TaczBuiltinComponent.java`
+- `src/loader/forge/localtest/META-INF/mods.toml`
+- `src/loader/forge/resources/META-INF/mods.toml`
+- `src/loader/forge/resources/ysm.forge.mixins.json`
+- `src/loader/neoforge/localtest/META-INF/neoforge.mods.toml`
+- `src/loader/neoforge/resources/META-INF/neoforge.mods.toml`
 - `src/localtest/java/com/elfmcys/ysm/localtest/VisualTestHarness.java`
 - `src/localtest/resources/fabric.mod.json`
+- `src/localtest/resources/pack.mcmeta`
 - `src/main/java/com/elfmcys/ysm/buffer/Memory.java`
+- `src/main/java/com/elfmcys/ysm/client/command/ClientFeedback.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/ModelInfoTooltip.java`
+- `src/main/java/com/elfmcys/ysm/client/compat/jade/YsmJadePlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitCommonPlugin.java`
 - `src/main/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitPlugin.java`
+- `src/main/java/com/elfmcys/ysm/client/event/ClientCapabilityAttach.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/GuiDraw.java`
+- `src/main/java/com/elfmcys/ysm/client/gui/overlay/HudLayer.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiQuadRenderState.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/GuiScissor.java`
 - `src/main/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModelRenderState.java`
@@ -525,6 +636,11 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabric.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmFabricClient.java`
 - `src/main/java/com/elfmcys/ysm/fabric/YsmModMenu.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeClientEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/forge/ForgeNetwork.java`
+- `src/main/java/com/elfmcys/ysm/forge/YsmForge.java`
+- `src/main/java/com/elfmcys/ysm/forge/mixin/SoundEngineStreamMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/AbstractArrowExtraInfoMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ArrowPotionAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ChunkMapAccessor.java`
@@ -541,11 +657,13 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ServerPlayerRidingMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ThrowableItemProjectileAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/TrackedEntityAccessor.java`
+- `src/main/java/com/elfmcys/ysm/mixin/fabric/YsmMixinConfigPlugin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/BufferBuilderDirectWriteMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ByteBufferBuilderAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ClientRespawnCloneMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRenderDispatcherMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRenderDispatcherReloadMixin.java`
+- `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRenderStateDataMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntityRendererStateMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/EntitySubjectSampleMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/GameRendererProfileMixin.java`
@@ -566,6 +684,10 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ScreenAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/platform/EntityCapabilityMixin.java`
 - `src/main/java/com/elfmcys/ysm/model/resource/client/SoundAcceptance.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeClientEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeEventHooks.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/NeoForgeNetwork.java`
+- `src/main/java/com/elfmcys/ysm/neoforge/YsmNeoForge.java`
 - `src/main/java/com/elfmcys/ysm/network/NetworkHandlerClient.java`
 - `src/main/java/com/elfmcys/ysm/network/SoundPolicyPayload.java`
 - `src/main/java/com/elfmcys/ysm/network/YsmFramePayload.java`
@@ -575,6 +697,7 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/platform/EntityWalkDistance.java`
 - `src/main/java/com/elfmcys/ysm/platform/FMLEnvironment.java`
 - `src/main/java/com/elfmcys/ysm/platform/FMLPaths.java`
+- `src/main/java/com/elfmcys/ysm/platform/McCompat.java`
 - `src/main/java/com/elfmcys/ysm/platform/ModList.java`
 - `src/main/java/com/elfmcys/ysm/platform/OnlyIn.java`
 - `src/main/java/com/elfmcys/ysm/platform/PermissionHelper.java`
@@ -599,6 +722,7 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/platform/event/Mod.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/SubscribeEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/Subscribers.java`
+- `src/main/java/com/elfmcys/ysm/platform/event/YsmEvents.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/AddReloadListenerEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ClientPlayerNetworkEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/EntityJoinLevelEvent.java`
@@ -619,14 +743,17 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ServerStoppingEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/ShieldBlockEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/event/forge/TickEvent.java`
+- `src/main/java/com/elfmcys/ysm/platform/input/KeyCodes.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/KeyConflictContext.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/KeyModifier.java`
 - `src/main/java/com/elfmcys/ysm/platform/input/YsmKeyMapping.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/NetworkDirection.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/NetworkEvent.java`
 - `src/main/java/com/elfmcys/ysm/platform/network/PacketTarget.java`
+- `src/main/java/com/elfmcys/ysm/platform/network/Payloads.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/EntitySubmitHelper.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderMatrices.java`
+- `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateData.java`
 - `src/main/java/com/elfmcys/ysm/platform/render/YsmRenderStateKeys.java`
 - `src/main/resources/data/ysm/tags/item/bows.json`
 - `src/main/resources/data/ysm/tags/item/crossbows.json`
@@ -641,6 +768,13 @@ The Java files written new for the port are All Rights Reserved; [LICENSE-PORT.m
 - `src/verification/test/java/com/elfmcys/ysm/model/resource/client/SoundAcceptanceTest.java`
 - `src/verification/test/java/com/elfmcys/ysm/testsupport/FabricTestEnvironment.java`
 - `src/verification/test/resources/META-INF/services/org.junit.platform.launcher.LauncherSessionListener`
+- `versions/26.1.1.properties`
+- `versions/26.1.2.properties`
+- `versions/26.1.properties`
+- `versions/26.3.properties`
+- `versions/26.3.remap`
+- `versions/loader-forge.remap`
+- `versions/loader-neoforge.remap`
 
 ## Deleted upstream files
 

@@ -2,6 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.elfmcys.ysm.mixin",
+  "plugin": "com.elfmcys.ysm.mixin.fabric.YsmMixinConfigPlugin",
   "compatibilityLevel": "JAVA_25",
   "injectors": {
     "defaultRequire": 1
@@ -12,6 +13,7 @@
     "fabric.client.ByteBufferBuilderAccessor",
     "fabric.client.BufferBuilderDirectWriteMixin",
     "fabric.client.RenderTypeInvoker",
+    "fabric.client.EntityRenderStateDataMixin",
     "fabric.client.EntityRendererStateMixin",
     "fabric.client.LivingEntityRendererMixin",
     "fabric.client.EntityRenderDispatcherReloadMixin",

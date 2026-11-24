@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.geckolib3.geo;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.YesSteveModel;
 import com.elfmcys.ysm.api.rendering.event.RenderLayerEvent;
 import com.elfmcys.ysm.api.rendering.event.RenderModelEvent;
@@ -93,11 +94,11 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
 
             var vehicle = entity.getVehicle();
             if (vehicle != null) {
-                vehicle.getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
+                ICapabilityHolder.of(vehicle).getCapability(VehicleAnimatableCapabilityProvider.CAP).ifPresent(cap -> {
                     cap.waitForRenderUpdate();
                     var rot = cap.getRotation();
                     if (rot != null)
-                        poseStack.mulPose(new Quaternionf().rotateZYX(rot.z, 0, rot.x).invert());
+                        com.elfmcys.ysm.platform.McCompat.rotate(poseStack, new Quaternionf().rotateZYX(rot.z, 0, rot.x).invert());
                 });
             }
 
@@ -181,16 +182,16 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
         if (state.isFullyFrozen)
             bodyRot += (float)(Math.cos(Mth.floor(ageInTicks) * 3.25F) * Math.PI * 0.4F);
         if (!state.hasPose(Pose.SLEEPING))
-            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyRot));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(180.0F - bodyRot));
         if (state.hasPose(Pose.SLEEPING)) {
             Direction bedOrientation = state.bedOrientation;
             float angle = bedOrientation != null ? sleepDirectionToRotation(bedOrientation) : bodyRot;
-            poseStack.mulPose(Axis.YP.rotationDegrees(angle));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(270.0F));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(angle));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZP.rotationDegrees(90.0F));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(270.0F));
         } else if (state.isUpsideDown) {
             poseStack.translate(0.0F, (state.boundingBoxHeight + 0.1F) / entityScale, 0.0F);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
+            com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZP.rotationDegrees(180.0F));
         }
     }
 

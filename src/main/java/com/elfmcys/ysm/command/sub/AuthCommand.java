@@ -1,5 +1,7 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.command.sub;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.AuthModelsCapabilityProvider;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.ysm.capability.ModelSelectionService;
@@ -53,12 +55,12 @@ public final class AuthCommand {
         }
         var hash = model.get().representation().modelId();
         for (var player : EntityArgument.getPlayers(context, TARGETS)) {
-            player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
+            ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
                 if (add) {
                     capability.addModel(hash);
                 } else {
                     capability.removeModel(hash);
-                    player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(selection -> {
+                    ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(selection -> {
                         if (selection
                             .getModelId() instanceof com.elfmcys.ysm.model.domain.PublishedModelId.Model modelId
                             && hash.equals(modelId.hash())
@@ -76,7 +78,7 @@ public final class AuthCommand {
     private static int all(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var hashes = ServerModelService.instance().catalog().orElseThrow().models().keySet();
         for (var player : EntityArgument.getPlayers(context, TARGETS)) {
-            player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
+            ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
                 hashes.forEach(capability::addModel);
                 SessionProtocolHandler.refreshGrants(player);
             });
@@ -87,9 +89,9 @@ public final class AuthCommand {
     private static int clear(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var snapshot = ServerModelService.instance().catalog().orElseThrow();
         for (var player : EntityArgument.getPlayers(context, TARGETS)) {
-            player.getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
+            ICapabilityHolder.of(player).getCapability(AuthModelsCapabilityProvider.AUTH_MODELS_CAP).ifPresent(capability -> {
                 capability.clear();
-                player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(selection -> {
+                ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP).ifPresent(selection -> {
                     var selected = selection.getModelId();
                     if (selected instanceof com.elfmcys.ysm.model.domain.PublishedModelId.Model modelId
                         && snapshot.catalog().byModelId().containsKey(modelId.hash()) && snapshot.catalog().byModelId()

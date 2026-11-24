@@ -1,6 +1,7 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.network.forge;
 
+import com.elfmcys.ysm.platform.capability.ICapabilityHolder;
 import com.elfmcys.ysm.capability.ModelInfoCapabilityProvider;
 import com.elfmcys.ysm.capability.ModelSelectionService;
 import com.elfmcys.ysm.event.CapabilityEvent;
@@ -131,21 +132,24 @@ public final class ControlHandler {
     }
 
     static boolean validCatalogAction(ConfigActionProto action, SettingsProto settings) {
-        for (var button : settings.extraAnimationButtons()) {
-            if (!button.id().equals(action.buttonId()) || action.formIndex() < 0
-                || action.formIndex() >= button.configForms().size())
-                continue;
-            var form = button.configForms().get(action.formIndex());
-            if (action.hasBoolValue())
-                return form.type().equals("checkbox");
-            if (action.hasF32Value())
-                return form.type().equals("range");
-            if (!form.type().equals("radio") || action.labelIndex() < 0 || action.labelIndex() >= form.labels().size())
-                return false;
-            var label = form.labels().get(action.labelIndex());
-            return label.name().equals(action.labelName());
+        // Fabric port: a repeated button id means its last definition, as ModelInfoView and ModelProgramInventory
+        // keep it (2.6.5 parity).
+        com.elfmcys.ysm.proto.mixel.manifest.info.ExtraAnimationButtonProto button = null;
+        for (var candidate : settings.extraAnimationButtons()) {
+            if (candidate.id().equals(action.buttonId()))
+                button = candidate;
         }
-        return false;
+        if (button == null || action.formIndex() < 0 || action.formIndex() >= button.configForms().size())
+            return false;
+        var form = button.configForms().get(action.formIndex());
+        if (action.hasBoolValue())
+            return form.type().equals("checkbox");
+        if (action.hasF32Value())
+            return form.type().equals("range");
+        if (!form.type().equals("radio") || action.labelIndex() < 0 || action.labelIndex() >= form.labels().size())
+            return false;
+        var label = form.labels().get(action.labelIndex());
+        return label.name().equals(action.labelName());
     }
 
     private static Entity resolveEntity(ServerPlayer sender, EntityRefProto reference) {
@@ -173,7 +177,7 @@ public final class ControlHandler {
             return null;
         ManagedContainer model;
         if (entity instanceof ServerPlayer player) {
-            var modelId = player.getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP)
+            var modelId = ICapabilityHolder.of(player).getCapability(ModelInfoCapabilityProvider.MODEL_INFO_CAP)
                 .map(value -> value.getModelId()).orElse(null);
             model = modelId == null ? catalog.defaultModel().orElse(null) : catalog.find(modelId).orElse(null);
         } else {
@@ -189,6 +193,6 @@ public final class ControlHandler {
 
     private static void swing(ServerPlayer player, InteractionHand hand) {
         // Fabric port: vanilla 26.x swing (item swing durations); Forge's onEntitySwing hook does not exist.
-        player.swing(hand, false);
+        com.elfmcys.ysm.platform.McCompat.swing(player, hand, false);
     }
 }

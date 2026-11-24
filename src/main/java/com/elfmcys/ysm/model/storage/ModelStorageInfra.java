@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.storage;
 
 import com.elfmcys.ysm.AssetPaths;
@@ -28,6 +29,9 @@ public final class ModelStorageInfra implements AutoCloseable {
     private final CacheRegion remote;
     private final Scope localScope;
     private final Scope globalScope;
+    // Fabric port (2.6.5 parity): config/yes_steve_model/custom and /auth, converted into the local cache region
+    private final Scope legacyCustomScope;
+    private final Scope legacyAuthScope;
     private final DerivedStorageWork derivedWork = new DerivedStorageWork();
     private final DatabaseWork databaseWork = new DatabaseWork();
     private final PlayerPreferences preferences;
@@ -40,7 +44,9 @@ public final class ModelStorageInfra implements AutoCloseable {
         local = new CacheRegion(paths.gameCacheRoot(), null, derivedWork, databaseWork);
         admit(local);
         localScope = new Scope(
-            ConvertedScope.of(paths.gameModelsRoot(), com.elfmcys.ysm.compatibility.AbiVersion.MODEL_SCHEMA), local);
+            ConvertedScope.of(paths.gameModelsRoot(), ConvertedScope.CURRENT_VERSION), local);
+        legacyCustomScope = new Scope(ConvertedScope.of(paths.legacyCustomRoot(), ConvertedScope.CURRENT_VERSION), local);
+        legacyAuthScope = new Scope(ConvertedScope.of(paths.legacyAuthRoot(), ConvertedScope.CURRENT_VERSION), local);
         if (paths.global().isPresent()) {
             var global = paths.global().orElseThrow();
             remote = global.cacheGuard().root().equals(local.cacheRootIdentity()) ? local
@@ -52,7 +58,7 @@ public final class ModelStorageInfra implements AutoCloseable {
                 throw failure;
             }
             globalScope = new Scope(
-                ConvertedScope.of(global.dataRoot(), com.elfmcys.ysm.compatibility.AbiVersion.MODEL_SCHEMA), remote);
+                ConvertedScope.of(global.dataRoot(), ConvertedScope.CURRENT_VERSION), remote);
         } else {
             remote = local;
             globalScope = null;
@@ -154,7 +160,8 @@ public final class ModelStorageInfra implements AutoCloseable {
     }
 
     public List<Scope> scopes() {
-        return globalScope == null ? List.of(localScope) : List.of(localScope, globalScope);
+        return globalScope == null ? List.of(localScope, legacyCustomScope, legacyAuthScope)
+            : List.of(localScope, legacyCustomScope, legacyAuthScope, globalScope);
     }
 
     public Scope scope(CatalogRootIdentity root) {
@@ -168,6 +175,10 @@ public final class ModelStorageInfra implements AutoCloseable {
         }
         if (configured.equals(paths.modelsRoot()))
             return localScope;
+        if (configured.equals(paths.legacyCustomRoot()))
+            return legacyCustomScope;
+        if (configured.equals(paths.legacyAuthRoot()))
+            return legacyAuthScope;
         throw new IllegalArgumentException("Source root is outside this process layout: " + configured);
     }
 

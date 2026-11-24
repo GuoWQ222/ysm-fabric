@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.compat;
 
 import com.elfmcys.ysm.YesSteveModel;
@@ -11,7 +11,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Consumer;
-import net.fabricmc.loader.api.FabricLoader;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.irisshaders.iris.pbr.loader.PBRTextureLoader;
 import net.irisshaders.iris.pbr.loader.PBRTextureLoaderRegistry;
@@ -41,7 +40,7 @@ public final class IrisCompat {
     private IrisCompat() {}
 
     public static void init() {
-        if (!FabricLoader.getInstance().isModLoaded(MOD_ID))
+        if (!com.elfmcys.ysm.platform.Platform.isModLoaded(MOD_ID))
             return;
         try {
             var format = IrisVertexFormats.ENTITY;
@@ -67,12 +66,26 @@ public final class IrisCompat {
      * fallback writer is used then).
      */
     private static VertexFormatType nativeLayout(VertexFormat format) {
+        //#if MC >= 26.2
         if (format.getVertexSize() != 56 || offset(format, "Position") != 0 || offset(format, "Color") != 12
             || offset(format, "UV0") != 16 || offset(format, "UV1") != 24 || offset(format, "UV2") != 28
             || offset(format, "Normal") != 32 || offset(format, IrisVertexFormats.ENTITY_ID_ATTRIBUTE) != 36)
             return null;
         int mid = offset(format, IrisVertexFormats.MID_TEXTURE_ATTRIBUTE);
         int tangent = offset(format, IrisVertexFormats.TANGENT_ATTRIBUTE);
+        //#else
+        //$$ // Iris for 26.1 names attributes by vanilla VertexFormatElement
+        //$$ if (format.getVertexSize() != 56 || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.POSITION) != 0
+        //$$     || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.COLOR) != 12
+        //$$     || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.UV0) != 16
+        //$$     || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.UV1) != 24
+        //$$     || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.UV2) != 28
+        //$$     || offset(format, com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL) != 32
+        //$$     || offset(format, IrisVertexFormats.ENTITY_ID_ELEMENT) != 36)
+        //$$     return null;
+        //$$ int mid = offset(format, IrisVertexFormats.MID_TEXTURE_ELEMENT);
+        //$$ int tangent = offset(format, IrisVertexFormats.TANGENT_ELEMENT);
+        //#endif
         if (mid == 44 && tangent == 52)
             return VertexFormatType.IRIS_56_V2; // Iris 1.11+: iris_Entity has four 16-bit values
         if (mid == 42 && tangent == 50)
@@ -80,6 +93,7 @@ public final class IrisCompat {
         return null;
     }
 
+    //#if MC >= 26.2
     private static int offset(VertexFormat format, String attribute) {
         try {
             return IrisVertexFormats.getOffset(format, attribute);
@@ -87,6 +101,11 @@ public final class IrisCompat {
             return -1;
         }
     }
+    //#else
+    //$$ private static int offset(VertexFormat format, com.mojang.blaze3d.vertex.VertexFormatElement element) {
+    //$$     return format.contains(element) ? format.getOffset(element) : -1;
+    //$$ }
+    //#endif
 
     public static Optional<VertexFormatType> determineVertexFormatType(VertexFormat vertexFormat) {
         if (installed && entityType != null && entityFormat == vertexFormat)

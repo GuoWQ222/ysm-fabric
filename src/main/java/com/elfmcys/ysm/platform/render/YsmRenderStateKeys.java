@@ -6,45 +6,44 @@
  */
 package com.elfmcys.ysm.platform.render;
 
-import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
-import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.Entity;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Fabric port: 26.x renders from extracted render states; YSM needs the entity itself (its capabilities hold the
- * animation state), so extraction stores it here and submission reads it back.
+ * animation state), so extraction stores it here and submission reads it back. Stored by EntityRenderStateDataMixin
+ * (loader-neutral; was Fabric's render state data keys).
  */
 public final class YsmRenderStateKeys {
-    public static final RenderStateDataKey<Entity> ENTITY = RenderStateDataKey.create(() -> "ysm:entity");
-    /** Set when YSM drew this state's body, so vanilla skips its model and layers. */
-    public static final RenderStateDataKey<Boolean> REPLACED = RenderStateDataKey.create(() -> "ysm:replaced");
-    /** The partial tick the state was extracted with. */
-    public static final RenderStateDataKey<Float> PARTIAL_TICK = RenderStateDataKey.create(() -> "ysm:partial_tick");
-
     private YsmRenderStateKeys() {}
 
+    private static YsmRenderStateData data(EntityRenderState state) {
+        return (YsmRenderStateData)state;
+    }
+
     public static void setEntity(EntityRenderState state, @Nullable Entity entity, float partialTick) {
-        ((FabricRenderState)state).setData(ENTITY, entity);
-        ((FabricRenderState)state).setData(PARTIAL_TICK, partialTick);
-        ((FabricRenderState)state).setData(REPLACED, null);
+        var data = data(state);
+        data.ysm$setEntity(entity);
+        data.ysm$setPartialTick(partialTick);
+        data.ysm$setReplaced(false);
     }
 
     public static @Nullable Entity entity(EntityRenderState state) {
-        return ((FabricRenderState)state).getData(ENTITY);
+        return data(state).ysm$entity();
     }
 
+    /** The partial tick the state was extracted with. */
     public static float partialTick(EntityRenderState state) {
-        Float value = ((FabricRenderState)state).getData(PARTIAL_TICK);
-        return value == null ? 1.0f : value;
+        return data(state).ysm$partialTick();
     }
 
+    /** Set when YSM drew this state's body, so vanilla skips its model and layers. */
     public static void setReplaced(EntityRenderState state, boolean replaced) {
-        ((FabricRenderState)state).setData(REPLACED, replaced ? Boolean.TRUE : null);
+        data(state).ysm$setReplaced(replaced);
     }
 
     public static boolean isReplaced(EntityRenderState state) {
-        return Boolean.TRUE.equals(((FabricRenderState)state).getData(REPLACED));
+        return data(state).ysm$replaced();
     }
 }

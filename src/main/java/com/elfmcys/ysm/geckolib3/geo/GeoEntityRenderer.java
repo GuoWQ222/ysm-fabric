@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.geckolib3.geo;
 
 import com.elfmcys.ysm.client.entity.AnimatableEntity;
@@ -38,7 +38,7 @@ public abstract class GeoEntityRenderer<TEntity extends Entity, T extends Animat
                 int overlay = getPackedOverlay(entity, 0);
                 poseStack.pushPose();
                 try {
-                    poseStack.mulPose(rotation);
+                    com.elfmcys.ysm.platform.McCompat.rotate(poseStack, rotation);
                     if (animatable instanceof com.elfmcys.ysm.client.entity.CustomVehicleEntity vehicle)
                         recordPassengerSeats(vehicle, data, rotation, angle);
                     preRender(data, animatable, poseStack, collector, light, overlay, Color.WHITE);
@@ -68,7 +68,7 @@ public abstract class GeoEntityRenderer<TEntity extends Entity, T extends Animat
         GeoRenderData data, org.joml.Quaternionf rotation, float angle) {
         var seats = new java.util.ArrayList<org.joml.Matrix4f>();
         var seatStack = new PoseStack();
-        seatStack.mulPose(rotation);
+        com.elfmcys.ysm.platform.McCompat.rotate(seatStack, rotation);
         try {
             data.modelState.visitLocatorGroup(com.elfmcys.ysm.client.model.locator.VehicleLocator.get().passenger,
                 seatStack, seat -> seats.add(new org.joml.Matrix4f(seat.last().pose())));

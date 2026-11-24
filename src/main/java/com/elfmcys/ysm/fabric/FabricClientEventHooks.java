@@ -29,7 +29,8 @@ public final class FabricClientEventHooks {
     public static void register() {
         com.elfmcys.ysm.client.event.ClientCommandHandler.register();
         com.elfmcys.ysm.client.gui.pip.YsmGuiModels.register();
-        com.elfmcys.ysm.client.event.ClientSetupEvent.registerHudElements();
+        com.elfmcys.ysm.client.event.ClientSetupEvent.hudLayers().forEach((id, layer) ->
+            net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(id, layer::extractRenderState));
         ClientTickEvents.START_CLIENT_TICK.register(client -> FabricEventHooks.post(new TickEvent.ClientTickEvent(TickEvent.Phase.START)));
         ClientTickEvents.END_CLIENT_TICK.register(client -> FabricEventHooks.post(new TickEvent.ClientTickEvent(TickEvent.Phase.END)));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FabricEventHooks.post(new ClientPlayerNetworkEvent.LoggingIn(client.player, handler)));

@@ -1,4 +1,4 @@
-// Modified for the unofficial Fabric 26.2 port by GuoWQ222, 2026 (see PORTING.md).
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.gui;
 
 import com.elfmcys.ysm.client.gui.button.FlatColorButton;
@@ -27,7 +27,7 @@ public class DownloadScreen extends ModelScreen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int pMouseX, int pMouseY, float pPartialTick) {
-        GuiDraw.drawCenteredString(graphics, font, "Coming Soooooooooooooooooooooooooon™", width / 2, height / 2 - 5, net.minecraft.network.chat.TextColor.DARK_RED.getValue());
+        GuiDraw.drawCenteredString(graphics, font, "Coming Soooooooooooooooooooooooooon™", width / 2, height / 2 - 5, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.DARK_RED));
         super.extractRenderState(graphics, pMouseX, pMouseY, pPartialTick);
     }
 }
