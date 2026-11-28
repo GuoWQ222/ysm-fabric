@@ -151,10 +151,15 @@ public final class GuiFrameInput {
 
     private static void setEquipment(Player player, EquipmentSlot slot, ItemStack item) {
         // Fabric port: 26.x inventories keep the selected hotbar item and equipment behind accessors.
+        //#if MC >= 1.21.5
         var inventory = player.getInventory();
         if (slot == EquipmentSlot.MAINHAND)
             inventory.setItem(inventory.getSelectedSlot(), item);
         else
             ((com.elfmcys.ysm.mixin.fabric.LivingEntityEquipmentAccessor)player).ysm$equipment().set(slot, item);
+        //#else
+        //$$ // before 1.21.5 the player inventory holds the equipment (a client-side preview entity plays no equip sound)
+        //$$ player.setItemSlot(slot, item);
+        //#endif
     }
 }

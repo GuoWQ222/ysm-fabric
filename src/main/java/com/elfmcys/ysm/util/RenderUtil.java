@@ -27,8 +27,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+//#if MC >= 26.1
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
+//#endif
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -51,7 +53,9 @@ import org.joml.Quaternionf;
 @SuppressWarnings("all")
 public final class RenderUtil {
     private static final int GUI_LIGHT = 0xF000F0;
+    //#if MC >= 26.1
     private static final BlockDisplayContext BLOCK_DISPLAY_CONTEXT = BlockDisplayContext.create();
+    //#endif
     private static boolean renderingInInventory = false;
     private static boolean renderingInPaperDoll = false;
     private static boolean renderingLevel = false;
@@ -84,9 +88,15 @@ public final class RenderUtil {
 
     /** Vertical offset vanilla applied to a passenger on its vehicle (1.20 riding offsets), as seen from the vehicle. */
     public static double passengerHeight(Entity vehicle, Entity passenger) {
+        //#if MC >= 1.20.5
         var ridingPosition = vehicle.getPassengerRidingPosition(passenger);
         var attachment = passenger.getVehicleAttachmentPoint(vehicle);
         return ridingPosition.y - vehicle.getY() - attachment.y;
+        //#else
+        //$$ // before 1.20.5 the passenger adds its own riding offset (Entity.positionRider)
+        //$$ var ridingPosition = vehicle.getPassengerRidingPosition(passenger);
+        //$$ return ridingPosition.y - vehicle.getY() + passenger.getMyRidingOffset(vehicle);
+        //#endif
     }
 
     public static void adjustPassengerPosition(Entity entity, PoseStack poseStack, float partialTicks) {
@@ -104,15 +114,23 @@ public final class RenderUtil {
                 return;
             // 2.6.5 parity: the passenger sits at the vehicle model's PassengerLocator for its index (recorded when the
             // vehicle was drawn), then undoes the vehicle yaw; without a seat, vanilla placement stays.
-            if (!(vehicleCap instanceof com.elfmcys.ysm.client.entity.CustomVehicleEntity seats))
-                return;
+            com.elfmcys.ysm.client.entity.CustomVehicleEntity seats = vehicleCap;
             var seat = seats.passengerSeat(index);
             if (seat == null)
                 return;
+            //#if MC >= 1.20.5
             poseStack.mulPose(seat);
+            //#else
+            //$$ poseStack.mulPoseMatrix(seat);
+            //#endif
             com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YN.rotationDegrees(seats.seatAngle()));
+            //#if MC >= 1.20.5
             double yOffset = vehicle.position().y - vehicle.getPassengerRidingPosition(entity).y
                 + entity.getVehicleAttachmentPoint(vehicle).y;
+            //#else
+            //$$ double yOffset = vehicle.position().y - vehicle.getPassengerRidingPosition(entity).y
+            //$$     - entity.getMyRidingOffset(vehicle);
+            //#endif
             boolean playerHasCap = entity instanceof Player player
                 && ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).isPresent();
             if (playerHasCap)
@@ -127,8 +145,8 @@ public final class RenderUtil {
         state.pose = entity.getPose();
         state.bedOrientation = entity.getBedOrientation();
         state.isInvisible = entity.isInvisible();
-        state.lightCoords = GUI_LIGHT;
-        state.outlineColor = 0;
+        com.elfmcys.ysm.platform.render.YsmRenderStateKeys.setLight(state, GUI_LIGHT);
+        com.elfmcys.ysm.platform.render.YsmRenderStateKeys.setOutlineColor(state, 0);
         state.scale = 1.0f;
         state.ageInTicks = entity.tickCount;
         state.boundingBoxHeight = entity.getBbHeight();
@@ -162,7 +180,7 @@ public final class RenderUtil {
         PoseStack poseStack = new PoseStack();
         // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
         // from the pose, so a view-space flip left GUI models lit from behind (dark).
-        poseStack.scale(1.0f, 1.0f, -1.0f);
+        com.elfmcys.ysm.platform.McCompat.flipDepth(poseStack);
         poseStack.translate(0.0D, 0.0D, 1000.0D);
         poseStack.scale(pScale, pScale, pScale);
         poseStack.translate(0, 0.8, 0);
@@ -274,12 +292,17 @@ public final class RenderUtil {
     }
 
     private static void submitBlock(BlockState block, PoseStack poseStack, SubmitNodeCollector collector) {
+        //#if MC >= 26.1
         var resolver = RegisterEntityRenderersEvent.getBlockModelResolver();
         if (resolver == null)
             return;
         var state = new BlockModelRenderState();
         resolver.update(state, block, BLOCK_DISPLAY_CONTEXT);
         state.submit(poseStack, collector, GUI_LIGHT, OverlayTexture.NO_OVERLAY, 0);
+        //#else
+        //$$ // 1.21.9 - 1.21.11: the collector draws a block state directly (no outline colour)
+        //$$ collector.submitBlock(poseStack, block, GUI_LIGHT, OverlayTexture.NO_OVERLAY, 0);
+        //#endif
     }
 
     private static <TAnimatable extends AnimatableEntity<?> & IPreviewEntity> void submitExtraEntity(float yaw,
@@ -301,10 +324,31 @@ public final class RenderUtil {
         poseStack.pushPose();
         try {
             com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.YP.rotationDegrees(yaw));
+            //#if MC >= 1.21.9
             var state = dispatcher.extractEntity(vehicle, partialTicks);
-            state.lightCoords = GUI_LIGHT;
+            com.elfmcys.ysm.platform.render.YsmRenderStateKeys.setLight(state, GUI_LIGHT);
             state.shadowPieces.clear();
             dispatcher.submit(state, camera, 0, -passengerHeight(vehicle, player), 0, poseStack, collector);
+            //#else
+            //$$ // before 1.21.9 the dispatcher draws a state at once (no shadow in GUI previews)
+            //#if MC >= 1.21.5
+            //$$ var state = dispatcher.getRenderer(vehicle).createRenderState(vehicle, partialTicks);
+            //#endif
+            //$$ dispatcher.setRenderShadow(false);
+            //$$ try {
+            //#if MC >= 1.21.5
+            //$$     dispatcher.render(state, 0, -passengerHeight(vehicle, player), 0, poseStack, collector.buffers(), GUI_LIGHT);
+            //#elseif MC >= 1.21.2
+            //$$     // 1.21.4: the dispatcher draws an entity (it extracts the state itself)
+            //$$     dispatcher.render(vehicle, 0, -passengerHeight(vehicle, player), 0, partialTicks, poseStack, collector.buffers(), GUI_LIGHT);
+            //#else
+            //$$     // before 1.21.2 the entity call also takes a yaw (0 as upstream 1.20.1 passed)
+            //$$     dispatcher.render(vehicle, 0, -passengerHeight(vehicle, player), 0, 0.0F, partialTicks, poseStack, collector.buffers(), GUI_LIGHT);
+            //#endif
+            //$$ } finally {
+            //$$     dispatcher.setRenderShadow(true);
+            //$$ }
+            //#endif
         } finally {
             poseStack.popPose();
         }
@@ -386,7 +430,7 @@ public final class RenderUtil {
             var poseStack = new PoseStack();
             // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
             // from the pose, so a view-space flip left GUI models lit from behind (dark).
-            poseStack.scale(1.0f, 1.0f, -1.0f);
+            com.elfmcys.ysm.platform.McCompat.flipDepth(poseStack);
             poseStack.translate(0.0D, input.disableRotation() ? 5.5 : 0, 1000.0D);
             poseStack.scale(scale, scale, scale);
             var zp = Axis.ZP.rotationDegrees(180.0F);
@@ -437,7 +481,7 @@ public final class RenderUtil {
                 var poseStack = new PoseStack();
                 // Depth flip in the pose (not the view): 26.x applies the model-view to positions only, and YSM's normals come
                 // from the pose, so a view-space flip left GUI models lit from behind (dark).
-                poseStack.scale(1, 1, -1);
+                com.elfmcys.ysm.platform.McCompat.flipDepth(poseStack);
                 poseStack.translate(0, 0, -z);
                 poseStack.scale(scale, scale, scale);
                 Quaternionf zRot = Axis.ZP.rotationDegrees(180.1F);
@@ -446,12 +490,31 @@ public final class RenderUtil {
                 zRot.mul(yRot);
                 com.elfmcys.ysm.platform.McCompat.rotate(poseStack, zRot);
                 var dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+                //#if MC >= 1.21.9
                 var state = dispatcher.extractEntity(player, partialTicks);
-                state.lightCoords = 15728880;
+                com.elfmcys.ysm.platform.render.YsmRenderStateKeys.setLight(state, 15728880);
                 state.shadowPieces.clear();
                 var camera = new CameraRenderState();
                 camera.orientation = new Quaternionf(yRot).conjugate();
                 dispatcher.submit(state, camera, 0, 0, 0, poseStack, collector);
+                //#else
+                //#if MC >= 1.21.5
+                //$$ var state = dispatcher.getRenderer(player).createRenderState(player, partialTicks);
+                //#endif
+                //$$ dispatcher.overrideCameraOrientation(new Quaternionf(yRot).conjugate());
+                //$$ dispatcher.setRenderShadow(false);
+                //$$ try {
+                //#if MC >= 1.21.5
+                //$$     dispatcher.render(state, 0, 0, 0, poseStack, collector.buffers(), 15728880);
+                //#elseif MC >= 1.21.2
+                //$$     dispatcher.render(player, 0, 0, 0, partialTicks, poseStack, collector.buffers(), 15728880);
+                //#else
+                //$$     dispatcher.render(player, 0, 0, 0, 0.0F, partialTicks, poseStack, collector.buffers(), 15728880);
+                //#endif
+                //$$ } finally {
+                //$$     dispatcher.setRenderShadow(true);
+                //$$ }
+                //#endif
             } finally {
                 setRenderingInPaperDoll(false);
             }

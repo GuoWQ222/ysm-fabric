@@ -4,6 +4,6 @@
       "id": "#c:tools/mace",
       "required": false
     },
-    "minecraft:mace"
+    { "id": "minecraft:mace", "required": false }
   ]
 }

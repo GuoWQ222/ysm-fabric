@@ -76,6 +76,7 @@ public final class ModelIdUtil {
                 set.add(entityId);
                 // Since 1.21.2 every boat wood is its own entity type; models written for older versions (including
                 // 3.0-dev's own built-ins) still say minecraft:boat / minecraft:chest_boat.
+                //#if MC >= 1.21.2
                 if (entityId.getNamespace().equals("minecraft")
                     && !net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(entityId)) {
                     if (entityId.getPath().equals("boat")) {
@@ -89,6 +90,7 @@ public final class ModelIdUtil {
                                 set.add(key);
                     }
                 }
+                //#endif
             }
         }
         return set;

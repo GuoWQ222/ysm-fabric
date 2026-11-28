@@ -1,0 +1,9 @@
+# Minecraft before 1.21.4 (Forge builds 1.20.2 - 1.21.3): no item model resolver / item render states (stand-ins in
+# src/legacy/pre-item-models), equipment models were ids (EquipmentModel) instead of assets. After below-1.21.5.
+net.minecraft.client.renderer.item.ItemModelResolver com.elfmcys.ysm.legacy.item.ItemModelResolver
+net.minecraft.client.renderer.item.ItemStackRenderState com.elfmcys.ysm.legacy.item.ItemStackRenderState
+
+net.minecraft.client.resources.model.EquipmentClientInfo net.minecraft.world.item.equipment.EquipmentModel
+EquipmentClientInfo EquipmentModel
+~assetId model
+regex	ctx\.getItemModelResolver\(\)	new com.elfmcys.ysm.legacy.item.ItemModelResolver(ctx.getItemRenderer())

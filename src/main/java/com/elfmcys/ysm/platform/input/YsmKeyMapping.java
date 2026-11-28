@@ -16,7 +16,12 @@ import net.minecraft.resources.Identifier;
  * share the {@code ysm:main} category (translation key {@code key.category.ysm.main}, as in 2.6.5).
  */
 public class YsmKeyMapping extends KeyMapping {
+    //#if MC >= 1.21.9
     public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("ysm", "main"));
+    //#else
+    //$$ // before 1.21.9 a key category is its translation key
+    //$$ public static final String CATEGORY = "key.category.ysm.main";
+    //#endif
 
     private final KeyConflictContext context;
     private final KeyModifier modifier;
@@ -37,8 +42,10 @@ public class YsmKeyMapping extends KeyMapping {
         return modifier;
     }
 
-    /** Forge's {@code matches(keyCode, scanCode)}. */
+    //#if MC >= 1.21.9
+    /** Forge's {@code matches(keyCode, scanCode)} (vanilla has it before 1.21.9). */
     public boolean matches(int keyCode, int scanCode) {
         return matches(new KeyEvent(keyCode, scanCode, 0));
     }
+    //#endif
 }

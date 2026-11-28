@@ -91,7 +91,7 @@ public class DebugAnimationScreen {
         var entity = customEntity.getEntity();
         var localPlayer = Minecraft.getInstance().player;
         if (localPlayer != null) {
-            localPlayer.sendSystemMessage(Component.translatable("message.yes_steve_model.model.debug_animation.true")
+            com.elfmcys.ysm.platform.McCompat.message(localPlayer, Component.translatable("message.yes_steve_model.model.debug_animation.true")
                 .append(" -> ").append(Objects.requireNonNullElseGet(entity.getCustomName(), entity::getDisplayName)));
         }
     }
@@ -106,8 +106,8 @@ public class DebugAnimationScreen {
             TARGET = null;
             var localPlayer = Minecraft.getInstance().player;
             if (localPlayer != null) {
-                localPlayer
-                    .sendSystemMessage(Component.translatable("message.yes_steve_model.model.debug_animation.false"));
+                com.elfmcys.ysm.platform.McCompat.message(localPlayer,
+                    Component.translatable("message.yes_steve_model.model.debug_animation.false"));
             }
         }
     }
@@ -187,7 +187,7 @@ public class DebugAnimationScreen {
             return false;
         }
         var replacement = notice.replacement();
-        minecraft.player.sendSystemMessage(Component.translatable(
+        com.elfmcys.ysm.platform.McCompat.message(minecraft.player, Component.translatable(
             "message.yes_steve_model.model.debug_animation.replacement", displayLocation(notice.location()),
             replacement.result().name(), replacement.reason().name(), replacement.nodePath(), replacement.message()));
         return true;

@@ -30,7 +30,7 @@ public class CommandUtil {
             return false;
         }
         if (source instanceof net.minecraft.world.entity.player.Player player
-            && com.elfmcys.ysm.platform.PermissionHelper.has(player.permissions(), level)) {
+            && com.elfmcys.ysm.platform.PermissionHelper.has(player, level)) {
             return true;
         }
         if (isLocalPlayer(source)) {
@@ -40,7 +40,7 @@ public class CommandUtil {
     }
 
     public static boolean hasPermission(CommandSourceStack source, int level) {
-        if (com.elfmcys.ysm.platform.PermissionHelper.has(source.permissions(), level)) {
+        if (com.elfmcys.ysm.platform.PermissionHelper.has(source, level)) {
             return true;
         }
         if (source.getEntity() != null && isLocalPlayer(source.getEntity())) {

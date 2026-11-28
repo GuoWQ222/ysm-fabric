@@ -1,6 +1,17 @@
 // Forge loader (ForgeGradle 7): dependencies, dev runs and mods.toml. Applied by build.gradle for -Ploader=forge.
 // Versions come from versions/<mc>.properties (forge_version, forge_range).
 
+// stand-in folders with their own mixin config (src/legacy/<name>/resources/ysm.<name>.mixins.json)
+def ysmLegacyMixinConfigs = ysmExtraSources.findAll { file("src/legacy/${it}/resources/ysm.${it}.mixins.json").exists() }
+    .collect { "ysm.${it}.mixins.json" }
+
+// versions/<mc>.properties "force_deps": library versions the launcher needs over what conflict resolution picks
+// (Forge for 1.21 asks for jopt-simple 6.0-alpha-3, which lacks the jopt.simple module modlauncher requires)
+def ysmForcedDeps = (findProperty('force_deps') ?: '').toString().split(',')*.trim().findAll { it }
+if (!ysmForcedDeps.isEmpty()) {
+    configurations.configureEach { resolutionStrategy { ysmForcedDeps.each { force it } } }
+}
+
 repositories {
     minecraft.mavenizer(it)
     maven fg.forgeMaven
@@ -13,6 +24,7 @@ minecraft {
             systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
             // Forge reads mixin configs from the jar manifest (MixinConfigs); dev runs load classes from directories
             args '--mixin.config', 'ysm.mixins.json', '--mixin.config', 'ysm.forge.mixins.json'
+            ysmLegacyMixinConfigs.each { config -> args '--mixin.config', config }
             if (ysmNativeLibraryPathOrNull != null)
                 environment 'YSM_NATIVE_PATH', ysmNativeLibraryPathOrNull
             if (project.hasProperty('mixin_count'))
@@ -35,10 +47,12 @@ minecraft {
 }
 
 // ForgeGradle's launcher task (SlimeLauncherExec, a JavaExec) resolves a Java 8 toolchain when it is created (the
-// build machine needs a JDK 8 listed for that); the game itself runs on the project's Java 25.
+// build machine needs a JDK 8 listed for that); the game itself runs on the Java its Minecraft version ships with
+// (java_release: 21 or 17 before 26.1, else 25).
+def ysmRunJava = (findProperty('java_release') ?: '25').toString() as int
 tasks.withType(JavaExec).configureEach {
     if (name.startsWith('run'))
-        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(ysmRunJava) }
 }
 
 dependencies {
@@ -51,16 +65,23 @@ sourceSets.main.resources.srcDir 'src/loader/forge/resources'
 processResources {
     exclude 'fabric.mod.json'
     filesMatching('META-INF/mods.toml') {
-        expand 'mod_version': project.version, 'forge_range': forge_range, 'mc_range_maven': mc_range_maven
+        // the javafml language provider reports only Forge's major version (Forge 48: "48"), so the loader range keeps
+        // the lower bound's major; the forge dependency keeps the full range
+        def loaderRange = forge_range.toString().replaceFirst(/^\[(\d+)[^,]*,/, '[$1,')
+        expand 'mod_version': project.version, 'forge_range': forge_range, 'forge_loader_range': loaderRange,
+            'mc_range_maven': mc_range_maven
     }
-    // Forge bundles Sponge Mixin 0.8.7: compatibility levels end at JAVA_21 (an unknown level is a fatal config error)
-    filesMatching('ysm.mixins.json') {
-        filter { line -> line.replace('"compatibilityLevel": "JAVA_25"', '"compatibilityLevel": "JAVA_21"') }
+    // Forge bundles Sponge Mixin 0.8.7 (0.8.5 up to Forge for 1.20.6): compatibility levels end at JAVA_21 (JAVA_17
+    // with 0.8.5) and an unknown level is a fatal config error; versions/<mc>.properties "mixin_compat" names it
+    def ysmMixinCompat = (findProperty('mixin_compat') ?: 'JAVA_21').toString()
+    inputs.property 'mixin_compat', ysmMixinCompat
+    filesMatching('ysm*.mixins.json') {
+        filter { line -> line.replaceAll(/"compatibilityLevel": "JAVA_\d+"/,'"compatibilityLevel": "' + ysmMixinCompat + '"') }
     }
 }
 
 jar {
-    manifest.attributes('MixinConfigs': 'ysm.mixins.json,ysm.forge.mixins.json')
+    manifest.attributes('MixinConfigs': (['ysm.mixins.json', 'ysm.forge.mixins.json'] + ysmLegacyMixinConfigs).join(','))
 }
 
 // Test harness (dev runs): its own Forge mod metadata instead of fabric.mod.json
@@ -86,6 +107,20 @@ def assembleForgeRunMods = tasks.register('assembleForgeRunMods') {
             into forgeRunYsm
             from mainOutput
             from(declarationOutput) { exclude 'META-INF/services/javax.annotation.processing.Processor' }
+            // Forge 48 builds the game layer from Minecraft's classpath file only, so the libraries the release jar
+            // shades are unpacked into the mod folder (unrelocated, as the dev classes reference them); Maven
+            // artifact and its dependencies are in that layer already (same packages exported twice fail to resolve)
+            if (project.hasProperty('forge_mod_classes')) {
+                project.configurations.ysmImplementation.resolve().findAll {
+                    !(it.name ==~ /(maven-artifact|plexus-utils|commons-lang3)-.*\.jar/)
+                }.each { library ->
+                    from(project.zipTree(library)) {
+                        exclude 'module-info.class', 'META-INF/versions/*/module-info.class', 'META-INF/*.SF',
+                            'META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/MANIFEST.MF', 'META-INF/mods.toml'
+                    }
+                }
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            }
         }
         project.sync {
             into forgeRunHarness
@@ -101,6 +136,139 @@ tasks.withType(JavaExec).configureEach {
             // the test harness (ysm_localtest) is a client mod; the dedicated server run leaves it out
             def runMods = name == 'runServer' ? files(forgeRunYsm) : files(forgeRunYsm, forgeRunHarness)
             classpath = runMods + classpath.filter { !separate.contains(it) }
+            // Forge 48 (Minecraft 1.20.2) finds dev mods only through MOD_CLASSES ("modid%%folder" entries); later
+            // Forge scans the classpath folders. versions/<mc>.properties "forge_mod_classes" turns it on.
+            if (project.hasProperty('forge_mod_classes')) {
+                def entries = ["ysm%%${forgeRunYsm.get().asFile}"]
+                if (name != 'runServer')
+                    entries += "ysm_localtest%%${forgeRunHarness.get().asFile}"
+                environment 'MOD_CLASSES', entries.join(File.pathSeparator)
+            }
         }
     }
+}
+
+// Forge before 1.21.10 ships no MixinExtras: versions/<mc>.properties names one (mixinextras_forge) to bundle as a
+// Forge jar-in-jar (META-INF/jarjar + metadata.json, as Forge's own jarJar writes it); YsmMixinConfigPlugin starts
+// it with MixinExtrasBootstrap.init(). Dev runs load the same jar from the classpath.
+if (project.hasProperty('mixinextras_forge')) {
+    def mixinExtrasVersion = project.property('mixinextras_forge').toString()
+    configurations { ysmMixinExtras { transitive = false } }
+    dependencies {
+        compileOnly "io.github.llamalad7:mixinextras-common:${mixinExtrasVersion}"
+        implementation "io.github.llamalad7:mixinextras-forge:${mixinExtrasVersion}"
+        ysmMixinExtras "io.github.llamalad7:mixinextras-forge:${mixinExtrasVersion}"
+    }
+    def jarJarMetadata = layout.buildDirectory.file('generated/jarjar/META-INF/jarjar/metadata.json')
+    def writeJarJarMetadata = tasks.register('writeForgeJarJarMetadata') {
+        inputs.property 'mixinextras', mixinExtrasVersion
+        outputs.file jarJarMetadata
+        doLast {
+            def file = jarJarMetadata.get().asFile
+            file.parentFile.mkdirs()
+            file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([jars: [[
+                identifier: [group: 'io.github.llamalad7', artifact: 'mixinextras-forge'],
+                version   : [range: "[${mixinExtrasVersion},)", artifactVersion: mixinExtrasVersion],
+                path      : "META-INF/jarjar/mixinextras-forge-${mixinExtrasVersion}.jar",
+                isObfuscated: false]]]))
+        }
+    }
+    tasks.named('shadowJar') {
+        dependsOn writeJarJarMetadata
+        from(project.configurations.ysmMixinExtras) { into 'META-INF/jarjar' }
+        from(layout.buildDirectory.dir('generated/jarjar'))
+    }
+}
+
+// Forge up to 1.20.4 runs on SRG member names (Mojang class names); YSM is compiled against Mojang's names. As
+// ForgeGradle 6 did: Mixin's annotation processor writes a refmap (and the mixins' own shadow / overwrite mappings),
+// and the release jar is renamed to SRG names (buildSrc SrgRemapTask). versions/<mc>.properties: reobf_srg=true,
+// mcp_config_version, client_mappings_url. Dev runs keep Mojang names and ignore the refmap.
+if (project.hasProperty('reobf_srg')) {
+    configurations {
+        ysmMcpConfig { transitive = false }
+    }
+    dependencies {
+        ysmMcpConfig "de.oceanlabs.mcp:mcp_config:${project.property('mcp_config_version')}@zip"
+        annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+        // MixinExtras' injectors (@ModifyExpressionValue, @WrapOperation, ...) join the refmap through its processor
+        if (project.hasProperty('mixinextras_forge'))
+            annotationProcessor "io.github.llamalad7:mixinextras-common:${project.property('mixinextras_forge')}"
+    }
+    def srgDir = layout.buildDirectory.dir('srg')
+    def clientMappingsFile = layout.buildDirectory.file('srg/client_mappings.txt')
+    def mojangToSrg = layout.buildDirectory.file('srg/mojang-srg.tsrg')
+    def mixinMappings = layout.buildDirectory.file('srg/mixin.tsrg')
+    def refmap = layout.buildDirectory.file('srg/ysm.refmap.json')
+    def clientMappingsUrl = project.property('client_mappings_url').toString()
+    def downloadClientMappings = tasks.register('ysmClientMappings') {
+        inputs.property 'url', clientMappingsUrl
+        outputs.file clientMappingsFile
+        doLast {
+            def target = clientMappingsFile.get().asFile
+            target.parentFile.mkdirs()
+            URI.create(clientMappingsUrl).toURL().withInputStream { input -> target.withOutputStream { it << input } }
+        }
+    }
+    def srgMappings = tasks.register('ysmSrgMappings', com.elfmcys.ysm.gradle.SrgMappingsTask) {
+        dependsOn downloadClientMappings
+        mcpConfig.set(layout.file(provider { project.configurations.ysmMcpConfig.singleFile }))
+        clientMappings.set(clientMappingsFile)
+        output.set(mojangToSrg)
+    }
+    tasks.named('compileJava', JavaCompile) {
+        dependsOn srgMappings
+        inputs.file(mojangToSrg)
+        outputs.file(refmap)
+        outputs.file(mixinMappings)
+        options.compilerArgumentProviders.add({ ->
+            ["-AreobfTsrgFile=${mojangToSrg.get().asFile}", "-AoutTsrgFile=${mixinMappings.get().asFile}",
+             "-AoutRefMapFile=${refmap.get().asFile}", '-AdefaultObfuscationEnv=searge', '-AmappingTypes=tsrg']
+        } as CommandLineArgumentProvider)
+    }
+    // the release jar names the refmap in every YSM mixin config; dev runs switch refmaps off (Mojang names there)
+    tasks.named('processResources') {
+        filesMatching('ysm*.mixins.json') {
+            filter { line -> line.trim() == '{' ? '{\n  "refmap": "ysm.refmap.json",' : line }
+        }
+    }
+    // -Pdev_refmaps (test clients with other mods): refmaps stay on, so mods whose mixins name members through their
+    // refmap (renamed SRG -> Mojang by tools/pc/port/srg_deobf.ps1) load in dev; YSM's own SRG refmap is not on the dev
+    // classpath, so its configs fall back to their names
+    if (!project.hasProperty('dev_refmaps'))
+        minecraft.runs.configureEach { jvmArgs '-Dmixin.env.disableRefMap=true' }
+    tasks.named('shadowJar') { from(refmap) }
+    // after build.gradle's own shadowJar settings (classifier ''): the Mojang-named jar gets a classifier, the renamed
+    // one takes the plain name
+    afterEvaluate { tasks.named('shadowJar') { archiveClassifier = 'mojang' } }
+    // Minecraft members plus the mixins' own shadows and overwrites; the processor writes those one line per member
+    // with its class in front ("class name [desc] srg"), grouped into TSRG v1 class blocks here
+    def combinedMappings = tasks.register('ysmSrgCombined') {
+        dependsOn srgMappings, tasks.named('compileJava')
+        def combined = srgDir.map { it.file('reobf.tsrg') }
+        inputs.file(mojangToSrg)
+        outputs.file(combined)
+        doLast {
+            def extra = mixinMappings.get().asFile
+            def byClass = new LinkedHashMap<String, List<String>>()
+            if (extra.exists()) {
+                extra.readLines().findAll { it.trim() }.each { line ->
+                    def parts = line.trim().split(' ')
+                    byClass.computeIfAbsent(parts[0]) { new ArrayList<String>() } << ('\t' + parts[1..-1].join(' '))
+                }
+            }
+            def mixinBlocks = byClass.collect { owner, members -> "${owner} ${owner}\n" + members.join('\n') + '\n' }.join('')
+            combined.get().asFile.text = mojangToSrg.get().asFile.text + mixinBlocks
+        }
+    }
+    def renamed = tasks.register('ysmSrgJar', com.elfmcys.ysm.gradle.SrgRemapTask) {
+        dependsOn tasks.named('shadowJar'), combinedMappings
+        input.set(tasks.named('shadowJar').flatMap { it.archiveFile })
+        mappings.set(srgDir.map { it.file('reobf.tsrg') })
+        output.set(layout.buildDirectory.file("libs/ysm-${project.version}.jar"))
+        // the class hierarchy: everything YSM compiles against (Minecraft's jar may live in the project's build
+        // folder); classes the remapper cannot read count as having no Minecraft parents
+        libraries.from(provider { sourceSets.main.compileClasspath.files.findAll { it.name.endsWith('.jar') } })
+    }
+    tasks.named('assemble') { dependsOn renamed }
 }

@@ -86,11 +86,11 @@ public class FlatSlider extends AbstractSliderButton implements IConfigFormsButt
     }
 
     private int textureY() {
-        return (isFocused() && !canChangeValue ? 1 : 0) * 20;
+        return (isFocused() && !((com.elfmcys.ysm.mixin.fabric.client.AbstractSliderButtonAccessor)this).ysm$canChangeValue() ? 1 : 0) * 20;
     }
 
     private int handleTextureY() {
-        return (!isHovered() && !canChangeValue ? 2 : 3) * 20;
+        return (!isHovered() && !((com.elfmcys.ysm.mixin.fabric.client.AbstractSliderButtonAccessor)this).ysm$canChangeValue() ? 2 : 3) * 20;
     }
 
     @Override

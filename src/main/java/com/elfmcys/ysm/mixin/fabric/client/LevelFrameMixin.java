@@ -32,11 +32,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LevelFrameMixin {
     //#if MC >= 26.2
     @Inject(method = "extract", at = @At("HEAD"))
-    //#else
+    //#elseif MC >= 26.1
     //$$ @Inject(method = "extractLevel", at = @At("HEAD"))
     //#endif
+    //#if MC >= 26.1
     private void ysm$scheduleAnimations(DeltaTracker deltaTracker, Camera camera, float deltaPartialTick,
         CallbackInfo ci) {
+    //#else
+    //$$ // 1.21.x: renderLevel extracts the level itself, with the game-time partial tick of the frame
+    //$$ @Inject(method = "renderLevel", at = @At("HEAD"))
+    //$$ private void ysm$scheduleAnimations(CallbackInfo ci) {
+    //$$     float deltaPartialTick = net.minecraft.client.Minecraft.getInstance().getDeltaTracker()
+    //$$         .getGameTimeDeltaPartialTick(false);
+    //#endif
         if (!YesSteveModel.isAvailable())
             return;
         // A frame can extract without rendering the level; finish that frame's updates first.

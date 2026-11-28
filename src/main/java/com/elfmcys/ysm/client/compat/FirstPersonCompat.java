@@ -28,7 +28,26 @@ public final class FirstPersonCompat {
     }
 
     public static boolean isRenderingPlayer() {
-        return installed && Inner.isRenderingPlayer();
+        return installed && (submittingExtracted || Inner.isRenderingPlayer());
+    }
+
+    /** Render thread: YSM is submitting a state extracted while First-person Model drew the local player. */
+    private static boolean submittingExtracted;
+
+    /**
+     * Runs a player's submit as First-person Model drawing when its state was extracted that way: its 1.21.9 / 1.21.10
+     * builds raise their flag only during extraction, and YSM poses the model (hides the head, places the camera) at
+     * submit.
+     */
+    public static <T> T submitExtracted(boolean extractedWhileDrawing, java.util.function.Supplier<T> submit) {
+        if (!extractedWhileDrawing || submittingExtracted)
+            return submit.get();
+        submittingExtracted = true;
+        try {
+            return submit.get();
+        } finally {
+            submittingExtracted = false;
+        }
     }
 
     public static boolean shouldHideHead() {

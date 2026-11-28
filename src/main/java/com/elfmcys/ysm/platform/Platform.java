@@ -51,7 +51,11 @@ public final class Platform {
         //#elseif LOADER == neoforge
         //$$ return net.neoforged.fml.ModList.get().isLoaded(modId);
         //#else
+        //#if MC >= 26.1
         //$$ return net.minecraftforge.fml.ModList.isLoaded(modId);
+        //#else
+        //$$ return net.minecraftforge.fml.ModList.get().isLoaded(modId);
+        //#endif
         //#endif
     }
 
@@ -61,12 +65,39 @@ public final class Platform {
             .map(container -> container.getMetadata().getVersion().getFriendlyString());
         //#elseif LOADER == neoforge
         //$$ return net.neoforged.fml.ModList.get().getModContainerById(modId)
-        //$$     .map(container -> container.getModInfo().getVersion().toString());
+        //$$     .map(container -> versionOf(container.getModInfo()));
         //#else
+        //#if MC >= 26.1
         //$$ return net.minecraftforge.fml.ModList.getModContainerById(modId)
-        //$$     .map(container -> container.getModInfo().getVersion().toString());
+        //#else
+        //$$ return net.minecraftforge.fml.ModList.get().getModContainerById(modId)
+        //#endif
+        //$$     .map(container -> versionOf(container.getModInfo()));
         //#endif
     }
+
+    //#if LOADER == neoforge
+    //$$ private static final String MOD_INFO = "net.neoforged.neoforgespi.language.IModInfo";
+    //#elseif LOADER == forge
+    //$$ private static final String MOD_INFO = "net.minecraftforge.forgespi.language.IModInfo";
+    //#endif
+    //#if LOADER != fabric
+    //$$ private static java.lang.reflect.Method modInfoVersion;
+    //$$
+    //$$ /**
+    //$$  * IModInfo.getVersion() looked up by name: it returns Maven's ArtifactVersion, which the release jar relocates along
+    //$$  * with YSM's own copy of Maven's library, so a direct call would name a method the loader does not have.
+    //$$  */
+    //$$ private static String versionOf(Object modInfo) {
+    //$$     try {
+    //$$         if (modInfoVersion == null)
+    //$$             modInfoVersion = Class.forName(MOD_INFO).getMethod("getVersion");
+    //$$         return String.valueOf(modInfoVersion.invoke(modInfo));
+    //$$     } catch (ReflectiveOperationException failure) {
+    //$$         return "unknown";
+    //$$     }
+    //$$ }
+    //#endif
 
     /** All loaded mods. */
     public static List<ModInfo> mods() {
@@ -77,10 +108,14 @@ public final class Platform {
             .toList();
         //#elseif LOADER == neoforge
         //$$ return net.neoforged.fml.ModList.get().getMods().stream()
-        //$$     .map(mod -> new ModInfo(mod.getModId(), mod.getDisplayName(), mod.getVersion().toString())).toList();
+        //$$     .map(mod -> new ModInfo(mod.getModId(), mod.getDisplayName(), versionOf(mod))).toList();
         //#else
+        //#if MC >= 26.1
         //$$ return net.minecraftforge.fml.ModList.getMods().stream()
-        //$$     .map(mod -> new ModInfo(mod.getModId(), mod.getDisplayName(), mod.getVersion().toString())).toList();
+        //#else
+        //$$ return net.minecraftforge.fml.ModList.get().getMods().stream()
+        //#endif
+        //$$     .map(mod -> new ModInfo(mod.getModId(), mod.getDisplayName(), versionOf(mod))).toList();
         //#endif
     }
 
@@ -92,7 +127,11 @@ public final class Platform {
         //$$ var file = net.neoforged.fml.ModList.get().getModFileById(modId);
         //$$ return file == null ? Optional.empty() : Optional.of(file.getFile().getFilePath());
         //#else
+        //#if MC >= 26.1
         //$$ var file = net.minecraftforge.fml.ModList.getModFileById(modId);
+        //#else
+        //$$ var file = net.minecraftforge.fml.ModList.get().getModFileById(modId);
+        //#endif
         //$$ return file == null ? Optional.empty() : Optional.of(file.getFile().getFilePath());
         //#endif
     }
@@ -116,7 +155,11 @@ public final class Platform {
         //#elseif LOADER == neoforge
         //$$ return com.elfmcys.ysm.neoforge.YsmNeoForge.ownResource(String.join("/", parts));
         //#else
+        //#if MC >= 26.1
         //$$ return net.minecraftforge.fml.ModList.getModFileById(com.elfmcys.ysm.YesSteveModel.MOD_ID).getFile()
+        //#else
+        //$$ return net.minecraftforge.fml.ModList.get().getModFileById(com.elfmcys.ysm.YesSteveModel.MOD_ID).getFile()
+        //#endif
         //$$     .findResource(parts);
         //#endif
     }

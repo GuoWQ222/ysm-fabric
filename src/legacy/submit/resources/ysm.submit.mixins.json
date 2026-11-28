@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.elfmcys.ysm.legacy.submit.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "EntityRendererLeashInvoker",
+    "LivingEntityRendererLegacyMixin",
+    "EntityRenderDispatcherLegacyMixin",
+    "ItemInHandRendererLegacyMixin",
+    "KeyboardHandlerLegacyMixin",
+    "MouseHandlerLegacyMixin"
+  ]
+}

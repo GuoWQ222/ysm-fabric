@@ -11,8 +11,12 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.Screen;
+//#if MC >= 1.21.9
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+//#endif
+//#if MC >= 26.1
 import net.minecraft.client.renderer.state.GameRenderState;
+//#endif
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -59,6 +63,7 @@ public final class McCompat {
         //#endif
     }
 
+    //#if MC >= 1.21.6
     public static com.mojang.blaze3d.platform.Lighting lighting() {
         //#if MC >= 26.2
         return Minecraft.getInstance().gameRenderer.lighting();
@@ -66,6 +71,7 @@ public final class McCompat {
         //$$ return Minecraft.getInstance().gameRenderer.getLighting();
         //#endif
     }
+    //#endif
 
     public static Camera mainCamera() {
         //#if MC >= 26.2
@@ -75,6 +81,7 @@ public final class McCompat {
         //#endif
     }
 
+    //#if MC >= 1.21.9
     public static FeatureRenderDispatcher featureRenderDispatcher() {
         //#if MC >= 26.2
         return Minecraft.getInstance().gameRenderer.featureRenderDispatcher();
@@ -82,12 +89,64 @@ public final class McCompat {
         //$$ return Minecraft.getInstance().gameRenderer.getFeatureRenderDispatcher();
         //#endif
     }
+    //#endif
 
+    /** The parrot variant on a player's left shoulder (before 1.21.9: read from the shoulder entity tag). */
+    public static java.util.Optional<net.minecraft.world.entity.animal.parrot.Parrot.Variant> shoulderParrotLeft(
+        net.minecraft.world.entity.player.Player player) {
+        //#if MC >= 1.21.9
+        return player.getShoulderParrotLeft();
+        //#else
+        //$$ return shoulderParrot(player.getShoulderEntityLeft());
+        //#endif
+    }
+
+    public static java.util.Optional<net.minecraft.world.entity.animal.parrot.Parrot.Variant> shoulderParrotRight(
+        net.minecraft.world.entity.player.Player player) {
+        //#if MC >= 1.21.9
+        return player.getShoulderParrotRight();
+        //#else
+        //$$ return shoulderParrot(player.getShoulderEntityRight());
+        //#endif
+    }
+    //#if MC < 1.21.9
+    //$$ private static java.util.Optional<net.minecraft.world.entity.animal.parrot.Parrot.Variant> shoulderParrot(
+    //$$     net.minecraft.nbt.CompoundTag tag) {
+    //$$     if (tag.isEmpty() || EntityType.byString(tag.getStringOr("id", "")).filter(type -> type == EntityType.PARROT).isEmpty())
+    //$$         return java.util.Optional.empty();
+    //$$     return java.util.Optional.of(net.minecraft.world.entity.animal.parrot.Parrot.Variant.byId(tag.getIntOr("Variant", 0)));
+    //$$ }
+    //#endif
+
+    //#if MC >= 26.1
     public static GameRenderState gameRenderState() {
         //#if MC >= 26.2
         return Minecraft.getInstance().gameRenderer.gameRenderState();
         //#else
         //$$ return Minecraft.getInstance().gameRenderer.getGameRenderState();
+        //#endif
+    }
+    //#endif
+
+    /** A chat line for the local player only (26.1: sendSystemMessage; 1.x: displayClientMessage). */
+    public static void message(net.minecraft.client.player.LocalPlayer player, net.minecraft.network.chat.Component text) {
+        //#if MC >= 26.1
+        player.sendSystemMessage(text);
+        //#else
+        //$$ player.displayClientMessage(text, false);
+        //#endif
+    }
+
+    /** Line width for vanilla-style line geometry (26.1: window render state; 1.x: the window itself). */
+    public static float lineWidth() {
+        //#if MC >= 26.1
+        return gameRenderState().windowRenderState.appropriateLineWidth;
+        //#else
+        //#if MC >= 1.21.11
+        //$$ return Minecraft.getInstance().getWindow().getAppropriateLineWidth();
+        //#else
+        //$$ return Math.max(2.5F, Minecraft.getInstance().getWindow().getWidth() / 1920.0F * 2.5F);
+        //#endif
         //#endif
     }
 
@@ -124,12 +183,28 @@ public final class McCompat {
         //#endif
     }
 
+    /**
+     * The GUI depth flip: z negated in the pose, normals with it. Before 1.20.5 PoseStack.scale took the normal factor
+     * from Mth.fastInvCubeRoot of the factors' product, which a negative product breaks (GUI models came out unshaded):
+     * there the flip goes straight into both matrices, as 1.20.5's scale does it.
+     */
+    public static void flipDepth(com.mojang.blaze3d.vertex.PoseStack pose) {
+        //#if MC >= 1.20.5
+        pose.scale(1.0F, 1.0F, -1.0F);
+        //#else
+        //$$ pose.last().pose().scale(1.0F, 1.0F, -1.0F);
+        //$$ pose.last().normal().scale(1.0F, 1.0F, -1.0F);
+        //#endif
+    }
+
     /** Rotates by a quaternion (26.3: PoseStack.rotate; before: mulPose). */
     public static void rotate(com.mojang.blaze3d.vertex.PoseStack pose, org.joml.Quaternionfc rotation) {
         //#if MC >= 26.3
         //$$ pose.rotate(rotation);
-        //#else
+        //#elseif MC >= 1.21.5
         pose.mulPose(rotation);
+        //#else
+        //$$ pose.mulPose(new org.joml.Quaternionf(rotation));
         //#endif
     }
 

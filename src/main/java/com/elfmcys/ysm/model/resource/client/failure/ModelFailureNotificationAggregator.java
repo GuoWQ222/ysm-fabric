@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.model.resource.client.failure;
 
 import com.elfmcys.ysm.model.catalog.content.ModelContent;
@@ -62,7 +63,7 @@ public final class ModelFailureNotificationAggregator implements AutoCloseable {
         Minecraft.getInstance().execute(() -> {
             var player = Minecraft.getInstance().player;
             if (player != null) {
-                player.sendSystemMessage(Component.translatable(worst.translationKey(), batch.size()));
+                com.elfmcys.ysm.platform.McCompat.message(player, Component.translatable(worst.translationKey(), batch.size()));
             }
         });
     }

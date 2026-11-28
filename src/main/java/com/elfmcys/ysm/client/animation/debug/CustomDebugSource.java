@@ -1,3 +1,4 @@
+// Modified for the unofficial Minecraft 26.x port (Fabric, NeoForge, Forge) by GuoWQ222, 2026 (see PORTING.md).
 package com.elfmcys.ysm.client.animation.debug;
 
 import net.minecraft.client.Minecraft;
@@ -19,7 +20,7 @@ public class CustomDebugSource implements DebugSource {
             return;
         }
         Minecraft.getInstance().execute(() -> {
-            Minecraft.getInstance().player.sendSystemMessage(
+            com.elfmcys.ysm.platform.McCompat.message(Minecraft.getInstance().player, 
                 Component.translatable("message.yes_steve_model.model.debug_animation.output").append(message));
         });
     }

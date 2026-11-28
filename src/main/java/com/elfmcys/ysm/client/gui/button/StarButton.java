@@ -40,7 +40,12 @@ public class StarButton extends FlatColorButton {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+    //#else
+    //$$ public void onPress() {
+    //$$     var input = com.elfmcys.ysm.legacy.input.InputWithModifiers.current();
+    //#endif
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
             ICapabilityHolder.of(player).getCapability(PlayerAnimatableCapabilityProvider.CAP).ifPresent(modelInfoCap -> {

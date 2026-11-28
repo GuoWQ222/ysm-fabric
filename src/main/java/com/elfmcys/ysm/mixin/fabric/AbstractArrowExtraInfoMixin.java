@@ -30,12 +30,22 @@ public abstract class AbstractArrowExtraInfoMixin implements IArrowExtraInfo {
     @Unique
     private String ysm$shootItemId = "";
 
+    //#if MC >= 1.21.2
     @Shadow
     protected abstract boolean isInGround();
+    //#else
+    //$$ // before 1.21.2 the in-ground state is a field
+    //$$ @Shadow
+    //$$ protected boolean inGround;
+    //#endif
 
     @Override
     public boolean ysm$isInGround() {
+        //#if MC >= 1.21.2
         return isInGround();
+        //#else
+        //$$ return inGround;
+        //#endif
     }
 
     @Override

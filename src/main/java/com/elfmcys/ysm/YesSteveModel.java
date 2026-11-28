@@ -109,7 +109,7 @@ public final class YesSteveModel {
     public static void sendUnavailableMessage() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            player.sendSystemMessage(getUnavailableMessage());
+            com.elfmcys.ysm.platform.McCompat.message(player, getUnavailableMessage());
         }
     }
 

@@ -23,6 +23,9 @@ public final class ForgeClientEventHooks {
     public static void register() {
         com.elfmcys.ysm.client.gui.pip.YsmGuiModels.register();
         com.elfmcys.ysm.client.event.ClientCommandHandler.register();
+        // Forge for 1.20.6, 1.21 and 1.21.6 / 1.21.7: a mixin draws the layers (src/legacy/gui-hud; 1.20.6 has the event but
+        // its layers take a float partial tick, and vanilla Gui.render runs there)
+        //#if MC >= 1.21.8 || MC < 1.21.6 && MC >= 1.21.1
         net.minecraftforge.client.event.AddGuiOverlayLayersEvent.BUS.addListener(event -> {
             var layers = event.getLayeredDraw();
             // hidden with the HUD (F1), as the Fabric HUD elements and the original Forge overlays
@@ -32,6 +35,17 @@ public final class ForgeClientEventHooks {
                         layer.extractRenderState(graphics, delta);
                 }));
         });
+        //#endif
+        //#if MC < 1.20.5
+        //$$ // Forge 48 / 49 (Minecraft 1.20.2 - 1.20.4): ForgeGui draws the HUD (vanilla Gui.render does not run) from registered
+        //$$ // overlays, as upstream YSM registered its own on 1.20.1
+        //$$ com.elfmcys.ysm.forge.YsmForge.modEventBus().addListener((net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) ->
+        //$$     com.elfmcys.ysm.client.event.ClientSetupEvent.hudLayers().forEach((id, layer) ->
+        //$$         event.registerAboveAll(id.getPath(), (gui, graphics, partialTick, width, height) -> {
+        //$$             if (!com.elfmcys.ysm.platform.McCompat.hudHidden())
+        //$$                 layer.render(graphics, com.elfmcys.ysm.legacy.DeltaTracker.of(partialTick));
+        //$$         })));
+        //#endif
         // YSM's key mappings are collected by its own event, then registered in Forge's
         YsmEvents.post(new RegisterKeyMappingsEvent());
         net.minecraftforge.client.event.RegisterKeyMappingsEvent.BUS.addListener(event -> {
@@ -72,6 +86,7 @@ public final class ForgeClientEventHooks {
     }
 
     /** YSM's GUI model previews (PictureInPictureRenderer for YsmGuiModelRenderState). */
+    //#if MC >= 1.21.6
     public static void registerPictureRenderer() {
         net.minecraftforge.client.event.RegisterPictureInPictureRendererEvent.BUS.addListener(event -> {
             //#if MC >= 26.2
@@ -82,4 +97,5 @@ public final class ForgeClientEventHooks {
             //#endif
         });
     }
+    //#endif
 }

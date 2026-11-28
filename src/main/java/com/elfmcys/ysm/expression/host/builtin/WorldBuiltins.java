@@ -183,8 +183,12 @@ public final class WorldBuiltins {
     public static float queryMoonPhase(MolangContextView<Entity> context) {
         // Fabric port: 26.x moon phase is an environment attribute (what the sky shows at the entity).
         var entity = context.subject();
+        //#if MC >= 1.21.11
         return entity.level().environmentAttributes()
             .getValue(net.minecraft.world.attribute.EnvironmentAttributes.MOON_PHASE, entity.position()).index();
+        //#else
+        //$$ return entity.level().getMoonPhase();
+        //#endif
     }
 
     @BuiltinFunction(value = "time_of_day", namespace = "query")

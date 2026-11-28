@@ -64,6 +64,7 @@ class FallbackVertexWriter {
                 var normalZ = ((byte)((normal >>> 16) & 0xFF)) / 127f;
 
                 // Fabric port: 26.x VertexConsumer.addVertex(pos, ARGB color, uv, overlay, light, normal).
+                //#if MC >= 1.21
                 vertexBuffer.addVertex(Float.intBitsToFloat(vertexData[offset + INDEX_X]),
                     Float.intBitsToFloat(vertexData[offset + INDEX_Y]),
                     Float.intBitsToFloat(vertexData[offset + INDEX_Z]),
@@ -71,6 +72,15 @@ class FallbackVertexWriter {
                     Float.intBitsToFloat(vertexData[offset + INDEX_TEX_U]),
                     Float.intBitsToFloat(vertexData[offset + INDEX_TEX_V]), overlayUv, vertexData[offset + INDEX_LIGHT],
                     normalX, normalY, normalZ);
+                //#else
+                //$$ // before 1.21: vertex(pos, r, g, b, a, uv, overlay, light, normal), ended by the call
+                //$$ vertexBuffer.vertex(Float.intBitsToFloat(vertexData[offset + INDEX_X]),
+                //$$     Float.intBitsToFloat(vertexData[offset + INDEX_Y]),
+                //$$     Float.intBitsToFloat(vertexData[offset + INDEX_Z]), r, g, b, a,
+                //$$     Float.intBitsToFloat(vertexData[offset + INDEX_TEX_U]),
+                //$$     Float.intBitsToFloat(vertexData[offset + INDEX_TEX_V]), overlayUv, vertexData[offset + INDEX_LIGHT],
+                //$$     normalX, normalY, normalZ);
+                //#endif
             }
         }
     }

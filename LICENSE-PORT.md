@@ -17,7 +17,7 @@ Built-in model assets have their own licenses (see NOTICE.md). The models includ
 
 ## All Rights Reserved
 
-The 135 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
+The 186 Java files listed below were written new for this port. They are Copyright (c) 2026 GuoWQ222,
 All Rights Reserved, and are **not** licensed under the Apache License 2.0. Each one says so in its header.
 
 You may view them on GitHub, and GitHub's Terms of Service let you fork the repository on GitHub. Beyond that, no
@@ -29,6 +29,56 @@ stays under the Apache License 2.0 and can be used under that license.
 
 - `buildSrc/src/main/java/com/elfmcys/ysm/gradle/PreprocessTask.java`
 - `buildSrc/src/main/java/com/elfmcys/ysm/gradle/Preprocessor.java`
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/RelocationCheck.java`
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/SrgMappingsTask.java`
+- `buildSrc/src/main/java/com/elfmcys/ysm/gradle/SrgRemapTask.java`
+- `src/legacy/gui-hud/java/com/elfmcys/ysm/legacy/hud/mixin/GuiHudLegacyMixin.java`
+- `src/legacy/gui-immediate/java/com/elfmcys/ysm/client/gui/pip/GuiQuadRenderState.java`
+- `src/legacy/gui-immediate/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModelRenderState.java`
+- `src/legacy/gui-immediate/java/com/elfmcys/ysm/client/gui/pip/YsmGuiModels.java`
+- `src/legacy/gui-immediate/java/com/elfmcys/ysm/legacy/gui/mixin/PreviewOutputMixin.java`
+- `src/legacy/pip-readback/java/com/elfmcys/ysm/legacy/pip/mixin/PictureInPictureCopySourceMixin.java`
+- `src/legacy/pre-byte-buffer-builder/java/com/elfmcys/ysm/mixin/fabric/client/BufferBuilderDirectWriteMixin.java`
+- `src/legacy/pre-checkbox-builder/java/com/elfmcys/ysm/legacy/gui/CheckboxBuilder.java`
+- `src/legacy/pre-data-components/java/com/elfmcys/ysm/legacy/item/ArrowPotions.java`
+- `src/legacy/pre-data-components/java/com/elfmcys/ysm/mixin/fabric/ArrowPotionAccessor.java`
+- `src/legacy/pre-delta-tracker/java/com/elfmcys/ysm/legacy/DeltaTracker.java`
+- `src/legacy/pre-item-models/java/com/elfmcys/ysm/legacy/item/ItemModelResolver.java`
+- `src/legacy/pre-item-models/java/com/elfmcys/ysm/legacy/item/ItemStackRenderState.java`
+- `src/legacy/pre-payload-types/java/com/elfmcys/ysm/forge/ForgeNetwork.java`
+- `src/legacy/pre-payload-types/java/com/elfmcys/ysm/legacy/network/ByteBufCodecs.java`
+- `src/legacy/pre-payload-types/java/com/elfmcys/ysm/legacy/network/CustomPacketPayload.java`
+- `src/legacy/pre-payload-types/java/com/elfmcys/ysm/legacy/network/StreamCodec.java`
+- `src/legacy/pre-pipelines/java/com/elfmcys/ysm/client/texture/YsmTexture.java`
+- `src/legacy/pre-pipelines/java/com/elfmcys/ysm/platform/NbtCompat.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/EntityRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/FishingHookRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/HumanoidRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/LivingEntityRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/MinecartRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/PlayerRenderState.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/state/StateExtractor.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/submit/mixin/EntityRenderDispatcherLegacyMixin.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/submit/mixin/EntityRendererLeashInvoker.java`
+- `src/legacy/pre-render-states/java/com/elfmcys/ysm/legacy/submit/mixin/LivingEntityRendererLegacyMixin.java`
+- `src/legacy/projection-buffers/java/com/elfmcys/ysm/legacy/projection/mixin/CachedOrthoProjectionMatrixBufferMixin.java`
+- `src/legacy/projection-buffers/java/com/elfmcys/ysm/legacy/projection/mixin/CachedPerspectiveProjectionMatrixBufferMixin.java`
+- `src/legacy/projection-buffers/java/com/elfmcys/ysm/legacy/projection/mixin/PerspectiveProjectionMatrixBufferMixin.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/input/CharacterEvent.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/input/InputWithModifiers.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/input/KeyEvent.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/input/MouseButtonEvent.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/input/MouseButtonInfo.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/render/CameraRenderState.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/render/SubmitNodeCollector.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/EntityRenderDispatcherLegacyMixin.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/EntityRendererLeashInvoker.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/ItemInHandRendererLegacyMixin.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/KeyboardHandlerLegacyMixin.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/LivingEntityRendererLegacyMixin.java`
+- `src/legacy/submit/java/com/elfmcys/ysm/legacy/submit/mixin/MouseHandlerLegacyMixin.java`
+- `src/legacy/wthit-initializer/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitCommonPlugin.java`
+- `src/legacy/wthit-initializer/java/com/elfmcys/ysm/client/compat/wthit/YsmWthitPlugin.java`
 - `src/localtest/java/com/elfmcys/ysm/localtest/VisualTestHarness.java`
 - `src/main/java/com/elfmcys/ysm/buffer/Memory.java`
 - `src/main/java/com/elfmcys/ysm/client/command/ClientFeedback.java`
@@ -67,6 +117,7 @@ stays under the Apache License 2.0 and can be used under that license.
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ServerCommonPacketListenerAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/ServerPlayerRidingMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/YsmMixinConfigPlugin.java`
+- `src/main/java/com/elfmcys/ysm/mixin/fabric/client/AbstractSliderButtonAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/BufferBuilderDirectWriteMixin.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ByteBufferBuilderAccessor.java`
 - `src/main/java/com/elfmcys/ysm/mixin/fabric/client/ClientRespawnCloneMixin.java`

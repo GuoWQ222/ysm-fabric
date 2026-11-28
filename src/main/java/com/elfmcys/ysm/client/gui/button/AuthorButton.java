@@ -85,9 +85,15 @@ public class AuthorButton extends Button {
         String authorComment =
             LanguageManager.getI18n(model, "metadata.authors.%d.comment".formatted(index), author.comment().orElse(""));
 
+        //#if MC >= 1.21.11
         graphics.textRenderer().acceptScrollingWithDefaultCenter(
             Component.literal(authorName).withColor(com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GOLD)),
             this.getX() + 2, this.getX() + width - 2, this.getY() + 72, this.getY() + 82);
+        //#else
+        //$$ renderScrollingString(graphics, font,
+        //$$     Component.literal(authorName).withColor(com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GOLD)),
+        //$$     this.getX() + 2, this.getY() + 72, this.getX() + width - 2, this.getY() + 82, 0xFFFFFFFF);
+        //#endif
         GuiDraw.drawCenteredString(graphics, font, authorRole, this.getX() + 35, this.getY() + 82, com.elfmcys.ysm.platform.McCompat.rgb(net.minecraft.ChatFormatting.GREEN));
         drawWordWrap(graphics, Component.literal(authorComment), this.getX() + 3, this.getY() + 95, 64, 0xFFFFFFFF);
     }
@@ -154,7 +160,12 @@ public class AuthorButton extends Button {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+    //#else
+    //$$ public void onPress() {
+    //$$     var input = com.elfmcys.ysm.legacy.input.InputWithModifiers.current();
+    //#endif
         if (author == null) {
             return;
         }

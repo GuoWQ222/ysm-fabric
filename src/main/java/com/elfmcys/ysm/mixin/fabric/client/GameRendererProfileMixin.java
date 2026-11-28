@@ -24,9 +24,13 @@ public abstract class GameRendererProfileMixin {
     //#if MC >= 26.3
     //$$ @Inject(method = "render()V", at = @At("HEAD"))
     //$$ private void ysm$beforeRender(CallbackInfo ci) {
-    //#else
+    //#elseif MC >= 1.21
     @Inject(method = "render(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("HEAD"))
     private void ysm$beforeRender(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo ci) {
+    //#else
+    //$$ // before 1.21: render(partialTick, nanoTime, renderLevel)
+    //$$ @Inject(method = "render(FJZ)V", at = @At("HEAD"))
+    //$$ private void ysm$beforeRender(float partialTick, long nanoTime, boolean renderLevel, CallbackInfo ci) {
     //#endif
         ysm$profileFrameActive = NativeProfiler.beginFrame();
     }
@@ -34,9 +38,12 @@ public abstract class GameRendererProfileMixin {
     //#if MC >= 26.3
     //$$ @Inject(method = "render()V", at = @At("RETURN"))
     //$$ private void ysm$afterRender(CallbackInfo ci) {
-    //#else
+    //#elseif MC >= 1.21
     @Inject(method = "render(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("RETURN"))
     private void ysm$afterRender(DeltaTracker deltaTracker, boolean advanceGameTime, CallbackInfo ci) {
+    //#else
+    //$$ @Inject(method = "render(FJZ)V", at = @At("RETURN"))
+    //$$ private void ysm$afterRender(float partialTick, long nanoTime, boolean renderLevel, CallbackInfo ci) {
     //#endif
         NativeProfiler.endFrame(ysm$profileFrameActive);
         ysm$profileFrameActive = false;

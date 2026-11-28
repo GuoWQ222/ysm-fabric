@@ -18,12 +18,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Fabric port of ServerPlayerMixin: the driver's vehicle model is applied once the player is seated. */
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerRidingMixin {
+    //#if MC >= 1.21.9
     @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z",
+    //#else
+    //$$ @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z",
+    //#endif
         at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;positionRider(Lnet/minecraft/world/entity/Entity;)V",
             shift = At.Shift.AFTER))
+    //#if MC >= 1.21.9
     private void ysm$afterPositionRider(Entity vehicle, boolean force, boolean sendEventAndTriggers,
         CallbackInfoReturnable<Boolean> cir) {
+    //#else
+    //$$ private void ysm$afterPositionRider(Entity vehicle, boolean force, CallbackInfoReturnable<Boolean> cir) {
+    //#endif
         if (!YesSteveModel.isAvailable())
             return;
         var player = (ServerPlayer)(Object)this;

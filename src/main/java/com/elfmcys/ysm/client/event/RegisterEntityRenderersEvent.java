@@ -20,7 +20,9 @@ public final class RegisterEntityRenderersEvent {
     private static CustomProjectileRenderer CUSTOM_PROJECTILE_RENDERER;
     private static CustomFirstPersonArmRenderer CUSTOM_FIRST_PERSON_RENDERER;
     private static CustomVehicleRenderer CUSTOM_VEHICLE_RENDERER;
+    //#if MC >= 26.1
     private static net.minecraft.client.renderer.block.BlockModelResolver BLOCK_MODEL_RESOLVER;
+    //#endif
 
     private RegisterEntityRenderersEvent() {}
 
@@ -28,7 +30,9 @@ public final class RegisterEntityRenderersEvent {
     public static void init(EntityRendererProvider.Context context) {
         if (!YesSteveModel.isAvailable())
             return;
+        //#if MC >= 26.1
         BLOCK_MODEL_RESOLVER = context.getBlockModelResolver();
+        //#endif
         CUSTOM_PLAYER_RENDERER = new CustomPlayerRenderer(context);
         CUSTOM_PROJECTILE_RENDERER = new CustomProjectileRenderer();
         releaseFirstPersonArm();
@@ -70,11 +74,13 @@ public final class RegisterEntityRenderersEvent {
             CUSTOM_FIRST_PERSON_RENDERER.releaseForPlayer(player);
     }
 
+    //#if MC >= 26.1
     /** Block models for GUI previews (bed, ground). */
     public static net.minecraft.client.renderer.block.BlockModelResolver getBlockModelResolver() {
         ensureInitialized();
         return BLOCK_MODEL_RESOLVER;
     }
+    //#endif
 
     public static CustomVehicleRenderer getVehicleRenderer() {
         ensureInitialized();

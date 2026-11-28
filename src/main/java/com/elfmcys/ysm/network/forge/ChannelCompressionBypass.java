@@ -30,10 +30,11 @@ public final class ChannelCompressionBypass {
         @Override
         public void write(ChannelHandlerContext context, Object message, ChannelPromise promise) throws Exception {
             // Fabric port: YSM frames travel as vanilla custom-payload packets carrying a YsmFramePayload.
-            var bypass = message instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket(var payload)
-                && channelName.equals(payload.type().id())
-                || message instanceof net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket(var payload2)
-                    && channelName.equals(payload2.type().id());
+            // (type patterns, not record patterns: the Minecraft 1.20.2 - 1.20.4 builds are Java 17)
+            var bypass = message instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket clientbound
+                && channelName.equals(clientbound.payload().type().id())
+                || message instanceof net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket serverbound
+                    && channelName.equals(serverbound.payload().type().id());
             var previous = BYPASS_COMPRESSION.get();
             BYPASS_COMPRESSION.set(bypass);
             try {

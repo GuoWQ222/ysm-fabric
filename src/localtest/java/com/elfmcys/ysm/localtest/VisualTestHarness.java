@@ -154,6 +154,14 @@ public final class VisualTestHarness implements ClientModInitializer {
                             case "waitFor" -> waitForPlayer = kv[1].trim();
                             case "configProbe" -> configProbe = kv[1].trim();
                             case "observeDistance" -> observeDistance = Double.parseDouble(kv[1].trim());
+                            // height above the target's feet to aim at (e.g. its face); default: half its height
+                            case "observeAim" -> observeAim = Double.parseDouble(kv[1].trim());
+                            // game window size for the shots, e.g. 1920x1080 (default 1280x720)
+                            case "window" -> {
+                                var size = kv[1].trim().split("x");
+                                windowWidth = Integer.parseInt(size[0]);
+                                windowHeight = Integer.parseInt(size[1]);
+                            }
                             default -> {
                             }
                         }
@@ -198,16 +206,57 @@ public final class VisualTestHarness implements ClientModInitializer {
         }
     }
 
+    /**
+     * The shared scenario is written for 26.x; older versions name a few things differently (the 26.1 reference run
+     * and versions from 1.21.11 send it unchanged).
+     */
+    private static String forThisVersion(String command) {
+        //#if MC < 1.21.11
+        //$$ // gamerule ids before 1.21.11
+        //$$ command = command.replace("gamerule advance_time ", "gamerule doDaylightCycle ")
+        //$$     .replace("gamerule advance_weather ", "gamerule doWeatherCycle ");
+        //#endif
+        //#if MC < 1.21.2
+        //$$ // one boat entity type before 1.21.2
+        //$$ command = command.replace("minecraft:oak_boat", "minecraft:boat");
+        //#endif
+        return command;
+    }
+
     private static void shot(String name) {
         var mc = Minecraft.getInstance();
+        // a minimized window renders into a 1x1 framebuffer (seen on a second test client): logged and restored, so the
+        // following shots show the game (the window resizes on the next event poll)
+        long window = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+        if (window != 0L && org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window, org.lwjgl.glfw.GLFW.GLFW_ICONIFIED) != 0) {
+            int[] fbWidth = new int[1];
+            int[] fbHeight = new int[1];
+            org.lwjgl.glfw.GLFW.glfwGetFramebufferSize(window, fbWidth, fbHeight);
+            log("  window minimized (framebuffer " + fbWidth[0] + "x" + fbHeight[0] + "): restored");
+            org.lwjgl.glfw.GLFW.glfwRestoreWindow(window);
+        }
+        // a fresh world on an older version toasts recipes and advancements the reference world had long done
+        //#if MC >= 26.2
+        mc.gui.toastManager().clear();
+        //#elseif MC >= 1.21.2
+        //$$ mc.getToastManager().clear();
+        //#else
+        //$$ mc.getToasts().clear();
+        //#endif
+        //#if MC >= 1.21.6
         Screenshot.grab(mc.gameDirectory, "ysmtest_" + shotPrefix + name + ".png", com.elfmcys.ysm.localtest.VisualTestHarness.mainTarget(mc), 1,
             message -> {});
+        //#else
+        //$$ Screenshot.grab(mc.gameDirectory, "ysmtest_" + shotPrefix + name + ".png", com.elfmcys.ysm.localtest.VisualTestHarness.mainTarget(mc),
+        //$$     message -> {});
+        //#endif
         log("screenshot " + name);
     }
 
     private static void command(String command) {
         var mc = Minecraft.getInstance();
         if (mc.player != null) {
+            command = forThisVersion(command);
             mc.player.connection.sendCommand(command);
             log("command /" + command);
         }
@@ -234,6 +283,9 @@ public final class VisualTestHarness implements ClientModInitializer {
     private static int configProbePhase;
     private static int waitForTicks;
     private static double observeDistance = 5.0;
+    private static double observeAim = Double.NaN;
+    private static int windowWidth = 1280;
+    private static int windowHeight = 720;
     private static int observeElapsed;
     private static int observeShot;
     private static boolean observeSeen;
@@ -401,7 +453,9 @@ public final class VisualTestHarness implements ClientModInitializer {
                 });
             }
             case "respawn" -> player.respawn();
-            case "screen" -> com.elfmcys.ysm.platform.McCompat.setScreen(null);
+            // "screen model": the model selection screen, opened directly (the hotkey press of the gui scene does not
+            // reach the keyboard event that opens it); "screen close" (any other argument) closes the screen
+            case "screen" -> com.elfmcys.ysm.platform.McCompat.setScreen("model".equals(arg) ? new PlayerModelScreen() : null);
             case "press" -> {
                 if (arg.matches("\\d+"))
                     pressKeyCode(mc, Integer.parseInt(arg), "key code " + arg);
@@ -409,6 +463,7 @@ public final class VisualTestHarness implements ClientModInitializer {
                     pressMapping(mc, arg);
             }
             case "hud" -> setHudHidden(mc, !"show".equals(arg));
+            case "entities" -> logServerEntities(mc);
             case "log" -> log(String.format(java.util.Locale.ROOT,
                 "%s: flying=%b mayfly=%b ground=%b y=%.3f dy=%.3f mode=%s camera=%s",
                 arg, player.getAbilities().flying, player.getAbilities().mayfly, player.onGround(), player.getY(),
@@ -417,7 +472,36 @@ public final class VisualTestHarness implements ClientModInitializer {
         }
     }
 
-private static void logState(Minecraft mc) {
+    /** Singleplayer diagnostics: what the integrated server's entity lookups see (selector paths). */
+    private static void logServerEntities(Minecraft mc) {
+        var server = mc.getSingleplayerServer();
+        if (server == null) {
+            log("entities: no integrated server");
+            return;
+        }
+        server.execute(() -> {
+            try {
+                var levels = new java.util.ArrayList<net.minecraft.server.level.ServerLevel>();
+                server.getAllLevels().forEach(levels::add);
+                log("entities: getAllLevels=" + levels.size() + " class=" + server.getAllLevels().getClass().getName());
+                var overworld = server.overworld();
+                int all = 0;
+                for (var ignored : overworld.getAllEntities())
+                    all++;
+                var typed = new java.util.ArrayList<net.minecraft.world.entity.Entity>();
+                overworld.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(
+                    net.minecraft.world.entity.Entity.class), entity -> true, typed, 100);
+                var any = overworld.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(
+                    net.minecraft.world.entity.Entity.class), entity -> true);
+                log("entities: overworld getAllEntities=" + all + " getEntities(test,pred,list)=" + typed.size()
+                    + " getEntities(test,pred)=" + any.size());
+            } catch (RuntimeException failure) {
+                log("entities: failed " + failure);
+            }
+        });
+    }
+
+    private static void logState(Minecraft mc) {
         var player = mc.player;
         var vehicle = player.getVehicle();
         logIntegrations(player);
@@ -434,7 +518,11 @@ private static void logState(Minecraft mc) {
             player.getYRot(), player.yBodyRot, player.yHeadRot,
             vehicle == null ? "none" : vehicle.getClass().getSimpleName(), vehicle == null ? 0f : vehicle.getYRot()));
         if (vehicle instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart cart)
+            //#if MC >= 1.21.2
             log("  minecart: behavior=" + cart.getBehavior().getClass().getSimpleName() + " xRot=" + cart.getXRot());
+            //#else
+            //$$ log("  minecart: xRot=" + cart.getXRot());
+            //#endif
     }
 
     /** Undoes the fake grab (a screen opened by the key keeps its own cursor state). */
@@ -451,9 +539,14 @@ private static void logState(Minecraft mc) {
     /** Test-only: YSM's key handlers need an active window with a grabbed mouse; the test window is often unfocused. */
     private static void pretendFocused(Minecraft mc) {
         try {
+            //#if MC >= 26.1
             var focused = com.mojang.blaze3d.platform.Window.class.getDeclaredField("focused");
             focused.setAccessible(true);
             focused.setBoolean(mc.getWindow(), true);
+            //#else
+            //$$ // 1.x: the active-window flag lives in Minecraft
+            //$$ mc.setWindowActive(true);
+            //#endif
             var grabbed = net.minecraft.client.MouseHandler.class.getDeclaredField("mouseGrabbed");
             grabbed.setAccessible(true);
             grabbed.setBoolean(mc.mouseHandler, true);
@@ -477,6 +570,7 @@ private static void logState(Minecraft mc) {
     /** A real key press and release of one GLFW key code through the keyboard handler. */
     private static void pressKeyCode(Minecraft mc, int keyCode, String label) {
         try {
+            //#if MC >= 1.21.9
             var method = net.minecraft.client.KeyboardHandler.class.getDeclaredMethod("keyPress", long.class,
                 int.class, net.minecraft.client.input.KeyEvent.class);
             method.setAccessible(true);
@@ -484,6 +578,15 @@ private static void logState(Minecraft mc) {
             var event = new net.minecraft.client.input.KeyEvent(keyCode, 0, 0);
             method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 1, event);
             method.invoke(mc.keyboardHandler, mc.getWindow().handle(), 0, event);
+            //#else
+            //$$ // before 1.21.9: keyPress(window, key, scancode, action, modifiers)
+            //$$ var method = net.minecraft.client.KeyboardHandler.class.getDeclaredMethod("keyPress", long.class,
+            //$$     int.class, int.class, int.class, int.class);
+            //$$ method.setAccessible(true);
+            //$$ pretendFocused(mc);
+            //$$ method.invoke(mc.keyboardHandler, mc.getWindow().getWindow(), keyCode, 0, 1, 0);
+            //$$ method.invoke(mc.keyboardHandler, mc.getWindow().getWindow(), keyCode, 0, 0, 0);
+            //#endif
             releaseMouse(mc);
             log("  pressed " + label);
         } catch (ReflectiveOperationException error) {
@@ -519,7 +622,7 @@ private static void logState(Minecraft mc) {
             log("  firstperson: enabled=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isEnabled()
                 + " renderingPlayer=" + com.elfmcys.ysm.client.compat.FirstPersonCompat.isRenderingPlayer());
         log("  gui: hud calls=" + com.elfmcys.ysm.client.gui.overlay.ExtraPlayerScreen.calls + " pip draws="
-            + com.elfmcys.ysm.client.gui.pip.YsmGuiModelRenderer.draws);
+            + com.elfmcys.ysm.client.gui.pip.YsmGuiModels.draws());
         if (loader.isModLoaded("immersive_melodies")) {
             var data = new com.elfmcys.ysm.client.compat.immersivemelodies.ImmersiveMelodiesCompat.ImmersiveMelodiesData();
             com.elfmcys.ysm.client.compat.immersivemelodies.ImmersiveMelodiesCompat.updateMelodyProgress(player, data);
@@ -682,7 +785,11 @@ private static void logState(Minecraft mc) {
                         if (child instanceof net.minecraft.client.gui.components.Checkbox box
                             && box.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents key
                             && key.getKey().equals("gui.yes_steve_model.config.disable_self_hands")) {
+                            //#if MC >= 1.21.9
                             box.onPress(new net.minecraft.client.input.KeyEvent(257, 0, 0));
+                            //#else
+                            //$$ box.onPress();
+                            //#endif
                             pressed = true;
                         } else if (child instanceof net.minecraft.client.gui.components.AbstractSliderButton slider) {
                             var setValue = net.minecraft.client.gui.components.AbstractSliderButton.class
@@ -759,7 +866,8 @@ private static void logState(Minecraft mc) {
         double x = target.getX() - Math.sin(yaw) * observeDistance;
         double z = target.getZ() + Math.cos(yaw) * observeDistance;
         net.minecraft.world.entity.Entity aim = target.getVehicle() != null ? target.getVehicle() : target;
-        double pitch = Math.toDegrees(Math.atan2(mc.player.getEyeHeight() - aim.getBbHeight() * 0.5, observeDistance));
+        double aimHeight = Double.isNaN(observeAim) ? aim.getBbHeight() * 0.5 : observeAim;
+        double pitch = Math.toDegrees(Math.atan2(mc.player.getEyeHeight() - aimHeight, observeDistance));
         command(String.format(java.util.Locale.ROOT, "tp @s %.2f %.2f %.2f %.1f %.1f", x, aim.getY(), z,
             target.getYRot() + 180.0F, pitch));
         observeAwaitShot = true;
@@ -863,18 +971,42 @@ private static void logState(Minecraft mc) {
                 net.minecraft.client.gui.screens.ConnectScreen.startConnecting(title, mc,
                     net.minecraft.client.multiplayer.resolver.ServerAddress.parseString(serverAddress),
                     new net.minecraft.client.multiplayer.ServerData("ysmtest", serverAddress,
-                        net.minecraft.client.multiplayer.ServerData.Type.OTHER), false, null);
+                        net.minecraft.client.multiplayer.ServerData.Type.OTHER), false
+                    //#if MC >= 1.20.5
+                    , null
+                    //#endif
+                    );
             } else if (mc.getLevelSource().levelExists(WORLD)) {
                 log("loading world " + WORLD);
+                //#if MC >= 1.20.5
                 mc.createWorldOpenFlows().openWorld(WORLD, () -> log("world load cancelled"));
+                //#elseif MC >= 1.20.3
+                //$$ mc.createWorldOpenFlows().checkForBackupAndLoad(WORLD, () -> log("world load cancelled"));
+                //#else
+                //$$ mc.createWorldOpenFlows().loadLevel(title, WORLD);
+                //#endif
             } else {
                 log("creating flat world " + WORLD);
+                //#if MC >= 26.1
                 var settings = new LevelSettings(WORLD, GameType.CREATIVE,
                     new LevelSettings.DifficultySettings(Difficulty.PEACEFUL, false, false), true,
                     WorldDataConfiguration.DEFAULT);
+                //#else
+                //$$ var settings = new LevelSettings(WORLD, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
+                //#if MC >= 1.21.2
+                //$$     new net.minecraft.world.level.gamerules.GameRules(WorldDataConfiguration.DEFAULT.enabledFeatures()),
+                //#else
+                //$$     new net.minecraft.world.level.gamerules.GameRules(),
+                //#endif
+                //$$     WorldDataConfiguration.DEFAULT);
+                //#endif
                 mc.createWorldOpenFlows().createFreshLevel(WORLD, settings, new WorldOptions(20261122L, false, false),
                     registries -> registries.lookupOrThrow(Registries.WORLD_PRESET).getOrThrow(WorldPresets.FLAT)
-                        .value().createWorldDimensions(), title);
+                        .value().createWorldDimensions()
+                    //#if MC >= 1.20.3
+                    , title
+                    //#endif
+                    );
             }
             return;
         }
@@ -886,7 +1018,7 @@ private static void logState(Minecraft mc) {
         }
         switch (stage) {
             case 0 -> {
-                mc.getWindow().setWindowed(1280, 720);
+                mc.getWindow().setWindowed(windowWidth, windowHeight);
                 log("in world; settling");
                 sample("world-joined", false);
                 wait = SETTLE_TICKS;
@@ -910,6 +1042,10 @@ private static void logState(Minecraft mc) {
                 }
                 command("gamerule advance_time false");
                 command("gamerule advance_weather false");
+                //#if MC < 1.21.11
+                //$$ // removing one half of the sleep scene's bed drops the other half as an item here
+                //$$ command("gamerule doTileDrops false");
+                //#endif
                 command("time set 6000");
                 command("weather clear");
                 command("tp @s 0.5 -60 0.5 0 0");

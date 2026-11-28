@@ -120,7 +120,7 @@ public class MolangCommand {
             target.executeTransient(exp, TransientExpressionSession.Privilege.LOCAL_EXECUTE, false, result -> {
                 minecraft.execute(() -> {
                     if (minecraft.player == player) {
-                        player.sendSystemMessage(
+                        com.elfmcys.ysm.platform.McCompat.message(player, 
                             Component.translatable("message.yes_steve_model.model.debug_animation.result", result));
                     }
                 });

@@ -3,8 +3,14 @@ plugins {
     id 'java'
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     implementation gradleApi()
+    // SrgRemapTask (Forge 1.20.2 - 1.20.4 release jars)
+    implementation 'org.ow2.asm:asm-commons:9.8'
 }
 
 // Java 17 bytecode from whichever JDK runs Gradle (no separate 17 toolchain needed on build machines)

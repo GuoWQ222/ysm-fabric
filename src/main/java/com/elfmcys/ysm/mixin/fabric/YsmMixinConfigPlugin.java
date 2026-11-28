@@ -21,7 +21,12 @@ public final class YsmMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Set<String> SKIP = Set.of(System.getProperty("ysm.mixin.skip", "").split("\\+"));
 
     @Override
-    public void onLoad(String mixinPackage) {}
+    public void onLoad(String mixinPackage) {
+        //#if LOADER == forge && MC < 1.21.10
+        //$$ // Forge before 1.21.10 ships no MixinExtras: the bundled copy (jar-in-jar) is started here
+        //$$ com.llamalad7.mixinextras.MixinExtrasBootstrap.init();
+        //#endif
+    }
 
     @Override
     public String getRefMapperConfig() {

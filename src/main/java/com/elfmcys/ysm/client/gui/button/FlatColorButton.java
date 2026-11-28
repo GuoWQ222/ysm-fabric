@@ -65,7 +65,11 @@ public class FlatColorButton extends Button {
             graphics.fillGradient(this.getX(), this.getY() + this.height - 1, this.getX() + this.width,
                 this.getY() + this.height, 0xff_F3EFE0, 0xff_F3EFE0);
         }
+        //#if MC >= 1.21.11
         this.extractScrollingStringOverContents(graphics.textRendererForWidget(this, net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects.NONE), this.getMessage().copy().withColor(0xF3EFE0), 2);
+        //#else
+        //$$ this.renderScrollingString(graphics, net.minecraft.client.Minecraft.getInstance().font, 2, 0xFFF3EFE0);
+        //#endif
     }
 
     public void setSelect(boolean select) {

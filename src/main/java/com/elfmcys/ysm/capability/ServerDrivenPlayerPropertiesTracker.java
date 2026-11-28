@@ -189,6 +189,6 @@ public final class ServerDrivenPlayerPropertiesTracker {
     }
 
     private static int quantizeAxis(float value) {
-        return Math.round(Math.clamp(value, -1f, 1f) * 127f);
+        return Math.round(Math.max(-1f, Math.min(1f, value)) * 127f); // (no Math.clamp: Java 17 builds)
     }
 }

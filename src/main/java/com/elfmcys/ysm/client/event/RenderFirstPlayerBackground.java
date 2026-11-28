@@ -55,9 +55,15 @@ public final class RenderFirstPlayerBackground {
 
     /** 1.20 view bobbing on 26.x's client avatar state (walk distance and bob). */
     private static void bobView(PoseStack poseStack, float partialTick, LocalPlayer player) {
+        //#if MC >= 1.21.9
         var avatar = player.avatarState();
         float phase = avatar.getBackwardsInterpolatedWalkDistance(partialTick);
         float bob = avatar.getInterpolatedBob(partialTick);
+        //#else
+        //$$ // before 1.21.9 the player keeps walk distance and bob (GameRenderer.bobView reads them the same way)
+        //$$ float phase = -(player.walkDist + (player.walkDist - player.walkDistO) * partialTick);
+        //$$ float bob = Mth.lerp(partialTick, player.oBob, player.bob);
+        //#endif
         poseStack.translate(-Mth.sin(phase * (float)Math.PI) * bob * 0.5F,
             Math.abs(Mth.cos(phase * (float)Math.PI) * bob), 0);
         com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZN.rotationDegrees(Mth.sin(phase * (float)Math.PI) * bob * 3));

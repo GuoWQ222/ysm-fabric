@@ -48,8 +48,16 @@ public final class Preprocessor {
      */
     public static String remap(String text, List<String[]> pairs) {
         for (var pair : pairs) {
+            if (pair.length == 3) {
+                text = java.util.regex.Pattern.compile(pair[1]).matcher(text).replaceAll(pair[2]);
+                continue;
+            }
             var from = pair[0];
             var to = pair[1];
+            // "~name": a member (method or field) name, also renamed after a '.' (calls like super.name(...))
+            boolean member = from.startsWith("~");
+            if (member)
+                from = from.substring(1);
             int index = text.indexOf(from);
             if (index < 0)
                 continue;
@@ -57,8 +65,12 @@ public final class Preprocessor {
             int start = 0;
             while (index >= 0) {
                 int end = index + from.length();
-                boolean before = index == 0 || !isNamePart(text.charAt(index - 1));
-                boolean after = from.endsWith(".") || end >= text.length() || !Character.isJavaIdentifierPart(text.charAt(end));
+                char previous = index == 0 ? ' ' : text.charAt(index - 1);
+                // an entry edge that is not a name character (".identifier()") needs no boundary on that side
+                boolean before = !Character.isJavaIdentifierPart(from.charAt(0))
+                    || (member ? !Character.isJavaIdentifierPart(previous) : !isNamePart(previous));
+                boolean after = !Character.isJavaIdentifierPart(from.charAt(from.length() - 1)) || end >= text.length()
+                    || !Character.isJavaIdentifierPart(text.charAt(end));
                 if (before && after) {
                     out.append(text, start, index).append(to);
                     start = end;
@@ -81,6 +93,14 @@ public final class Preprocessor {
             var trimmed = line.strip();
             if (trimmed.isEmpty() || trimmed.startsWith("#"))
                 continue;
+            // "regex<TAB>pattern<TAB>replacement": a Java regex over the whole file ($1.. groups)
+            if (trimmed.startsWith("regex\t")) {
+                var regex = trimmed.split("\t", -1);
+                if (regex.length != 3)
+                    throw new IllegalArgumentException("bad regex remap line '" + trimmed + "'");
+                pairs.add(regex);
+                continue;
+            }
             var parts = trimmed.split("\\s+");
             if (parts.length != 2)
                 throw new IllegalArgumentException("bad remap line '" + trimmed + "'");

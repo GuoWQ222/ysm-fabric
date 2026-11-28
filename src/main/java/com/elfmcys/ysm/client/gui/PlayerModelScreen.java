@@ -370,6 +370,7 @@ public class PlayerModelScreen extends ModelScreen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!hasCurrentWorld())
             return;
+        drawBackgroundFirst(graphics, mouseX, mouseY, partialTick);
         updatePointer(mouseX, mouseY);
         var currentPage = pageScope;
         if (pageFrame != null)
@@ -452,18 +453,32 @@ public class PlayerModelScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         updatePointer(mouseX, mouseY);
+        //#if MC >= 1.21.9
         if (textField.mouseClicked(event, doubleClick)) {
+        //#else
+        //$$ if (textField.mouseClicked(event.x(), event.y(), event.button())) {
+        //#endif
             setFocused(textField);
             return true;
         }
         if (textField.isFocused()) {
             textField.setFocused(false);
         }
+        //#if MC >= 1.21.9
         var handled = super.mouseClicked(event, doubleClick);
+        //#else
+        //$$ var handled = super.mouseClicked(event.x(), event.y(), event.button());
+        //#endif
         if (!handled && button == InputConstants.MOUSE_BUTTON_RIGHT && !browser.currentPack().isBlank()) {
             this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1));
             backToParent();
@@ -473,11 +488,20 @@ public class PlayerModelScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
+    //#else
+    //$$ public boolean charTyped(char ysmChar, int ysmMods) {
+    //$$     var event = new com.elfmcys.ysm.legacy.input.CharacterEvent(ysmChar, ysmMods);
+    //#endif
         char codePoint = (char)event.codepoint();
         int modifiers = 0;
         var previous = textField.getValue();
+        //#if MC >= 1.21.9
         if (textField.charTyped(event)) {
+        //#else
+        //$$ if (textField.charTyped((char)event.codepoint(), event.modifiers())) {
+        //#endif
             if (!Objects.equals(previous, textField.getValue())) {
                 browser.resetPage();
                 init();
@@ -488,14 +512,23 @@ public class PlayerModelScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+    //#else
+    //$$ public boolean keyPressed(int ysmKey, int ysmScan, int ysmMods) {
+    //$$     var event = new com.elfmcys.ysm.legacy.input.KeyEvent(ysmKey, ysmScan, ysmMods);
+    //#endif
         int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
         if (PlayerModelScreenKey.PLAYER_MODEL_KEY.matches(keyCode, scanCode) && !textField.isFocused()) {
             onClose();
             return true;
         }
         var previous = textField.getValue();
+        //#if MC >= 1.21.9
         if (textField.keyPressed(event)) {
+        //#else
+        //$$ if (textField.keyPressed(event.key(), event.scancode(), event.modifiers())) {
+        //#endif
             if (!Objects.equals(previous, textField.getValue())) {
                 browser.resetPage();
                 init();
@@ -503,7 +536,11 @@ public class PlayerModelScreen extends ModelScreen {
             return true;
         }
         var handled = textField.isFocused() && textField.isVisible() && keyCode != InputConstants.KEY_ESCAPE
+            //#if MC >= 1.21.9
             && keyCode != InputConstants.KEY_TAB || super.keyPressed(event);
+            //#else
+            //$$ && keyCode != InputConstants.KEY_TAB || super.keyPressed(event.key(), event.scancode(), event.modifiers());
+            //#endif
         updateKeyboardPointer();
         return handled;
     }
@@ -534,12 +571,20 @@ public class PlayerModelScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.11
     public void resize(int width, int height) {
+    //#else
+    //$$ public void resize(net.minecraft.client.Minecraft minecraft, int width, int height) {
+    //#endif
         var search = textField == null ? "" : textField.getValue();
         var previousFocus = getFocused();
         var searchFocused = textField != null && textField.isFocused();
         var previousPage = pageScope;
+        //#if MC >= 1.21.11
         super.resize(width, height);
+        //#else
+        //$$ super.resize(minecraft, width, height);
+        //#endif
         textField.setValue(search);
         if (searchFocused)
             setFocused(textField);

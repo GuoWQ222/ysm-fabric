@@ -1,0 +1,12 @@
+# Minecraft before 1.21.6 (Forge builds 1.20.2 - 1.21.5): Minecraft started shipping JSpecify with 1.21.6; the
+# JetBrains annotations (compile-only) stand in. Listed after below-1.21.9 in "remaps".
+org.jspecify.annotations.Nullable org.jetbrains.annotations.Nullable
+# GUI (1.21.6 turned GuiGraphics into a render-state extractor): the 2D pose was a PoseStack, tooltips drew at once,
+# textured blits took a RenderType factory instead of a pipeline.
+.pose().pushMatrix() .pose().pushPose()
+.pose().popMatrix() .pose().popPose()
+.setTooltipForNextFrame( .renderTooltip(
+.setComponentTooltipForNextFrame( .renderComponentTooltip(
+net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED net.minecraft.client.renderer.RenderType::guiTextured
+RenderPipelines.GUI_TEXTURED net.minecraft.client.renderer.RenderType::guiTextured
+regex	\.pose\(\)\.translate\(\(float\)\(([^()]*)\), \(float\)\(([^()]*)\)\)	.pose().translate((float)($1), (float)($2), 0.0F)

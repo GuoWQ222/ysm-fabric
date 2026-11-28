@@ -1,0 +1,18 @@
+# Minecraft before 1.21.2 (Forge builds 1.20.2 - 1.21.1): entities render straight from the entity (render-state
+# stand-ins in src/legacy/pre-render-states, filled by StateExtractor) and older names. After below-1.21.4.
+net.minecraft.client.renderer.entity.state. com.elfmcys.ysm.legacy.state.
+net.minecraft.world.item.ItemUseAnimation net.minecraft.world.item.UseAnim
+ItemUseAnimation UseAnim
+~getDeltaTracker getTimer
+.MOB_EFFECT.getValue( .MOB_EFFECT.get(
+net.minecraft.util.ARGB.colorFromFloat net.minecraft.util.FastColor.ARGB32.colorFromFloat
+.getBufferSource() .bufferSource()
+.keyPresses.jump() .jumping
+.keyPresses.shift() .shiftKeyDown
+sound.location() sound.getLocation()
+EntityType.OAK_BOAT EntityType.BOAT
+regex	isOnCooldown\(Items\.SHIELD\.getDefaultInstance\(\)\)	isOnCooldown(Items.SHIELD)
+regex	(minecraft|Minecraft\.getInstance\(\))\.schedule\(	$1.tell(
+regex	import net\.minecraft\.world\.entity\.EntitySpawnReason;	// (no EntitySpawnReason before 1.21.2)
+regex	type\.create\(player\.level\(\), EntitySpawnReason\.LOAD\)	type.create(player.level())
+regex	\.blit\(net\.minecraft\.client\.renderer\.RenderType::guiTextured,\s*	.blit(

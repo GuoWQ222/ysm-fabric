@@ -21,7 +21,7 @@ public final class ClientCacheCommand {
                 return 0;
             java.util.function.Consumer<Component> feedback = message -> {
                 if (minecraft.player == player)
-                    player.sendSystemMessage(message);
+                    com.elfmcys.ysm.platform.McCompat.message(player, message);
             };
             try {
                 return CacheCommand.schedule(ModelRuntime.system().storage(), all, minecraft::execute, feedback,

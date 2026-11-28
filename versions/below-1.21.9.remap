@@ -1,0 +1,27 @@
+# Minecraft before 1.21.9 (Forge builds 1.20.2 - 1.21.8): 1.21.9's queued entity rendering, camera render state and
+# input event records do not exist; YSM's stand-ins (src/legacy/submit) take their names. Player renderers were
+# called Player* before 1.21.9's Avatar* rename. Listed after below-26.1 and below-1.21.11 in "remaps".
+net.minecraft.client.renderer.SubmitNodeCollector com.elfmcys.ysm.legacy.render.SubmitNodeCollector
+net.minecraft.client.renderer.state.CameraRenderState com.elfmcys.ysm.legacy.render.CameraRenderState
+net.minecraft.client.input. com.elfmcys.ysm.legacy.input.
+# Avatars (players and mannequins, 1.21.9) were players before
+net.minecraft.client.renderer.entity.player.AvatarRenderer net.minecraft.client.renderer.entity.player.PlayerRenderer
+AvatarRenderer PlayerRenderer
+net.minecraft.client.renderer.entity.state.AvatarRenderState net.minecraft.client.renderer.entity.state.PlayerRenderState
+AvatarRenderState PlayerRenderState
+/entity/player/AvatarRenderer; /entity/player/PlayerRenderer;
+/entity/state/AvatarRenderState; /entity/state/PlayerRenderState;
+net.minecraft.world.entity.Avatar net.minecraft.world.entity.player.Player
+/world/entity/Avatar; /world/entity/player/Player;
+# Forge before 1.21.9: these mod-bus events have no static BUS
+net.minecraftforge.client.event.AddGuiOverlayLayersEvent.BUS net.minecraftforge.client.event.AddGuiOverlayLayersEvent.getBus(com.elfmcys.ysm.forge.YsmForge.modBusGroup())
+net.minecraftforge.client.event.RegisterKeyMappingsEvent.BUS net.minecraftforge.client.event.RegisterKeyMappingsEvent.getBus(com.elfmcys.ysm.forge.YsmForge.modBusGroup())
+# Modifier keys: 1.21.9 asks the Minecraft instance; before, Screen's statics
+net.minecraft.client.Minecraft.getInstance().hasShiftDown() net.minecraft.client.gui.screens.Screen.hasShiftDown()
+net.minecraft.client.Minecraft.getInstance().hasControlDown() net.minecraft.client.gui.screens.Screen.hasControlDown()
+net.minecraft.client.Minecraft.getInstance().hasAltDown() net.minecraft.client.gui.screens.Screen.hasAltDown()
+# authlib records (1.21.9) / window handle / skin textures
+.getGameProfile().name() .getGameProfile().getName()
+.getWindow().handle() .getWindow().getWindow()
+.getSkin().body().texturePath() .getSkin().texture()
+.getSkin().cape() .getSkin().capeTexture()

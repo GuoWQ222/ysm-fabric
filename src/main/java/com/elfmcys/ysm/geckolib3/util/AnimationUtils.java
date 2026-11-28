@@ -22,7 +22,11 @@ public class AnimationUtils {
     /**
      * 获取实体的 Renderer
      */
+    //#if MC >= 1.21.2
     public static <T extends Entity> EntityRenderer<? super T, ?> getRenderer(T entity) {
+    //#else
+    //$$ public static <T extends Entity> EntityRenderer<? super T> getRenderer(T entity) {
+    //#endif
         EntityRenderDispatcher renderManager = Minecraft.getInstance().getEntityRenderDispatcher();
         return renderManager.getRenderer(entity);
     }

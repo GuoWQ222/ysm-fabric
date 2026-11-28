@@ -23,10 +23,18 @@ public final class ForgeEventHooks {
 
     public static void registerCommon() {
         net.minecraftforge.event.TickEvent.ServerTickEvent.Pre.BUS.addListener(event -> {
+            //#if MC >= 1.21.9
             YsmEvents.post(new TickEvent.ServerTickEvent(TickEvent.Phase.START, event.server()));
+            //#else
+            //$$ YsmEvents.post(new TickEvent.ServerTickEvent(TickEvent.Phase.START, event.getServer()));
+            //#endif
         });
         net.minecraftforge.event.TickEvent.ServerTickEvent.Post.BUS.addListener(event -> {
+            //#if MC >= 1.21.9
             YsmEvents.post(new TickEvent.ServerTickEvent(TickEvent.Phase.END, event.server()));
+            //#else
+            //$$ YsmEvents.post(new TickEvent.ServerTickEvent(TickEvent.Phase.END, event.getServer()));
+            //#endif
         });
         // PlayerLoggedInEvent: posted by the shared PlayerListLoginMixin (same order on every loader).
         net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent.BUS.addListener(event -> {

@@ -1,0 +1,11 @@
+# Minecraft before 1.21.5 (Forge builds 1.20.2 - 1.21.4): no render pipelines or GPU device; render types carry
+# shader state and textures are OpenGL ids (stand-ins in src/legacy/pre-pipelines). Listed after below-1.21.6.
+regex	import net\.minecraft\.client\.renderer\.RenderPipelines;	// (no RenderPipelines before 1.21.5)
+regex	(\w+)\.getStringOr\(	com.elfmcys.ysm.platform.NbtCompat.getStringOr($1, 
+regex	(\w+)\.getBooleanOr\(	com.elfmcys.ysm.platform.NbtCompat.getBooleanOr($1, 
+regex	(\w+)\.getIntOr\(	com.elfmcys.ysm.platform.NbtCompat.getIntOr($1, 
+regex	(\w+)\.getCompoundOrEmpty\(	com.elfmcys.ysm.platform.NbtCompat.getCompoundOrEmpty($1, 
+# Tag.asString() returns an Optional from 1.21.5
+regex	\.asString\(\)\.orElse\(""\)	.getAsString()
+varsTag.keySet() varsTag.getAllKeys()
+regex	(\w+)\.getFloatOr\(	com.elfmcys.ysm.platform.NbtCompat.getFloatOr($1, 

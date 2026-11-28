@@ -4,7 +4,9 @@ package com.elfmcys.ysm.geckolib3.geo;
 import com.elfmcys.ysm.mixin.fabric.client.RenderTypeInvoker;
 import java.util.function.Function;
 import net.minecraft.client.renderer.RenderPipelines;
+//#if MC >= 1.21.11
 import net.minecraft.client.renderer.rendertype.RenderSetup;
+//#endif
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
@@ -24,9 +26,23 @@ public final class CustomTranslucentRenderType {
     }
 
     private static RenderType build(Identifier texture) {
+        //#if MC >= 1.21.11
         var setup = RenderSetup.builder(RenderPipelines.ENTITY_TRANSLUCENT).withTexture("Sampler0", texture)
             .useLightmap().useOverlay().affectsCrumbling().setOutline(RenderSetup.OutlineProperty.AFFECTS_OUTLINE)
             .createRenderSetup();
         return RenderTypeInvoker.ysm$create("entity_translucent_ysm", setup);
+        //#else
+        //$$ // 1.21.5 - 1.21.10: vanilla entity_translucent's composite state, without sorting on upload
+        //$$ var state = RenderType.CompositeState.builder()
+        //#if MC >= 1.21.6
+        //$$     .setTextureState(new net.minecraft.client.renderer.RenderStateShard.TextureStateShard(texture, false))
+        //#else
+        //$$     .setTextureState(new net.minecraft.client.renderer.RenderStateShard.TextureStateShard(texture,
+        //$$         net.minecraft.util.TriState.FALSE, false))
+        //#endif
+        //$$     .setLightmapState(net.minecraft.client.renderer.RenderStateShard.LIGHTMAP)
+        //$$     .setOverlayState(net.minecraft.client.renderer.RenderStateShard.OVERLAY).createCompositeState(true);
+        //$$ return RenderType.create("entity_translucent_ysm", 1536, true, false, RenderPipelines.ENTITY_TRANSLUCENT, state);
+        //#endif
     }
 }

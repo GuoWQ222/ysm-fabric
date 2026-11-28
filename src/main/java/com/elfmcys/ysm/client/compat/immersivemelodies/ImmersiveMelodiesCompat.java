@@ -43,8 +43,15 @@ public final class ImmersiveMelodiesCompat {
 
     private static final class Inner {
         static void updateMelodyProgress(LivingEntity entity, ImmersiveMelodiesData data) {
+            //#if MC >= 1.21.2
             if (immersive_melodies.client.animation.EntityModelAnimator.getInstrument(entity) == null)
                 return;
+            //#else
+            //$$ // the compile-time Immersive Melodies API is a 1.21.2+ build whose EntityModelAnimator names render states:
+            //$$ // look the call up at run time
+            //$$ if (instrument(entity) == null)
+            //$$     return;
+            //#endif
             var minecraft = net.minecraft.client.Minecraft.getInstance();
             float time = (minecraft.isPaused() ? 0.0F : minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false))
                 + (float)entity.tickCount;
@@ -56,5 +63,24 @@ public final class ImmersiveMelodiesCompat {
             data.delta = progress.delta();
             data.time = progress.getTime();
         }
+        //#if MC < 1.21.2
+        //$$ private static java.lang.reflect.Method getInstrument;
+        //$$ private static boolean lookupFailed;
+        //$$ 
+        //$$ private static Object instrument(LivingEntity entity) {
+        //$$     if (lookupFailed)
+        //$$         return null;
+        //$$     try {
+        //$$         if (getInstrument == null)
+        //$$             getInstrument = Class.forName("immersive_melodies.client.animation.EntityModelAnimator")
+        //$$                 .getMethod("getInstrument", LivingEntity.class);
+        //$$         return getInstrument.invoke(null, entity);
+        //$$     } catch (ReflectiveOperationException | LinkageError failure) {
+        //$$         lookupFailed = true;
+        //$$         com.elfmcys.ysm.YesSteveModel.LOGGER.warn("Immersive Melodies instrument lookup failed", failure);
+        //$$         return null;
+        //$$     }
+        //$$ }
+        //#endif
     }
 }

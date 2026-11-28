@@ -28,8 +28,15 @@ public final class ImmersiveAircraftCompat {
     }
 
     public static Optional<Vector3f> getRotation(AnimationEvent<CustomVehicleEntity> event) {
+        //#if MC >= 1.20.3
         return installed ? Inner.getRotation(event) : Optional.empty();
+        //#else
+        //$$ // the compile-time Immersive Aircraft API needs 1.20.3's VehicleEntity: no aircraft integration here
+        //$$ return Optional.empty();
+        //#endif
     }
+
+    //#if MC >= 1.20.3
 
     private static final class Inner {
         static Optional<Vector3f> getRotation(AnimationEvent<CustomVehicleEntity> event) {
@@ -43,4 +50,5 @@ public final class ImmersiveAircraftCompat {
             return Optional.of(rotation);
         }
     }
+    //#endif
 }

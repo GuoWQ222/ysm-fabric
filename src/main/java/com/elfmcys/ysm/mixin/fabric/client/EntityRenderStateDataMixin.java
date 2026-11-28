@@ -22,6 +22,10 @@ public abstract class EntityRenderStateDataMixin implements YsmRenderStateData {
     private float ysm$partialTick = 1.0f;
     @Unique
     private boolean ysm$replaced;
+    @Unique
+    private int ysm$light = 0xF000F0;
+    @Unique
+    private int ysm$outlineColor;
 
     @Override
     public @Nullable Entity ysm$entity() {
@@ -51,5 +55,38 @@ public abstract class EntityRenderStateDataMixin implements YsmRenderStateData {
     @Override
     public void ysm$setReplaced(boolean replaced) {
         ysm$replaced = replaced;
+    }
+
+    @Override
+    public int ysm$light() {
+        return ysm$light;
+    }
+
+    @Override
+    public void ysm$setLight(int light) {
+        ysm$light = light;
+    }
+
+    @Override
+    public int ysm$outlineColor() {
+        return ysm$outlineColor;
+    }
+
+    @Override
+    public void ysm$setOutlineColor(int color) {
+        ysm$outlineColor = color;
+    }
+
+    @Unique
+    private boolean ysm$firstPersonModel;
+
+    @Override
+    public boolean ysm$firstPersonModel() {
+        return ysm$firstPersonModel;
+    }
+
+    @Override
+    public void ysm$setFirstPersonModel(boolean drawing) {
+        ysm$firstPersonModel = drawing;
     }
 }

@@ -22,5 +22,15 @@ public abstract class EntityRendererStateMixin {
         at = @At("RETURN"))
     private void ysm$rememberEntity(Entity entity, float partialTicks, CallbackInfoReturnable<EntityRenderState> cir) {
         YsmRenderStateKeys.setEntity(cir.getReturnValue(), entity, partialTicks);
+        if (entity == net.minecraft.client.Minecraft.getInstance().player
+            && com.elfmcys.ysm.client.compat.FirstPersonCompat.isRenderingPlayer())
+            YsmRenderStateKeys.setFirstPersonModel(cir.getReturnValue(), true);
+        //#if MC < 1.21.9
+        //$$ var minecraft = net.minecraft.client.Minecraft.getInstance();
+        //$$ YsmRenderStateKeys.setLight(cir.getReturnValue(),
+        //$$     minecraft.getEntityRenderDispatcher().getPackedLightCoords(entity, partialTicks));
+        //$$ YsmRenderStateKeys.setOutlineColor(cir.getReturnValue(),
+        //$$     minecraft.shouldEntityAppearGlowing(entity) ? 0xFF000000 | entity.getTeamColor() : 0);
+        //#endif
     }
 }

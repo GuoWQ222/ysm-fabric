@@ -6,16 +6,20 @@
  */
 package com.elfmcys.ysm.mixin.fabric.client;
 
+//#if MC >= 1.21.11
 import net.minecraft.client.renderer.rendertype.RenderSetup;
+//#endif
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-/** RenderType.create is package-private in 26.x. */
+/** RenderType.create is package-private from 1.21.11 (before, the public factory is called directly). */
 @Mixin(RenderType.class)
 public interface RenderTypeInvoker {
+    //#if MC >= 1.21.11
     @Invoker("create")
     static RenderType ysm$create(String name, RenderSetup setup) {
         throw new AssertionError("mixin");
     }
+    //#endif
 }

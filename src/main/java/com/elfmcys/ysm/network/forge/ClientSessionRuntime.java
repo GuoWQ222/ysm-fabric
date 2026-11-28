@@ -254,7 +254,7 @@ public final class ClientSessionRuntime {
     private static void showPreviewMessage(Component message) {
         var player = Minecraft.getInstance().player;
         if (player != null)
-            player.sendSystemMessage(message);
+            com.elfmcys.ysm.platform.McCompat.message(player, message);
     }
 
     public static synchronized void tick() {
@@ -406,7 +406,7 @@ public final class ClientSessionRuntime {
     private static void sendCatalogDeltaFailureNotice(String translationKey) {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            player.sendSystemMessage(Component.translatable(translationKey));
+            com.elfmcys.ysm.platform.McCompat.message(player, Component.translatable(translationKey));
         }
     }
 
@@ -633,7 +633,7 @@ public final class ClientSessionRuntime {
                         if (player != null && player.connection.isAcceptingMessages()
                             && session.state() == ClientModelSession.State.LOCAL
                             && !NetworkHandler.isChannelPresent(connection)) {
-                            player.sendSystemMessage(
+                            com.elfmcys.ysm.platform.McCompat.message(player, 
                                 Component.translatable("message.yes_steve_model.client.server_not_found"));
                         }
                     }));

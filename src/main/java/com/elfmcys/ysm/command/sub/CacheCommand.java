@@ -27,7 +27,7 @@ public final class CacheCommand {
                     Component.translatable("commands.ysm.cache.failure", "cache", PublicFailure.summary(failure)));
                 return 0;
             }
-        }).requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source.permissions(), 2));
+        }).requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source, 2));
     }
 
     /** Fabric port: generic over the source so the client (FabricClientCommandSource) shares the tree. */

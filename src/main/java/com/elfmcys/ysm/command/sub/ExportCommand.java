@@ -22,7 +22,7 @@ public final class ExportCommand {
     private ExportCommand() {}
 
     public static LiteralArgumentBuilder<CommandSourceStack> get() {
-        return Commands.literal("export").requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source.permissions(), 2))
+        return Commands.literal("export").requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source, 2))
             .then(Commands.argument(MODEL_ID, com.elfmcys.ysm.command.ModelSelectorArgument.selector())
                 .suggests(CommandRegistry.ALL_MODELS).executes(context -> export(context, null))
                 .then(Commands.argument(EXTRA, StringArgumentType.greedyString())
@@ -30,7 +30,7 @@ public final class ExportCommand {
     }
 
     public static LiteralArgumentBuilder<CommandSourceStack> getAll() {
-        return Commands.literal("export-all").requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source.permissions(), 2))
+        return Commands.literal("export-all").requires(source -> com.elfmcys.ysm.platform.PermissionHelper.has(source, 2))
             .executes(context -> exportAll(context, null))
             .then(Commands.argument(PATTERN, StringArgumentType.greedyString())
                 .executes(context -> exportAll(context, parsePattern(StringArgumentType.getString(context, PATTERN)))));

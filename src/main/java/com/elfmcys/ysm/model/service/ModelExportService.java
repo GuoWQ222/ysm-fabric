@@ -44,7 +44,7 @@ public final class ModelExportService {
     private ModelExportService() {}
 
     public static Environment environment(CommandSourceStack source) {
-        if (!com.elfmcys.ysm.platform.PermissionHelper.has(source.permissions(), 2) || source.getServer().isDedicatedServer()) {
+        if (!com.elfmcys.ysm.platform.PermissionHelper.has(source, 2) || source.getServer().isDedicatedServer()) {
             throw new IllegalStateException("Export requires integrated server permission level 2");
         }
         var environment = ServerModelService.instance().exportEnvironment();

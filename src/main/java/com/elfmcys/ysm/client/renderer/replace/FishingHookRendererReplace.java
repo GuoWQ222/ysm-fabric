@@ -48,7 +48,7 @@ public final class FishingHookRendererReplace {
         float xa = (float)state.lineOriginOffset.x;
         float ya = (float)state.lineOriginOffset.y;
         float za = (float)state.lineOriginOffset.z;
-        float width = com.elfmcys.ysm.platform.McCompat.gameRenderState().windowRenderState.appropriateLineWidth;
+        float width = com.elfmcys.ysm.platform.McCompat.lineWidth();
         collector.submitCustomGeometry(poseStack, RenderTypes.lines(), (pose, buffer) -> {
             for (int i = 0; i < LINE_SEGMENTS; i++) {
                 float a0 = (float)i / LINE_SEGMENTS;
@@ -71,6 +71,15 @@ public final class FishingHookRendererReplace {
         nx /= length;
         ny /= length;
         nz /= length;
+        //#if MC >= 1.21.11
         buffer.addVertex(pose, x, y, z).setColor(0xFF000000).setNormal(pose, nx, ny, nz).setLineWidth(width);
+        //#elseif MC >= 1.21
+        //$$ // before 1.21.11 the line width is part of the render type
+        //$$ buffer.addVertex(pose, x, y, z).setColor(0xFF000000).setNormal(pose, nx, ny, nz);
+        //#elseif MC >= 1.20.5
+        //$$ buffer.vertex(pose, x, y, z).color(0xFF000000).normal(pose, nx, ny, nz).endVertex();
+        //#else
+        //$$ buffer.vertex(pose.pose(), x, y, z).color(0xFF000000).normal(pose.normal(), nx, ny, nz).endVertex();
+        //#endif
     }
 }

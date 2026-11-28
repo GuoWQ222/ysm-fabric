@@ -106,9 +106,9 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
 
             var texture = textureOverride == null ? data.texture : textureOverride;
             var bodyVisible = !state.isInvisible && !entity.isInvisibleTo(mc.player);
-            var glowing = state.appearsGlowing();
+            var glowing = com.elfmcys.ysm.platform.render.YsmRenderStateKeys.appearsGlowing(state);
             var renderType = getRenderType(texture, bodyVisible, glowing, data.modelState.hasTranslucentVertices());
-            var packedLight = state.lightCoords;
+            var packedLight = com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state);
             var packedOverlay = getPackedOverlay(entity, getOverlayProgress(entity, partialTick));
             if (renderType == null)
                 return;
@@ -122,14 +122,14 @@ public abstract class GeoReplacedEntityRenderer<TEntity extends LivingEntity, T 
 
             if (animatableEntity.canConsume(data, data.ctx)) {
                 if (renderType.isOutline()) {
-                    renderOutline(data, animatableEntity, renderType, poseStack, collector, state.outlineColor);
+                    renderOutline(data, animatableEntity, renderType, poseStack, collector, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
                 } else {
                     var event = new RenderModelEvent(entity, data, collector, renderType, poseStack, packedLight,
                         packedOverlay, Color.WHITE.getColor());
                     if (!YesSteveModel.postEvent(event) && animatableEntity.canConsume(data, data.ctx)) {
                         render(data, animatableEntity, renderType, poseStack, collector, packedLight, packedOverlay,
                             Color.WHITE);
-                        renderOutline(data, animatableEntity, renderType, poseStack, collector, state.outlineColor);
+                        renderOutline(data, animatableEntity, renderType, poseStack, collector, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
                     }
                 }
             }

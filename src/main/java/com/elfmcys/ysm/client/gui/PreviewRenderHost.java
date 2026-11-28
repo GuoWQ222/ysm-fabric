@@ -90,8 +90,16 @@ public final class PreviewRenderHost {
         //#else
         //$$ int blockSize = texture.getFormat().pixelSize();
         //#endif
+        //#if MC >= 1.21.11
         var buffer = device.createBuffer(() -> "YSM preview readback", 9, (long)WIDTH * HEIGHT * blockSize);
+        //#else
+        //$$ var buffer = device.createBuffer(() -> "YSM preview readback", 9, WIDTH * HEIGHT * blockSize);
+        //#endif
+        //#if MC >= 1.21.11
         device.createCommandEncoder().copyTextureToBuffer(texture, buffer, 0L, () -> {
+        //#else
+        //$$ device.createCommandEncoder().copyTextureToBuffer(texture, buffer, 0, () -> {
+        //#endif
             NativeImage pixels = null;
             Throwable failure = null;
             //#if MC >= 26.2

@@ -19,8 +19,13 @@ public class PositionButton extends Button {
     @Override
     protected void extractContents(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         // Fabric port: the vanilla button look (AbstractButton.extractContents is abstract in 26.x).
+        //#if MC >= 1.21.11
         this.extractDefaultSprite(guiGraphics);
         this.extractDefaultLabel(guiGraphics.textRendererForWidget(this, net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects.NONE));
+        //#else
+        //$$ // before 1.21.11 the vanilla button draws its sprite and label in renderWidget
+        //$$ super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+        //#endif
 
         Font font = Minecraft.getInstance().font;
         MutableComponent desc = Component.translatable("gui.yes_steve_model.config.loading_state_position");
@@ -34,7 +39,12 @@ public class PositionButton extends Button {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+    //#else
+    //$$ public void onPress() {
+    //$$     var input = com.elfmcys.ysm.legacy.input.InputWithModifiers.current();
+    //#endif
         LoadingStateScreenConfig.Position position = LoadingStateScreenConfig.LOADING_STATE_POSITION.get();
         LoadingStateScreenConfig.Position nextPosition = switch (position) {
             case TOP_LEFT -> LoadingStateScreenConfig.Position.TOP_CENTER;

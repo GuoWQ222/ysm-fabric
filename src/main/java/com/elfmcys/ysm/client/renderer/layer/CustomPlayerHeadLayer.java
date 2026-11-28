@@ -12,7 +12,9 @@ import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+//#if MC >= 1.21.2
 import net.minecraft.core.component.DataComponents;
+//#endif
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -40,20 +42,33 @@ public class CustomPlayerHeadLayer extends GeoLayerRenderer<CustomPlayerEntity> 
 
     /** Fabric port: 26.x armour is an equippable head item with an equipment asset (was ArmorItem). */
     private static boolean isArmorHead(ItemStack itemStack) {
+        //#if MC >= 1.21.2
         var equippable = itemStack.get(DataComponents.EQUIPPABLE);
         return equippable != null && equippable.slot() == EquipmentSlot.HEAD && equippable.assetId().isPresent();
+        //#else
+        //$$ return itemStack.getItem() instanceof net.minecraft.world.item.ArmorItem armor
+        //$$     && armor.getEquipmentSlot() == EquipmentSlot.HEAD;
+        //#endif
     }
 
     private void renderHeadItem(PoseStack poseStack, SubmitNodeCollector collector, int packedLight,
         GeoRenderData data, LivingEntityRenderState state, Player player, ItemStack head) {
         var itemState = new ItemStackRenderState();
+        //#if MC >= 1.21.5
         itemModelResolver.updateForLiving(itemState, head, ItemDisplayContext.HEAD, player);
+        //#else
+        //$$ itemModelResolver.updateForLiving(itemState, head, ItemDisplayContext.HEAD, false, player);
+        //#endif
         if (itemState.isEmpty())
             return;
         data.modelState.visitLocatorGroup(PlayerLocator.get().head, poseStack, locatorPose -> {
             locatorPose.scale(0.625F, 0.625F, 0.625F);
             locatorPose.translate(0.0F, 0.25F, 0.0F);
-            itemState.submit(locatorPose, collector, packedLight, OverlayTexture.NO_OVERLAY, state.outlineColor);
+            //#if MC >= 1.21.9
+            itemState.submit(locatorPose, collector, packedLight, OverlayTexture.NO_OVERLAY, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
+            //#else
+            //$$ itemState.render(locatorPose, collector.buffers(), packedLight, OverlayTexture.NO_OVERLAY);
+            //#endif
         });
     }
 }

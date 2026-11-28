@@ -80,14 +80,25 @@ public final class CatalogModelButton extends Button implements AutoCloseable {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+    //#else
+    //$$ public void onPress() {
+    //$$     var input = com.elfmcys.ysm.legacy.input.InputWithModifiers.current();
+    //#endif
         if (!authorizationRequired.getAsBoolean()) {
             selection.select(entry.modelHash(), metadata.path(), metadata.defaultTexture(), state.renderTarget());
         }
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         if (isMouseOver(mouseX, mouseY) && Minecraft.getInstance() != null && net.minecraft.client.Minecraft.getInstance().hasControlDown()
@@ -104,11 +115,18 @@ public final class CatalogModelButton extends Button implements AutoCloseable {
         // Fabric port: 26.x has no clicked() hook; cards that need authorization do not press.
         if (authorizationRequired.getAsBoolean())
             return false;
+        //#if MC >= 1.21.9
         return super.mouseClicked(event, doubleClick);
+        //#else
+        //$$ return super.mouseClicked(event.x(), event.y(), event.button());
+        //#endif
     }
 
-    /** Fabric port: 1.20's AbstractWidget.clicked (removed in 26.x); cards that need authorization never accept a click. */
-    boolean clicked(double mouseX, double mouseY) {
+    /**
+     * Fabric port: 1.20's AbstractWidget.clicked (removed in 26.x); cards that need authorization never accept a click.
+     * Protected: Minecraft before 1.21.4 still has AbstractWidget.clicked, which this then overrides.
+     */
+    protected boolean clicked(double mouseX, double mouseY) {
         return !authorizationRequired.getAsBoolean() && active && visible && isMouseOver(mouseX, mouseY);
     }
 
@@ -122,7 +140,7 @@ public final class CatalogModelButton extends Button implements AutoCloseable {
             YesSteveModel.LOGGER.error("Failed to open model entry directory", failure);
             var player = Minecraft.getInstance().player;
             if (player != null)
-                player.sendSystemMessage(Component.literal("Unable to open the model directory"));
+                com.elfmcys.ysm.platform.McCompat.message(player, Component.literal("Unable to open the model directory"));
         }
     }
 
@@ -157,7 +175,7 @@ public final class CatalogModelButton extends Button implements AutoCloseable {
         var input = CatalogModelTooltipFormatter.input(metadata, entry, locale, state.loadError());
         var player = Minecraft.getInstance().player;
         var lines = CatalogModelTooltipFormatter.format(input, net.minecraft.client.Minecraft.getInstance().hasShiftDown(), Component::translatable,
-            state.missingPreview(), player != null && com.elfmcys.ysm.platform.PermissionHelper.has(player.permissions(), 2));
+            state.missingPreview(), player != null && com.elfmcys.ysm.platform.PermissionHelper.has(player, 2));
         graphics.pose().pushMatrix();
         try {
             graphics.pose().translate((float)(0), (float)(0));

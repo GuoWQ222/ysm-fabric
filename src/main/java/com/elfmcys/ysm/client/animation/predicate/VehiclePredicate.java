@@ -59,8 +59,13 @@ public class VehiclePredicate implements IAnimationPredicate<CustomHumanoidEntit
             return playAnimation(event, "ride_pig", LoopType.LOOP);
         }
         // Fabric port: 26.x has no Saddleable; saddle-capable mobs accept the SADDLE slot.
+        //#if MC >= 1.21.5
         if (vehicle instanceof net.minecraft.world.entity.LivingEntity saddleable
             && saddleable.canUseSlot(net.minecraft.world.entity.EquipmentSlot.SADDLE)) {
+        //#else
+        //$$ // before 1.21.5 saddle-capable mobs are Saddleable
+        //$$ if (vehicle instanceof net.minecraft.world.entity.Saddleable saddleable && saddleable.isSaddleable()) {
+        //#endif
             return playAnimation(event, "ride", LoopType.LOOP);
         }
         if (vehicle instanceof Boat) {

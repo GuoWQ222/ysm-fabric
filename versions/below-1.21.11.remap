@@ -1,0 +1,27 @@
+# Minecraft 1.20.2 - 1.21.10 (Forge builds): names that Minecraft 1.21.11 moved or renamed, mapped back. Listed after
+# below-26.1 in versions/<mc>.properties "remaps" (same rules: whole names; trailing '.' = package; leading '~' =
+# member name; an entry edge that is not a name character needs no boundary).
+# 1.21.11 renamed ResourceLocation to Identifier (and ResourceKey.location() to identifier())
+net.minecraft.resources.Identifier net.minecraft.resources.ResourceLocation
+Identifier ResourceLocation
+.identifier() .location()
+/resources/Identifier; /resources/ResourceLocation;
+net.minecraft.util.Util net.minecraft.Util
+# Render types: 1.21.11 moved RenderType into renderer.rendertype and its factories into RenderTypes
+net.minecraft.client.renderer.rendertype.RenderTypes net.minecraft.client.renderer.RenderType
+net.minecraft.client.renderer.rendertype.RenderType net.minecraft.client.renderer.RenderType
+RenderTypes RenderType
+/renderer/rendertype/RenderType; /renderer/RenderType;
+# Models and entities: 1.21.11 sorted them into sub-packages
+net.minecraft.client.model.animal.parrot.ParrotModel net.minecraft.client.model.ParrotModel
+net.minecraft.client.model.object.equipment.ElytraModel net.minecraft.client.model.ElytraModel
+net.minecraft.world.entity.animal.parrot.Parrot net.minecraft.world.entity.animal.Parrot
+net.minecraft.world.entity.animal.pig.Pig net.minecraft.world.entity.animal.Pig
+net.minecraft.world.entity.projectile.arrow. net.minecraft.world.entity.projectile.
+net.minecraft.world.entity.projectile.throwableitemprojectile. net.minecraft.world.entity.projectile.
+net.minecraft.world.entity.vehicle.boat. net.minecraft.world.entity.vehicle.
+net.minecraft.world.entity.vehicle.minecart. net.minecraft.world.entity.vehicle.
+# Buttons: 1.21.11 made AbstractButton.renderWidget final and buttons draw in renderContents
+~renderContents renderWidget
+# Game rules: 1.21.11 moved them into world.level.gamerules
+net.minecraft.world.level.gamerules.GameRules net.minecraft.world.level.GameRules

@@ -82,7 +82,12 @@ public final class CatalogTextureButton extends Button
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+    //#else
+    //$$ public void onPress() {
+    //$$     var input = com.elfmcys.ysm.legacy.input.InputWithModifiers.current();
+    //#endif
         selection.select(modelHash, path, texture, renderTarget);
     }
 

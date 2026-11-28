@@ -68,6 +68,7 @@ public final class LivingBuiltins implements EntityComponent<Player> {
     @BuiltinFunction(value = "cape_flap_amount", namespace = "query")
     public static float capeFlapAmount(MolangContextView<Player> context) {
         var player = context.subject();
+        //#if MC >= 1.21.9
         // Fabric port: 26.x keeps cape, bob and walk distance in the client avatar state.
         if (!(player instanceof net.minecraft.client.entity.ClientAvatarEntity avatarEntity))
             return 0;
@@ -76,11 +77,24 @@ public final class LivingBuiltins implements EntityComponent<Player> {
         float x = (float)(avatar.getInterpolatedCloakX(partial) - Mth.lerp(partial, player.xo, player.getX()));
         float y = (float)(avatar.getInterpolatedCloakY(partial) - Mth.lerp(partial, player.yo, player.getY()));
         float z = (float)(avatar.getInterpolatedCloakZ(partial) - Mth.lerp(partial, player.zo, player.getZ()));
+        //#else
+        //$$ // before 1.21.9 the player itself keeps cape, bob and walk distance
+        //$$ float partial = context.inputs().partialTick();
+        //$$ float x = (float)(Mth.lerp(partial, player.xCloakO, player.xCloak) - Mth.lerp(partial, player.xo, player.getX()));
+        //$$ float y = (float)(Mth.lerp(partial, player.yCloakO, player.yCloak) - Mth.lerp(partial, player.yo, player.getY()));
+        //$$ float z = (float)(Mth.lerp(partial, player.zCloakO, player.zCloak) - Mth.lerp(partial, player.zo, player.getZ()));
+        //#endif
         float rotation = (player.yBodyRotO + (player.yBodyRot - player.yBodyRotO)) * ((float)Math.PI / 180f);
         float vertical = Mth.clamp(y * 10, -6, 32);
         float forward = Mth.clamp((x * Mth.sin(rotation) - z * Mth.cos(rotation)) * 100, 0, 150);
+        //#if MC >= 1.21.9
         float bob = avatar.getInterpolatedBob(partial);
         vertical += Mth.sin(avatar.getInterpolatedWalkDistance(partial) * 6) * 32 * bob;
+        //#else
+        //$$ float bob = Mth.lerp(partial, player.oBob, player.bob);
+        //$$ if (player instanceof net.minecraft.client.player.AbstractClientPlayer client)
+        //$$     vertical += Mth.sin(Mth.lerp(partial, client.walkDistO, client.walkDist) * 6) * 32 * bob;
+        //#endif
         if (player.isCrouching())
             vertical += 25;
         float result = Mth.clamp((6 + forward / 2 + vertical) / 108, 0, 1);
@@ -178,20 +192,32 @@ public final class LivingBuiltins implements EntityComponent<Player> {
 
     @BuiltinFunction("elytra_rot_x")
     public static float elytraRotX(MolangContextView<net.minecraft.client.player.AbstractClientPlayer> context) {
+        //#if MC >= 1.21.2
         float result = (float)Math.toDegrees(context.subject().elytraAnimationState.getRotX(1.0f));
+        //#else
+        //$$ float result = (float)Math.toDegrees(context.subject().elytraRotX);
+        //#endif
         return Float.isFinite(result) ? result : 0;
     }
 
     @BuiltinFunction("elytra_rot_y")
     public static float elytraRotY(MolangContextView<net.minecraft.client.player.AbstractClientPlayer> context) {
+        //#if MC >= 1.21.2
         float result = (float)Math.toDegrees(context.subject().elytraAnimationState.getRotY(1.0f));
+        //#else
+        //$$ float result = (float)Math.toDegrees(context.subject().elytraRotY);
+        //#endif
         return Float.isFinite(result) ? result : 0;
     }
 
     @BuiltinFunction("elytra_rot_z")
     public static float elytraRotZ(MolangContextView<AbstractClientPlayer> context) {
 
+        //#if MC >= 1.21.2
         return (float)Math.toDegrees(context.subject().elytraAnimationState.getRotZ(1.0f));
+        //#else
+        //$$ return (float)Math.toDegrees(context.subject().elytraRotZ);
+        //#endif
     }
 
     @BuiltinFunction("is_fishing")
@@ -203,22 +229,22 @@ public final class LivingBuiltins implements EntityComponent<Player> {
 
     @BuiltinFunction("has_left_shoulder_parrot")
     public static boolean hasLeftParrot(MolangContextView<Player> context) {
-        return context.subject().getShoulderParrotLeft().isPresent();
+        return com.elfmcys.ysm.platform.McCompat.shoulderParrotLeft(context.subject()).isPresent();
     }
 
     @BuiltinFunction("has_right_shoulder_parrot")
     public static boolean hasRightParrot(MolangContextView<Player> context) {
-        return context.subject().getShoulderParrotRight().isPresent();
+        return com.elfmcys.ysm.platform.McCompat.shoulderParrotRight(context.subject()).isPresent();
     }
 
     @BuiltinFunction("left_shoulder_parrot_variant")
     public static String leftParrotVariant(MolangContextView<Player> context) {
-        return parrotVariant(context.subject().getShoulderParrotLeft());
+        return parrotVariant(com.elfmcys.ysm.platform.McCompat.shoulderParrotLeft(context.subject()));
     }
 
     @BuiltinFunction("right_shoulder_parrot_variant")
     public static String rightParrotVariant(MolangContextView<Player> context) {
-        return parrotVariant(context.subject().getShoulderParrotRight());
+        return parrotVariant(com.elfmcys.ysm.platform.McCompat.shoulderParrotRight(context.subject()));
     }
 
     private static String parrotVariant(java.util.Optional<Parrot.Variant> variant) {
@@ -331,7 +357,11 @@ public final class LivingBuiltins implements EntityComponent<Player> {
                 .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
                 .get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, id));
             if (enchantment.isPresent())
+                //#if MC >= 1.21
                 sum += net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(enchantment.get(), stack);
+                //#else
+                //$$     sum += net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(enchantment.get().value(), stack);
+                //#endif
         }
         return (float)sum;
     }

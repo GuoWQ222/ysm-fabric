@@ -67,7 +67,11 @@ public class CustomPlayerItemInHandLayer extends GeoLayerRenderer<CustomPlayerEn
         boolean isLeftHand = arm == HumanoidArm.LEFT;
         var locator = isLeftHand ? PlayerLocator.get().leftHand : PlayerLocator.get().rightHand;
         var itemState = new ItemStackRenderState();
+        //#if MC >= 1.21.5
         itemModelResolver.updateForLiving(itemState, itemStack, displayContext, entity);
+        //#else
+        //$$ itemModelResolver.updateForLiving(itemState, itemStack, displayContext, isLeftHand, entity);
+        //#endif
         if (itemState.isEmpty())
             return;
         data.modelState.visitLocatorGroup(locator, poseStack, locatorPose -> {
@@ -77,7 +81,11 @@ public class CustomPlayerItemInHandLayer extends GeoLayerRenderer<CustomPlayerEn
                 locatorPose.translate(0.1, 0, 0);
                 locatorPose.scale(1.25f, 1.25f, 1.25f);
             }
-            itemState.submit(locatorPose, collector, packedLight, OverlayTexture.NO_OVERLAY, state.outlineColor);
+            //#if MC >= 1.21.9
+            itemState.submit(locatorPose, collector, packedLight, OverlayTexture.NO_OVERLAY, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
+            //#else
+            //$$ itemState.render(locatorPose, collector.buffers(), packedLight, OverlayTexture.NO_OVERLAY);
+            //#endif
         });
     }
 }

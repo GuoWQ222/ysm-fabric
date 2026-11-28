@@ -69,14 +69,23 @@ public final class RenderBuiltins implements EntityComponent<Entity> {
         if (axis < 0 || axis > 1)
             return 0;
         var camera = com.elfmcys.ysm.platform.McCompat.mainCamera();
+        //#if MC >= 1.21.11
         float result = axis == 0 ? -camera.xRot() : 180 + camera.yRot();
+        //#else
+        //$$ float result = axis == 0 ? -camera.getXRot() : 180 + camera.getYRot();
+        //#endif
         return Float.isFinite(result) ? result : 0;
     }
 
     @BuiltinFunction(value = "distance_from_camera", namespace = "query")
     public static float distanceFromCamera(MolangContextView<Entity> context) {
+        //#if MC >= 1.21.6
         float result = (float)com.elfmcys.ysm.platform.McCompat.mainCamera().position()
             .distanceTo(context.subject().position());
+        //#else
+        //$$ float result = (float)com.elfmcys.ysm.platform.McCompat.mainCamera().getPosition()
+        //$$     .distanceTo(context.subject().position());
+        //#endif
         return Float.isFinite(result) ? result : 0;
     }
 

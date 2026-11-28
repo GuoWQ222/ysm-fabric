@@ -65,7 +65,11 @@ public final class EntityRendererReplace {
                 .mul(com.mojang.math.Axis.ZP.rotationDegrees(-pitch));
             return new VehicleRotation(rotation, angle);
         }
+        //#if MC >= 1.21.2
         float angle = 180.0F - entity.getYRot(partialTick);
+        //#else
+        //$$ float angle = 180.0F - entity.getViewYRot(partialTick);
+        //#endif
         return new VehicleRotation(com.mojang.math.Axis.YP.rotationDegrees(angle), angle);
     }
 

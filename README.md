@@ -1,8 +1,9 @@
 # ysm-fabric
 
 An unofficial port of the open-source **Yes Steve Model 3.0-dev** to **Minecraft 26.1, 26.1.1, 26.1.2, 26.2 and
-26.3**, on **Fabric, NeoForge and Forge**. That makes 15 builds. The repository name dates from the first release,
-which was Fabric 26.2 only.
+26.3**, on **Fabric, NeoForge and Forge** (15 builds), and to **Minecraft 1.20.2 – 1.21.11 on Forge** (15 more
+builds: 1.20.2, 1.20.3, 1.20.4, 1.20.6, 1.21, 1.21.1, 1.21.3 – 1.21.11). The repository name dates from the first
+release, which was Fabric 26.2 only.
 
 > **This is not an official Yes Steve Model release.** It is not affiliated with or endorsed by the Yes Steve Model
 > authors (YS Group). "Yes Steve Model" and "YSM" are the names of their project. Please report problems with this
@@ -18,7 +19,10 @@ which was Fabric 26.2 only.
     loader;
   - the 26.x render pipeline (extract, submit, deferred draw);
   - the 26.x GUI (render-state extraction, picture-in-picture model previews);
-  - one source tree for all five Minecraft versions, with version-specific lines selected at build time.
+  - one source tree for all Minecraft versions, with version-specific lines selected at build time.
+- The same tree builds for Forge 1.20.2 – 1.21.11: `versions/<version>.properties` holds each version's settings, and
+  `src/legacy/` holds stand-ins for 26.x APIs those versions lack (render states, the submit pipeline, GUI
+  picture-in-picture, payload types and others). Forge 1.20.2 – 1.20.4 run on SRG names, so those jars are remapped.
 - Behaviour follows the released YSM 2.6.5 where 3.0-dev differs. For example, models without `origin_ver` are treated
   as 2.6.5 models, and maces and spears get their own item classes. No code from released YSM builds is included.
 - [PORTING.md](PORTING.md) describes the changes and lists every modified, added, renamed and deleted file.
@@ -66,6 +70,23 @@ on Modrinth but are really made for a newer version:
 - WTHIT on Forge 26.1;
 - Jade on NeoForge 26.1 and 26.1.1.
 
+**Forge 1.20.2 – 1.21.11, tested in game on all 15 builds** (Windows x64):
+- the same scenario suite, with no mixin failures;
+- the release jar on a real Forge server, joined by a normal (non-development) Forge client;
+- generated model previews (all 33 test models, the same image on every version) and the model screen;
+- integrations, where the mod has a Forge build for that version:
+
+| Mod | Forge 1.20.2 – 1.21.11 |
+| --- | --- |
+| WTHIT | all 15 |
+| Jade | 1.20.2, 1.20.3, 1.20.4 (Jade has no Forge builds for later versions) |
+| Carry On | 1.20.4, 1.21.1 – 1.21.11 |
+| First-person Model | 1.20.2, 1.20.4, 1.20.6, 1.21 – 1.21.10 |
+| Real Camera (classic mode) | 1.20.2, 1.20.3, 1.20.4 |
+
+Better Combat cannot run on these Forge versions: its only build here (1.20.2) needs Player Animator, which has no
+Forge 1.20.2 build. Immersive Melodies and Immersive Aircraft have no Forge builds for them.
+
 **Known problems in other mods:**
 - **Iris on NeoForge 26.2:** Iris 1.11.4 with Sodium 0.9.2 crashes on the first frame in a world. It crashes the same
   way without YSM installed.
@@ -90,12 +111,16 @@ redistributed here. Each model's license is in its `ysm.json` (`metadata.license
 
 ## Requirements
 
-- Java 25.
+- Java 25 for 26.x; for Forge 1.20.2 – 1.20.4 Java 17, for Forge 1.20.6 – 1.21.11 Java 21 (as Minecraft itself).
 - One of:
   - **Fabric:** Fabric Loader 0.20.1 or newer and Fabric API. Forge Config API Port is bundled inside the jar.
   - **NeoForge:** 26.1.0 or newer for 26.1 and 26.1.2, 26.1.1 for 26.1.1, 26.2.0 for 26.2, and 26.3.0 for 26.3.
     Forge Config API Port is bundled inside the jar.
   - **Forge:** 62 or newer for 26.1, 26.1.1 and 26.1.2, 65 for 26.2, and 66 for 26.3.
+  - **Forge 1.20.2 – 1.21.11:** the Forge build each jar was tested with, or newer: 48.1.0 (1.20.2), 49.0.2
+    (1.20.3), 49.2.13 (1.20.4), 50.2.15 (1.20.6), 51.0.33 (1.21), 52.1.21 (1.21.1), 53.1.16 (1.21.3), 54.1.22
+    (1.21.4), 55.1.18 (1.21.5), 56.0.9 (1.21.6), 57.0.3 (1.21.7), 58.1.26 (1.21.8), 59.0.5 (1.21.9), 60.1.18
+    (1.21.10), 61.2.5 (1.21.11). MixinExtras is bundled where Forge lacks it.
 - The YSM native library (`ysm.dll`, `libysm.so` or `libysm.dylib`), built from
   [YesSteveModel/YesSteveModel-Native](https://github.com/YesSteveModel/YesSteveModel-Native).
 
@@ -111,14 +136,17 @@ author's permission. The steps are documented for reference.
    - contains two MSVC compile fixes;
    - fixes JNI entry points that MSVC merged across translation units, which made one native function run another;
    - adds the entity vertex layout of Iris 1.11 on 26.x, which the port selects when Iris is installed.
-   The same library serves all 15 builds.
+   The same library serves all 30 builds.
 2. Copy the library to `src/main/resources/META-INF/native/` (for example `ysm.dll`). Only a library placed there is
    packed into the mod jar. For tests and dev runs, setting `YSM_NATIVE_PATH` or `ysm.native_path=<absolute path>`
    in `local.properties` is enough.
 3. Run `./gradlew assemble -Pmc=<version> -Ploader=<loader>` with JDK 25:
-   - `<version>` is `26.1`, `26.1.1`, `26.1.2`, `26.2` or `26.3`;
+   - `<version>` is `26.1`, `26.1.1`, `26.1.2`, `26.2` or `26.3`, or one of the Forge-only versions `1.20.2`,
+     `1.20.3`, `1.20.4`, `1.20.6`, `1.21`, `1.21.1` and `1.21.3` – `1.21.11` (with `-Ploader=forge`);
    - `<loader>` is `fabric`, `neoforge` or `forge`;
    - without them, the build is Fabric 26.2.
+   - A Forge 1.20.2 – 1.21.11 build also needs JDK 17 (1.20.2 – 1.20.4) or JDK 21 (later versions) where Gradle
+     finds it as a toolchain, for example through `-Porg.gradle.java.installations.paths=<jdk folders>`.
    The mod jar is written to `build/libs/`.
    - Each 26.1.x point release is compiled separately. Build the jar for the version you play.
    - The jar build fails if a bundled library is not relocated under `com.elfmcys`, so it cannot clash with

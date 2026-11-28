@@ -17,7 +17,9 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -34,7 +36,9 @@ public abstract class LivingEntityRendererMixin {
         CameraRenderState camera, CallbackInfo ci) {
         YsmRenderStateKeys.setReplaced(state, false);
         if (state instanceof AvatarRenderState && YsmRenderStateKeys.entity(state) instanceof AbstractClientPlayer player
-            && ReplacePlayerRenderEvent.tryReplace(player, state, poseStack, collector))
+            && com.elfmcys.ysm.client.compat.FirstPersonCompat.submitExtracted(
+                YsmRenderStateKeys.firstPersonModel(state),
+                () -> ReplacePlayerRenderEvent.tryReplace(player, state, poseStack, collector)))
             YsmRenderStateKeys.setReplaced(state, true);
     }
 
@@ -50,5 +54,29 @@ public abstract class LivingEntityRendererMixin {
             target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;shouldRenderLayers(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;)Z"))
     private boolean ysm$skipVanillaLayers(boolean original, LivingEntityRenderState state) {
         return original && !YsmRenderStateKeys.isReplaced(state);
+    }
+
+    @Shadow
+    @Final
+    protected java.util.List<?> layers;
+
+    /**
+     * The layers of a YSM-drawn player are skipped (YSM draws armour, held items, cape etc. itself), but Carry On (from
+     * Minecraft 1.21.9) draws the carried block or entity through its own layer on the player renderer: those layers
+     * still run, where vanilla runs its layers (the pose is in model space here), with vanilla's arguments.
+     */
+    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
+        at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;shouldRenderLayers(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;)Z"))
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void ysm$carryOnLayers(LivingEntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera, CallbackInfo ci) {
+        if (!YsmRenderStateKeys.isReplaced(state) || !com.elfmcys.ysm.client.compat.carryon.CarryOnCompat.isInstalled())
+            return;
+        for (Object layer : layers) {
+            if (layer.getClass().getName().startsWith("tschipp.carryon."))
+                ((net.minecraft.client.renderer.entity.layers.RenderLayer)layer).submit(poseStack, collector,
+                    state.lightCoords, state, state.yRot, state.xRot);
+        }
     }
 }

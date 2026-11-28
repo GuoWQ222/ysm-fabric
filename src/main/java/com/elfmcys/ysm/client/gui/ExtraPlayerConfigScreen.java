@@ -59,8 +59,25 @@ public class ExtraPlayerConfigScreen extends Screen {
             }).build());
     }
 
+    //#if MC < 1.21.6
+    //$$ /** As ModelScreen.drawBackgroundFirst: set once this frame's background is drawn before the 3D model. */
+    //$$ private boolean backgroundDrawn;
+    //$$
+    //$$ @Override
+    //$$ public void renderBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    //$$     if (!backgroundDrawn)
+    //$$         super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    //$$ }
+    //#endif
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int pMouseX, int pMouseY, float frameDeltaTime) {
+        //#if MC < 1.21.6
+        //$$ // before 1.21.6 Screen.render (called last) would draw the (from 1.20.5 blurred) background over the model
+        //$$ backgroundDrawn = false;
+        //$$ renderBackground(graphics, pMouseX, pMouseY, frameDeltaTime);
+        //$$ backgroundDrawn = true;
+        //#endif
         int startX = this.posX;
         int startY = this.posY;
         int endX = (int)(startX + this.scale * 1);
@@ -109,7 +126,13 @@ public class ExtraPlayerConfigScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         boolean xIn = this.posX - this.controlSize < mouseX && mouseX < this.posX + this.controlSize;
@@ -124,20 +147,38 @@ public class ExtraPlayerConfigScreen extends Screen {
         if (button == InputConstants.MOUSE_BUTTON_LEFT && xIn2 && yIn2) {
             this.isChangeScale = true;
         }
+        //#if MC >= 1.21.9
         return super.mouseClicked(event, doubleClick);
+        //#else
+        //$$ return super.mouseClicked(event.x(), event.y(), event.button());
+        //#endif
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+    //#else
+    //$$ public boolean mouseReleased(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //#endif
         double pMouseX = event.x(), pMouseY = event.y();
         int pButton = event.button();
         this.isChangePos = false;
         this.isChangeScale = false;
+        //#if MC >= 1.21.9
         return super.mouseReleased(event);
+        //#else
+        //$$ return super.mouseReleased(event.x(), event.y(), event.button());
+        //#endif
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
+    //#else
+    //$$ public boolean mouseDragged(double ysmX, double ysmY, int ysmButton, double deltaX, double deltaY) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         if (isChangeScale) {
@@ -160,13 +201,22 @@ public class ExtraPlayerConfigScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
+    //#else
+    //$$ public boolean charTyped(char ysmChar, int ysmMods) {
+    //$$     var event = new com.elfmcys.ysm.legacy.input.CharacterEvent(ysmChar, ysmMods);
+    //#endif
         char typedChar = (char)event.codepoint();
         int keyCode = 0;
         if (Character.toLowerCase(typedChar) == RESET_KEY && net.minecraft.client.Minecraft.getInstance().hasAltDown()) {
             this.reset();
         }
+        //#if MC >= 1.21.9
         return super.charTyped(event);
+        //#else
+        //$$ return super.charTyped((char)event.codepoint(), event.modifiers());
+        //#endif
     }
 
     private void reset() {

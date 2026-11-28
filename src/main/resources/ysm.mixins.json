@@ -32,7 +32,8 @@
     "fabric.client.MouseButtonEventsMixin",
     "fabric.client.GuiScreenOpeningMixin",
     "fabric.client.ClientRespawnCloneMixin",
-    "fabric.client.GuiExtractWaitMixin"
+    "fabric.client.GuiExtractWaitMixin",
+    "fabric.client.AbstractSliderButtonAccessor"
   ],
   "mixins": [
     "platform.EntityCapabilityMixin",

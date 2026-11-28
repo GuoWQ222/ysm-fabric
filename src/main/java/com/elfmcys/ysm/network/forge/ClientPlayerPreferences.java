@@ -338,7 +338,7 @@ public final class ClientPlayerPreferences implements AutoCloseable {
     private static void message(Component text) {
         var player = Minecraft.getInstance().player;
         if (player != null)
-            player.sendSystemMessage(text);
+            com.elfmcys.ysm.platform.McCompat.message(player, text);
     }
 
     @Override

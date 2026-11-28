@@ -29,7 +29,7 @@ public interface GameTrackingView {
             }
 
             private TrackedEntityAccessor tracked(ServerPlayer subject) {
-                return (TrackedEntityAccessor)((ChunkMapAccessor)subject.level().getChunkSource().chunkMap)
+                return (TrackedEntityAccessor)((ChunkMapAccessor)((net.minecraft.server.level.ServerLevel)subject.level()).getChunkSource().chunkMap)
                     .ysm$getEntityMap().get(subject.getId());
             }
         };

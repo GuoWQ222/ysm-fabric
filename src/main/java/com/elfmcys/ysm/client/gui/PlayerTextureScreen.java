@@ -231,6 +231,7 @@ public class PlayerTextureScreen extends ModelScreen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!hasCurrentWorld() || previewEntity == null)
             return;
+        drawBackgroundFirst(graphics, mouseX, mouseY, partialTick);
         updatePointer(mouseX, mouseY);
         graphics.fillGradient(x, y + 22, x + 90, y + 235, 0xFF222222, 0xFF222222);
         graphics.fillGradient(x + 93, y, x + 299, y + 235, 0xFF222222, 0xFF222222);
@@ -303,25 +304,52 @@ public class PlayerTextureScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         updatePointer(mouseX, mouseY);
+        //#if MC >= 1.21.9
         return super.mouseClicked(event, doubleClick);
+        //#else
+        //$$ return super.mouseClicked(event.x(), event.y(), event.button());
+        //#endif
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+    //#else
+    //$$ public boolean keyPressed(int ysmKey, int ysmScan, int ysmMods) {
+    //$$     var event = new com.elfmcys.ysm.legacy.input.KeyEvent(ysmKey, ysmScan, ysmMods);
+    //#endif
         int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
+        //#if MC >= 1.21.9
         var handled = super.keyPressed(event);
+        //#else
+        //$$ var handled = super.keyPressed(event.key(), event.scancode(), event.modifiers());
+        //#endif
         updateKeyboardPointer();
         return handled;
     }
 
     @Override
+    //#if MC >= 1.21.11
     public void resize(int width, int height) {
+    //#else
+    //$$ public void resize(net.minecraft.client.Minecraft minecraft, int width, int height) {
+    //#endif
         var focused = getFocused();
+        //#if MC >= 1.21.11
         super.resize(width, height);
+        //#else
+        //$$ super.resize(minecraft, width, height);
+        //#endif
         if (textureButtons.contains(focused))
             setFocused(focused);
     }
@@ -340,7 +368,12 @@ public class PlayerTextureScreen extends ModelScreen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+    //#else
+    //$$ public boolean mouseDragged(double ysmX, double ysmY, int ysmButton, double dragX, double dragY) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         if (!inViewRange(mouseX, mouseY)) {

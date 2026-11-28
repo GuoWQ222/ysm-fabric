@@ -29,6 +29,7 @@ public final class PlayerAnimatorCompat {
 
     private static final class Inner {
         static boolean hasThirdPersonModelAnim(AbstractClientPlayer player) {
+            //#if MC >= 1.21.9
             try {
                 var animations = com.zigythebird.playeranim.api.PlayerAnimationAccess.getPlayerAnimManager(player);
                 return animations != null && animations.isActive() && animations.getFirstPersonMode()
@@ -36,6 +37,10 @@ public final class PlayerAnimatorCompat {
             } catch (IllegalArgumentException notAnimatable) {
                 return false;
             }
+            //#else
+            //$$ // the Player Animation Library API compiled against is a 1.21.9+ one
+            //$$ return false;
+            //#endif
         }
     }
 }

@@ -1,0 +1,6 @@
+# Forge before 1.21.6 (EventBus 6): one game bus (MinecraftForge.EVENT_BUS) and the mod bus (IEventBus) take typed
+# listeners; the glue is written for EventBus 7 (X.BUS / X.getBus(modBusGroup())). Regex lines: regex<TAB>pattern<TAB>
+# replacement. Mod-bus events first (they were turned into getBus(...) by below-1.21.9 where needed).
+regex	([\w.]+)\.getBus\(com\.elfmcys\.ysm\.forge\.YsmForge\.modBusGroup\(\)\)\.addListener\((\w+) ->	com.elfmcys.ysm.forge.YsmForge.modEventBus().addListener(($1 $2) ->
+regex	([\w.]+)\.getBus\(modBusGroup\(\)\)\.addListener\((\w+) ->	modEventBus().addListener(($1 $2) ->
+regex	([\w.]+)\.BUS\.addListener\((\w+) ->	net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(($1 $2) ->

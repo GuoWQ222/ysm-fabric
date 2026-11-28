@@ -50,7 +50,13 @@ public class FlatCheckbox extends AbstractWidget implements IConfigFormsButton {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public void onClick(double ysmX, double ysmY) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, 0);
+    //$$     boolean doubleClick = false;
+    //#endif
         this.isStateTriggered = !this.isStateTriggered;
         onClick.accept(this.isStateTriggered);
     }

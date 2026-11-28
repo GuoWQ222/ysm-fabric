@@ -226,7 +226,7 @@ public final class ServerModelService implements AutoCloseable {
         sendState(player, PlayerStateHandler.serverFlags());
         sendState(player, PlayerStateHandler.flags(player));
         sendState(player, PlayerStateHandler.entityInitial(player));
-        for (var subject : player.level().players()) {
+        for (var subject : ((net.minecraft.server.level.ServerLevel)player.level()).players()) {
             if (subject != player && tracking.isTracking(player, subject))
                 sendTrackingInitial(subject, player);
         }
@@ -291,7 +291,7 @@ public final class ServerModelService implements AutoCloseable {
 
     public synchronized boolean startGenPreview(ServerPlayer player) {
         var state = connections.current(player.getUUID(), com.elfmcys.ysm.platform.Connections.of(player)).orElse(null);
-        if (INSTANCE != this || !com.elfmcys.ysm.platform.PermissionHelper.has(player.permissions(), 2) || state == null || !state.session.active()
+        if (INSTANCE != this || !com.elfmcys.ysm.platform.PermissionHelper.has(player, 2) || state == null || !state.session.active()
             || !state.session.hasPublishedCatalog())
             return false;
         NetworkHandler.sendToClientPlayer(GenPreviewStartProto.newBuilder().build(), player);
@@ -429,7 +429,7 @@ public final class ServerModelService implements AutoCloseable {
                 failure -> ServerModelService.this
                     .runIfCurrent(player, session, () -> NetworkHandler.sendToClientPlayer(failure, player)),
                 serverResources, previews,
-                new ServerAssetTransfers.Management(previewWork, () -> com.elfmcys.ysm.platform.PermissionHelper.has(player.permissions(), 2),
+                new ServerAssetTransfers.Management(previewWork, () -> com.elfmcys.ysm.platform.PermissionHelper.has(player, 2),
                     message -> ServerModelService.this.runIfCurrent(player, session,
                         () -> NetworkHandler.sendToClientPlayer(message, player)),
                     ServerModelService.this::publishCommittedPreview));

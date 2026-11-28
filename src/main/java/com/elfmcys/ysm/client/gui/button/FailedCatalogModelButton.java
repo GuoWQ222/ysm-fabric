@@ -24,7 +24,13 @@ public final class FailedCatalogModelButton extends Button {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         return mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height

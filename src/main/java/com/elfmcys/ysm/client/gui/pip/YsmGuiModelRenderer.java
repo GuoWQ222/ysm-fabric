@@ -38,9 +38,14 @@ public class YsmGuiModelRenderer extends PictureInPictureRenderer<YsmGuiModelRen
     protected void renderToTexture(YsmGuiModelRenderState state, PoseStack ignored, SubmitNodeCollector collector) {
     //#else
     //$$ protected void renderToTexture(YsmGuiModelRenderState state, PoseStack ignored) {
+    //#if MC >= 1.21.9
     //$$     // 26.1: the renderer collects and draws its own submissions (as vanilla GuiEntityRenderer)
     //$$     var dispatcher = com.elfmcys.ysm.platform.McCompat.featureRenderDispatcher();
     //$$     SubmitNodeCollector collector = dispatcher.getSubmitNodeStorage();
+    //#else
+    //$$     // before 1.21.9: drawn straight into the picture's buffers
+    //$$     SubmitNodeCollector collector = new SubmitNodeCollector(buffers);
+    //#endif
     //#endif
         draws++;
         com.elfmcys.ysm.platform.McCompat.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
@@ -59,7 +64,11 @@ public class YsmGuiModelRenderer extends PictureInPictureRenderer<YsmGuiModelRen
         }
         //#if MC < 26.2
         //$$ try {
+        //#if MC >= 1.21.9
         //$$     dispatcher.renderAllFeatures();
+        //#else
+        //$$     collector.flush();
+        //#endif
         //$$     // Draw what is still batched while the GUI transform is on the model-view stack: prepare() flushes the
         //$$     // shared buffers only after this method returns, when the stack is popped, and a model left in the batch
         //$$     // (third-person view) would be drawn without the GUI transform, off the picture.

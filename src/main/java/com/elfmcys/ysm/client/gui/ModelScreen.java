@@ -36,6 +36,32 @@ public abstract class ModelScreen extends Screen {
         return lifetime == null || lifetime.isCurrent();
     }
 
+    //#if MC < 1.21.6
+    //$$ /** Set once this frame's background is drawn: Screen.render (called after the screen's own drawing) skips it. */
+    //$$ private boolean backgroundDrawn;
+    //$$
+    //$$ @Override
+    //$$ public void renderBackground(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+    //$$     float partialTick) {
+    //$$     if (!backgroundDrawn)
+    //$$         super.renderBackground(graphics, mouseX, mouseY, partialTick);
+    //$$ }
+    //#endif
+
+    /**
+     * Called first by screens that draw their panels and 3D models before Screen's own rendering. Before 1.21.6
+     * Screen.render draws the background when called, i.e. over that drawing (from 1.20.5 blurred: the model came out
+     * blurred): the background is drawn here instead, once per frame. From 1.21.6 the background is separate: nothing.
+     */
+    protected final void drawBackgroundFirst(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int mouseX,
+        int mouseY, float partialTick) {
+        //#if MC < 1.21.6
+        //$$ backgroundDrawn = false;
+        //$$ renderBackground(graphics, mouseX, mouseY, partialTick);
+        //$$ backgroundDrawn = true;
+        //#endif
+    }
+
     public final void showScreen(@Nullable Screen screen) {
         if (!hasCurrentWorld())
             return;

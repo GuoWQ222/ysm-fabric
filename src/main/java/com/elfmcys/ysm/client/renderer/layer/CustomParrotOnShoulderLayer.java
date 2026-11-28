@@ -13,7 +13,9 @@ import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.ParrotRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+//#if MC >= 1.21.2
 import net.minecraft.client.renderer.entity.state.ParrotRenderState;
+//#endif
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.animal.parrot.Parrot;
 
@@ -30,11 +32,11 @@ public class CustomParrotOnShoulderLayer extends GeoLayerRenderer<CustomPlayerEn
         GeoRenderData renderData, LivingEntityRenderState state, int packedLight, int overlay) {
         var player = animatable.getEntity();
         var anim = renderData.animationData;
-        player.getShoulderParrotLeft().ifPresent(variant -> renderData.modelState
+        com.elfmcys.ysm.platform.McCompat.shoulderParrotLeft(player).ifPresent(variant -> renderData.modelState
             .visitLocatorGroup(PlayerLocator.get().leftShoulder, poseStack, locatorPose -> submitParrot(locatorPose,
                 collector, packedLight, state, variant, anim.limbSwing, anim.limbSwingAmount, anim.netHeadYaw,
                 anim.headPitch)));
-        player.getShoulderParrotRight().ifPresent(variant -> renderData.modelState
+        com.elfmcys.ysm.platform.McCompat.shoulderParrotRight(player).ifPresent(variant -> renderData.modelState
             .visitLocatorGroup(PlayerLocator.get().rightShoulder, poseStack, locatorPose -> submitParrot(locatorPose,
                 collector, packedLight, state, variant, anim.limbSwing, anim.limbSwingAmount, anim.netHeadYaw,
                 anim.headPitch)));
@@ -45,6 +47,7 @@ public class CustomParrotOnShoulderLayer extends GeoLayerRenderer<CustomPlayerEn
         float xRot) {
         poseStack.translate(0, 1.5, 0);
         com.elfmcys.ysm.platform.McCompat.rotate(poseStack, Axis.ZP.rotationDegrees(180));
+        //#if MC >= 1.21.2
         var parrotState = new ParrotRenderState();
         parrotState.pose = ParrotModel.Pose.ON_SHOULDER;
         parrotState.ageInTicks = state.ageInTicks;
@@ -52,12 +55,23 @@ public class CustomParrotOnShoulderLayer extends GeoLayerRenderer<CustomPlayerEn
         parrotState.walkAnimationSpeed = limbSwingAmount;
         parrotState.yRot = yRot;
         parrotState.xRot = xRot;
+        //#endif
         //#if MC >= 26.3
         //$$ collector.submitModel(model, parrotState, poseStack, ParrotRenderer.getVariantTexture(variant), packedLight,
-        //$$     OverlayTexture.NO_OVERLAY, state.outlineColor);
-        //#else
+        //$$     OverlayTexture.NO_OVERLAY, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
+        //#elseif MC >= 26.1
         collector.submitModel(model, parrotState, poseStack, ParrotRenderer.getVariantTexture(variant), packedLight,
-            OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+            OverlayTexture.NO_OVERLAY, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state), null);
+        //#elseif MC >= 1.21.2
+        //$$ collector.submitModel(model, parrotState, poseStack, model.renderType(ParrotRenderer.getVariantTexture(variant)),
+        //$$     packedLight, OverlayTexture.NO_OVERLAY, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state), null);
+        //#else
+        //$$ // before 1.21.2 the shoulder parrot model poses and draws itself
+        //$$ var texture = ParrotRenderer.getVariantTexture(variant);
+        //$$ int tickCount = (int)state.ageInTicks;
+        //$$ collector.submitDeferred(poseStack, (stack, buffers) -> model.renderOnShoulder(stack,
+        //$$     buffers.getBuffer(model.renderType(texture)), packedLight, OverlayTexture.NO_OVERLAY, limbSwing,
+        //$$     limbSwingAmount, yRot, xRot, tickCount));
         //#endif
     }
 }

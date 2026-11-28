@@ -21,6 +21,11 @@ public final class YsmGuiModels {
     private static final boolean DEBUG = System.getenv("YSM_DEBUG_PIP") != null;
     private static int debugBudget = 40;
 
+    /** Diagnostics (test harness): pictures drawn. */
+    public static int draws() {
+        return YsmGuiModelRenderer.draws;
+    }
+
     /** Client init: registers the picture-in-picture renderer. */
     public static void register() {
         //#if LOADER == fabric && MC >= 26.2

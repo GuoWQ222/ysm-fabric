@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "${forge_range}"
+loaderVersion = "${forge_loader_range}"
 license = "Apache-2.0 (Yes Steve Model 3.0-dev code) and All Rights Reserved (new port files); see LICENSE-PORT.md"
 
 [[mods]]

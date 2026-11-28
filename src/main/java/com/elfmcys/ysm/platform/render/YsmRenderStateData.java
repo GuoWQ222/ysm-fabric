@@ -23,4 +23,19 @@ public interface YsmRenderStateData {
     boolean ysm$replaced();
 
     void ysm$setReplaced(boolean replaced);
+
+    /** Packed light (Minecraft before 1.21.9: the state has no lightCoords field). */
+    int ysm$light();
+
+    void ysm$setLight(int light);
+
+    /** Outline colour, 0 = none (Minecraft before 1.21.9: no outlineColor field). */
+    int ysm$outlineColor();
+
+    void ysm$setOutlineColor(int color);
+
+    /** First-person Model was drawing the local player when this state was extracted. */
+    boolean ysm$firstPersonModel();
+
+    void ysm$setFirstPersonModel(boolean drawing);
 }

@@ -25,13 +25,40 @@ import org.joml.Matrix3x2fc;
 public record GuiQuadRenderState(Matrix3x2fc pose, float x0, float y0, float x1, float y1, float x2, float y2,
     float x3, float y3, int color, @Nullable ScreenRectangle scissorArea, @Nullable ScreenRectangle bounds)
     implements GuiElementRenderState {
+    //#if MC >= 1.21.9
     @Override
     public void buildVertices(VertexConsumer consumer) {
+        //#if MC >= 1.21.11
         consumer.addVertexWith2DPose(pose, x0, y0).setColor(color);
+        //#else
+        //$$ consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x0, y0).setColor(color);
+        //#endif
+        //#if MC >= 1.21.11
         consumer.addVertexWith2DPose(pose, x1, y1).setColor(color);
+        //#else
+        //$$ consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x1, y1).setColor(color);
+        //#endif
+        //#if MC >= 1.21.11
         consumer.addVertexWith2DPose(pose, x2, y2).setColor(color);
+        //#else
+        //$$ consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x2, y2).setColor(color);
+        //#endif
+        //#if MC >= 1.21.11
         consumer.addVertexWith2DPose(pose, x3, y3).setColor(color);
+        //#else
+        //$$ consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x3, y3).setColor(color);
+        //#endif
     }
+    //#else
+    //$$ // 1.21.6 - 1.21.8: GUI elements are built with a depth
+    //$$ @Override
+    //$$ public void buildVertices(VertexConsumer consumer, float z) {
+    //$$     consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x0, y0, z).setColor(color);
+    //$$     consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x1, y1, z).setColor(color);
+    //$$     consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x2, y2, z).setColor(color);
+    //$$     consumer.addVertexWith2DPose(new org.joml.Matrix3x2f(pose), x3, y3, z).setColor(color);
+    //$$ }
+    //#endif
 
     @Override
     public RenderPipeline pipeline() {

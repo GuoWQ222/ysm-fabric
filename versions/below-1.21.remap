@@ -1,0 +1,13 @@
+# Minecraft before 1.21 (Forge builds 1.20.2 - 1.20.6). After below-1.21.2: the frame partial tick is a float
+# (DeltaTracker stand-in in src/legacy/pre-delta-tracker), BufferBuilder owns its ByteBuffer (src/legacy/pre-byte-buffer-builder).
+net.minecraft.client.DeltaTracker com.elfmcys.ysm.legacy.DeltaTracker
+regex	\.getTimer\(\)\s*\.getGameTimeDeltaPartialTick\([^()]*\)	.getFrameTime()
+com.mojang.blaze3d.vertex.VertexFormatElement.POSITION com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_POSITION
+com.mojang.blaze3d.vertex.VertexFormatElement.COLOR com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_COLOR
+com.mojang.blaze3d.vertex.VertexFormatElement.UV0 com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_UV0
+com.mojang.blaze3d.vertex.VertexFormatElement.UV1 com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_UV1
+com.mojang.blaze3d.vertex.VertexFormatElement.UV2 com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_UV2
+com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL com.mojang.blaze3d.vertex.DefaultVertexFormat.ELEMENT_NORMAL
+EquipmentSlot.Type.HUMANOID_ARMOR EquipmentSlot.Type.ARMOR
+regex	\.getUseDuration\(context\.subject\(\)\)	.getUseDuration()
+regex	\.maxWidth\(\d+\)\.selected\(	.selected(

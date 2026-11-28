@@ -45,21 +45,36 @@ public abstract class YsmTexture extends AbstractTexture {
             //$$     texture.close();
             //$$     texture = null;
             //$$ }
+            //#if MC >= 1.21.6
             //$$ if (textureView != null) {
             //$$     textureView.close();
             //$$     textureView = null;
             //$$ }
+            //#endif
             //#endif
             var device = RenderSystem.getDevice();
             //#if MC >= 26.2
             texture = device.createTexture(() -> label, USAGE, GpuFormat.RGBA8_UNORM, pixels.getWidth(),
                 pixels.getHeight(), 1, 1);
             //#else
+            //#if MC >= 1.21.6
             //$$ texture = device.createTexture(() -> label, USAGE, TextureFormat.RGBA8, pixels.getWidth(),
             //$$     pixels.getHeight(), 1, 1);
+            //#else
+            //$$ // 1.21.5: no usage flags, no texture views
+            //$$ texture = device.createTexture(() -> label, TextureFormat.RGBA8, pixels.getWidth(), pixels.getHeight(), 1);
             //#endif
+            //#endif
+            //#if MC >= 1.21.6
             textureView = device.createTextureView(texture);
+            //#endif
+            //#if MC >= 1.21.11
             sampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
+            //#else
+            //$$ // before 1.21.11 the texture carries its own sampling state
+            //$$ texture.setAddressMode(com.mojang.blaze3d.textures.AddressMode.REPEAT);
+            //$$ texture.setTextureFilter(FilterMode.NEAREST, false);
+            //#endif
             width = pixels.getWidth();
             height = pixels.getHeight();
         }

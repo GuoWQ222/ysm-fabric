@@ -15,8 +15,10 @@ import com.elfmcys.ysm.platform.event.MinecraftForge;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
+//#if MC >= 1.21.6
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+//#endif
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -73,6 +75,7 @@ public abstract class EntityCapabilityMixin implements ICapabilityHolder {
         ysm$valid = true;
     }
 
+    //#if MC >= 1.21.6
     @Inject(method = "saveWithoutId", at = @At("TAIL"))
     private void ysm$saveCaps(ValueOutput output, CallbackInfo ci) {
         if (ysm$caps == null)
@@ -90,4 +93,33 @@ public abstract class EntityCapabilityMixin implements ICapabilityHolder {
                 caps.deserialize(tag);
         });
     }
+    //#else
+    //$$ // Minecraft before 1.21.6 saves entities into a CompoundTag
+    //$$ @Inject(method = "saveWithoutId", at = @At("TAIL"))
+    //$$ private void ysm$saveCaps(net.minecraft.nbt.CompoundTag output,
+    //$$     org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<net.minecraft.nbt.CompoundTag> cir) {
+    //$$     if (ysm$caps == null)
+    //$$         return;
+    //$$     var tag = ysm$caps.serialize();
+    //$$     if (!tag.isEmpty())
+    //$$         output.put(YSM$CAPS_KEY, tag);
+    //$$ }
+    //$$ 
+    //$$ @Inject(method = "load", at = @At("TAIL"))
+    //$$ private void ysm$loadCaps(net.minecraft.nbt.CompoundTag input, CallbackInfo ci) {
+    //#if MC >= 1.21.5
+    //$$     input.getCompound(YSM$CAPS_KEY).ifPresent(tag -> {
+    //$$         var caps = ysm$dispatcher();
+    //$$         if (caps != null)
+    //$$             caps.deserialize(tag);
+    //$$     });
+    //#else
+    //$$     if (input.contains(YSM$CAPS_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+    //$$         var caps = ysm$dispatcher();
+    //$$         if (caps != null)
+    //$$             caps.deserialize(input.getCompound(YSM$CAPS_KEY));
+    //$$     }
+    //#endif
+    //$$ }
+    //#endif
 }

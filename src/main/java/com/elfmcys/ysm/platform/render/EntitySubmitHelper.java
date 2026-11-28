@@ -20,28 +20,41 @@ public final class EntitySubmitHelper {
 
     public static void submitLeashesAndName(EntityRenderState state, PoseStack poseStack,
         SubmitNodeCollector collector, CameraRenderState camera) {
+        //#if MC >= 1.21.6
         if (state.leashStates != null) {
             for (var leash : state.leashStates)
                 collector.submitLeash(poseStack, leash);
         }
+        //#else
+        //$$ // before 1.21.6 an entity has one leash
+        //$$ if (state.leashState != null)
+        //$$     collector.submitLeash(poseStack, state.leashState);
+        //#endif
         poseStack.pushPose();
-        if (state.scoreText != null) {
+        // 1.x: only avatars (players) carry score text
+        //#if MC >= 26.1
+        var scoreText = state.scoreText;
+        //#else
+        //$$ var scoreText = state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatar
+        //$$     ? avatar.scoreText : null;
+        //#endif
+        if (scoreText != null) {
             //#if MC >= 26.2
-            collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.scoreText, !state.isDiscrete,
-                state.lightCoords, camera);
+            collector.submitNameTag(poseStack, state.nameTagAttachment, 0, scoreText, !state.isDiscrete,
+                com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state), camera);
             //#else
-            //$$ collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.scoreText, !state.isDiscrete,
-            //$$     state.lightCoords, state.distanceToCameraSq, camera);
+            //$$ collector.submitNameTag(poseStack, state.nameTagAttachment, 0, scoreText, !state.isDiscrete,
+            //$$     com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state), state.distanceToCameraSq, camera);
             //#endif
             poseStack.translate(0.0F, 9.0F * 1.15F * 0.025F, 0.0F);
         }
         if (state.nameTag != null)
             //#if MC >= 26.2
             collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.nameTag, !state.isDiscrete,
-                state.lightCoords, camera);
+                com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state), camera);
             //#else
             //$$ collector.submitNameTag(poseStack, state.nameTagAttachment, 0, state.nameTag, !state.isDiscrete,
-            //$$     state.lightCoords, state.distanceToCameraSq, camera);
+            //$$     com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state), state.distanceToCameraSq, camera);
             //#endif
         poseStack.popPose();
     }

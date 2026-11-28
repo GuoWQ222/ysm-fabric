@@ -1,0 +1,5 @@
+# Minecraft before 1.20.3 (Forge build 1.20.2). After below-1.20.5: no Checkbox.builder (src/legacy/pre-checkbox-builder),
+# no Component colour shortcut, short grass was grass.
+Checkbox.builder( com.elfmcys.ysm.legacy.gui.CheckboxBuilder.builder(
+Blocks.SHORT_GRASS Blocks.GRASS
+regex	\.withColor\(com\.elfmcys\.ysm\.platform\.McCompat\.rgb\((net\.minecraft\.ChatFormatting\.\w+)\)\)	.withStyle($1)

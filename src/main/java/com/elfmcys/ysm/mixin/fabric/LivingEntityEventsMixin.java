@@ -31,12 +31,32 @@ public abstract class LivingEntityEventsMixin implements ShieldBlockCooldownHold
         MinecraftForge.EVENT_BUS.post(new LivingEvent.LivingTickEvent((LivingEntity)(Object)this));
     }
 
+    //#if MC >= 1.21.5
     @Inject(method = "applyItemBlocking", at = @At("RETURN"))
     private void ysm$shieldBlocked(ServerLevel level, DamageSource source, float damage,
         CallbackInfoReturnable<Float> cir) {
         if (cir.getReturnValueF() > 0.0F)
             MinecraftForge.EVENT_BUS.post(new ShieldBlockEvent((LivingEntity)(Object)this, source, damage));
     }
+    //#elseif MC >= 1.21.2
+    //$$ // before 1.21.5: hurtServer asks isDamageSourceBlocked; a shield block is that check passing
+    //$$ @com.llamalad7.mixinextras.injector.ModifyExpressionValue(method = "hurtServer", at = @At(value = "INVOKE",
+    //$$     target = "Lnet/minecraft/world/entity/LivingEntity;isDamageSourceBlocked(Lnet/minecraft/world/damagesource/DamageSource;)Z"))
+    //$$ private boolean ysm$shieldBlocked(boolean blocked, ServerLevel level, DamageSource source, float damage) {
+    //$$     if (blocked)
+    //$$         MinecraftForge.EVENT_BUS.post(new ShieldBlockEvent((LivingEntity)(Object)this, source, damage));
+    //$$     return blocked;
+    //$$ }
+    //#else
+    //$$ // before 1.21.2 the server-side damage entry is hurt(source, damage)
+    //$$ @com.llamalad7.mixinextras.injector.ModifyExpressionValue(method = "hurt", at = @At(value = "INVOKE",
+    //$$     target = "Lnet/minecraft/world/entity/LivingEntity;isDamageSourceBlocked(Lnet/minecraft/world/damagesource/DamageSource;)Z"))
+    //$$ private boolean ysm$shieldBlocked(boolean blocked, DamageSource source, float damage) {
+    //$$     if (blocked && !((LivingEntity)(Object)this).level().isClientSide())
+    //$$         MinecraftForge.EVENT_BUS.post(new ShieldBlockEvent((LivingEntity)(Object)this, source, damage));
+    //$$     return blocked;
+    //$$ }
+    //#endif
 
     @Override
     public int ysm$getShieldBlockCooldown() {

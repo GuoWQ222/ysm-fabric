@@ -17,9 +17,18 @@ public interface ByteBufferBuilderAccessor {
     @Accessor("pointer")
     long ysm$pointer();
 
+    //#if MC >= 1.21.6
     @Accessor("writeOffset")
     long ysm$writeOffset();
 
     @Invoker("ensureCapacity")
     void ysm$ensureCapacity(long requiredCapacity);
+    //#else
+    //$$ // before 1.21.6 the builder counts in int
+    //$$ @Accessor("writeOffset")
+    //$$ int ysm$writeOffset();
+    //$$
+    //$$ @Invoker("ensureCapacity")
+    //$$ void ysm$ensureCapacity(int requiredCapacity);
+    //#endif
 }

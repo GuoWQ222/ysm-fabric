@@ -39,7 +39,11 @@ public final class GuiDraw {
         boolean shadow) {
         if (text == null)
             return x;
+        //#if MC >= 26.1
         g.text(font, text, x, y, argb(color), shadow);
+        //#else
+        //$$ g.drawString(font, text, x, y, argb(color), shadow);
+        //#endif
         return x + font.width(text) + (shadow ? 1 : 0);
     }
 
@@ -54,7 +58,11 @@ public final class GuiDraw {
 
     public static int drawString(GuiGraphicsExtractor g, Font font, Component text, int x, int y, int color,
         boolean shadow) {
+        //#if MC >= 26.1
         g.text(font, text, x, y, argb(color), shadow);
+        //#else
+        //$$ g.drawString(font, text, x, y, argb(color), shadow);
+        //#endif
         return x + font.width(text) + (shadow ? 1 : 0);
     }
 
@@ -65,7 +73,11 @@ public final class GuiDraw {
 
     public static int drawString(GuiGraphicsExtractor g, Font font, FormattedCharSequence text, int x, int y,
         int color, boolean shadow) {
+        //#if MC >= 26.1
         g.text(font, text, x, y, argb(color), shadow);
+        //#else
+        //$$ g.drawString(font, text, x, y, argb(color), shadow);
+        //#endif
         return x + font.width(text) + (shadow ? 1 : 0);
     }
 
@@ -75,22 +87,42 @@ public final class GuiDraw {
     }
 
     public static void drawCenteredString(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color) {
+        //#if MC >= 26.1
         g.centeredText(font, text, x, y, argb(color));
+        //#else
+        //$$ g.drawCenteredString(font, text, x, y, argb(color));
+        //#endif
     }
 
     public static void drawCenteredString(GuiGraphicsExtractor g, Font font, Component text, int x, int y,
         int color) {
+        //#if MC >= 26.1
         g.centeredText(font, text, x, y, argb(color));
+        //#else
+        //$$ g.drawCenteredString(font, text, x, y, argb(color));
+        //#endif
     }
 
     public static void drawCenteredString(GuiGraphicsExtractor g, Font font, FormattedCharSequence text, int x, int y,
         int color) {
+        //#if MC >= 26.1
         g.centeredText(font, text, x, y, argb(color));
+        //#else
+        //$$ g.drawCenteredString(font, text, x, y, argb(color));
+        //#endif
     }
 
     public static void drawWordWrap(GuiGraphicsExtractor g, Font font, FormattedText text, int x, int y, int width,
         int color) {
+        //#if MC >= 26.1
         g.textWithWordWrap(font, text, x, y, width, argb(color), false);
+        //#else
+        //#if MC >= 1.21.4
+        //$$ g.drawWordWrap(font, text, x, y, width, argb(color), false);
+        //#else
+        //$$ g.drawWordWrap(font, text, x, y, width, argb(color));
+        //#endif
+        //#endif
     }
 
     // ---- tooltips (26.x: deferred to the end of the frame) ----
@@ -116,11 +148,19 @@ public final class GuiDraw {
     // ---- lines ----
 
     public static void hLine(GuiGraphicsExtractor g, int x0, int x1, int y, int color) {
+        //#if MC >= 26.1
         g.horizontalLine(x0, x1, y, color);
+        //#else
+        //$$ g.hLine(x0, x1, y, color);
+        //#endif
     }
 
     public static void vLine(GuiGraphicsExtractor g, int x, int y0, int y1, int color) {
+        //#if MC >= 26.1
         g.verticalLine(x, y0, y1, color);
+        //#else
+        //$$ g.vLine(x, y0, y1, color);
+        //#endif
     }
 
     // ---- textures (1.20 overloads by argument count) ----
@@ -146,8 +186,13 @@ public final class GuiDraw {
     /** blit(texture, x, y, w, h, u, v, srcWidth, srcHeight, textureWidth, textureHeight). */
     public static void blit(GuiGraphicsExtractor g, Identifier texture, int x, int y, int width, int height, float u,
         float v, int srcWidth, int srcHeight, int textureWidth, int textureHeight) {
+        //#if MC >= 1.21.2
         g.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, u, v, width, height, srcWidth, srcHeight, textureWidth,
             textureHeight);
+        //#else
+        //$$ // before 1.21.2 the size comes before the source position
+        //$$ g.blit(texture, x, y, width, height, u, v, srcWidth, srcHeight, textureWidth, textureHeight);
+        //#endif
     }
 
     /**

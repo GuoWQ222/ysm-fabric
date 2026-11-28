@@ -36,8 +36,8 @@ public final class CustomSoundInstance extends MinecraftSoundInstance
         net.minecraft.resources.Identifier id, boolean looping) {
         return CompletableFuture.completedFuture(new MinecraftAudioStreamAdapter(stream));
     }
-    //#elseif LOADER == neoforge
-    //$$ // NeoForge: SoundInstance extension (custom stream instead of a sound file)
+    //#elseif LOADER == neoforge || MC < 1.21.6
+    //$$ // NeoForge, and Forge before 1.21.6: SoundInstance extension (custom stream instead of a sound file)
     //$$ @Override
     //$$ public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers,
     //$$     net.minecraft.client.resources.sounds.Sound sound, boolean looping) {

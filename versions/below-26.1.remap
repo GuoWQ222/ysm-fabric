@@ -1,0 +1,39 @@
+# Minecraft 1.x (the Forge builds 1.20.2 - 1.21.11): names that Minecraft 26.1 moved or renamed, mapped back.
+# Applied after the //#if directives to every Java file of a build whose versions/<mc>.properties lists it in
+# "remaps" (whole names only; a trailing '.' = package prefix; a leading '~' = member name, renamed after '.' too).
+# GuiGraphics' own drawing calls differ as well, but only client/gui/GuiDraw.java calls them (//#if blocks there).
+# GUI: 26.1 renamed GuiGraphics to GuiGraphicsExtractor and the render* methods of screens and widgets to extract*
+net.minecraft.client.gui.GuiGraphicsExtractor net.minecraft.client.gui.GuiGraphics
+GuiGraphicsExtractor GuiGraphics
+net.minecraft.client.renderer.state.gui. net.minecraft.client.gui.render.state.
+~extractRenderStateWithTooltipAndSubtitles renderWithTooltipAndSubtitles
+~extractRenderState render
+~extractWidgetRenderState renderWidget
+~extractContents renderContents
+~extractDefaultSprite renderDefaultSprite
+~extractDefaultLabel renderDefaultLabel
+~extractScrollingStringOverContents renderScrollingStringOverContents
+~extractEntityInInventoryFollowsMouse renderEntityInInventoryFollowsMouse
+~extractBackground renderBackground
+~extractBlurredBackground renderBlurredBackground
+~extractMenuBackground renderMenuBackground
+~extractTransparentBackground renderTransparentBackground
+~extractLabels renderLabels
+# GUI render state: 26.1 add* = 1.21.x submit*
+~addGuiElement submitGuiElement
+~addPicturesInPictureState submitPicturesInPictureState
+# Descriptors in mixin target strings (Lnet/minecraft/...;): entries that start with "/" need no boundary
+/renderer/state/level/CameraRenderState; /renderer/state/CameraRenderState;
+/gui/GuiGraphicsExtractor; /gui/GuiGraphics;
+client/renderer/state/gui/ client/gui/render/state/
+/util/LightCoordsUtil; /client/renderer/LightTexture;
+# Level / camera render states (26.1 split them into state.level)
+net.minecraft.client.renderer.state.level.CameraRenderState net.minecraft.client.renderer.state.CameraRenderState
+# Light coordinates: 26.1 moved the static helpers out of LightTexture
+net.minecraft.util.LightCoordsUtil net.minecraft.client.renderer.LightTexture
+LightCoordsUtil LightTexture
+# Vertex formats: 26.1 ENTITY = 1.x NEW_ENTITY
+com.mojang.blaze3d.vertex.DefaultVertexFormat.ENTITY com.mojang.blaze3d.vertex.DefaultVertexFormat.NEW_ENTITY
+DefaultVertexFormat.ENTITY DefaultVertexFormat.NEW_ENTITY
+# Level time: 26.1 world clocks; 1.x day time
+~getOverworldClockTime getDayTime

@@ -6,7 +6,9 @@ import com.elfmcys.ysm.client.texture.CustomPBRTextureSet;
 import com.elfmcys.ysm.info.type.PBRTextureType;
 import com.elfmcys.ysm.natives.render.VertexFormatType;
 import com.elfmcys.ysm.util.ResourceDiagnostics;
+//#if MC >= 1.21.5
 import com.mojang.blaze3d.opengl.GlTexture;
+//#endif
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
 import java.util.Optional;
@@ -103,7 +105,13 @@ public final class IrisCompat {
     }
     //#else
     //$$ private static int offset(VertexFormat format, com.mojang.blaze3d.vertex.VertexFormatElement element) {
+    //#if MC >= 1.21
     //$$     return format.contains(element) ? format.getOffset(element) : -1;
+    //#else
+    //$$     // before 1.21 offsets are looked up by element index
+    //$$     int index = format.getElements().indexOf(element);
+    //$$     return index < 0 ? -1 : format.getOffset(index);
+    //#endif
     //$$ }
     //#endif
 
@@ -141,9 +149,14 @@ public final class IrisCompat {
     public static void requirePbrTextures(CustomPBRTextureSet texture, Consumer<AbstractTexture> hostOwnership) {
         if (!installed)
             throw new IllegalStateException("Iris PBR integration is not installed");
+        //#if MC >= 1.21.5
         if (!(texture.getTexture() instanceof GlTexture glTexture))
             throw new IllegalStateException("Iris PBR textures need the OpenGL backend");
         var holder = PBRTextureManager.INSTANCE.getOrLoadHolder(glTexture.glId());
+        //#else
+        //$$ // before 1.21.5 a texture is its OpenGL id
+        //$$ var holder = PBRTextureManager.INSTANCE.getOrLoadHolder(texture.getId());
+        //#endif
         IllegalStateException failure = null;
         if (texture.getNormal() != null) {
             if (texture.getNormal() == holder.normalTexture())

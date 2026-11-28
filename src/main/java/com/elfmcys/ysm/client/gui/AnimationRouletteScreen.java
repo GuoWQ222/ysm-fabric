@@ -409,6 +409,10 @@ public class AnimationRouletteScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        //#if MC < 1.21.6
+        //$$ // before 1.21.6 Screen.render draws the (blurred) background, and this override does not call it
+        //$$ this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        //#endif
         String patText = StringUtils.joinWith(" > ", CACHE.stream().map(Pair::getLeft).toArray());
         GuiDraw.drawCenteredString(graphics, font, Component.translatable("gui.yes_steve_model.roulette.path", patText), this.x + 195, this.y - 100, 0xFFFFFF);
 
@@ -506,7 +510,13 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+    //#else
+    //$$ public boolean mouseClicked(double ysmX, double ysmY, int ysmButton) {
+    //$$     var event = com.elfmcys.ysm.legacy.input.MouseButtonEvent.of(ysmX, ysmY, ysmButton);
+    //$$     boolean doubleClick = false;
+    //#endif
         double mouseX = event.x(), mouseY = event.y();
         int button = event.button();
         if (-1 < selectId && selectId < extraAnimations.size()) {
@@ -542,7 +552,11 @@ public class AnimationRouletteScreen extends Screen {
             if (listener instanceof IConfigFormsButton) {
                 mouseYOffset = mouseY + this.configScrollY;
             }
+            //#if MC >= 1.21.9
             if (listener.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseYOffset, event.buttonInfo()), doubleClick)) {
+            //#else
+            //$$ if (listener.mouseClicked(mouseX, mouseYOffset, event.button())) {
+            //#endif
                 this.setFocused(listener);
                 if (button == 0) {
                     this.setDragging(true);
@@ -555,14 +569,23 @@ public class AnimationRouletteScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.21.9
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+    //#else
+    //$$ public boolean keyPressed(int ysmKey, int ysmScan, int ysmMods) {
+    //$$     var event = new com.elfmcys.ysm.legacy.input.KeyEvent(ysmKey, ysmScan, ysmMods);
+    //#endif
         int keyCode = event.key(), scanCode = com.elfmcys.ysm.platform.McCompat.scancode(event), modifiers = event.modifiers();
         if (AnimationRouletteKey.ANIMATION_ROULETTE_KEY.matches(keyCode, scanCode)
             && AnimationRouletteKey.ANIMATION_ROULETTE_KEY.ysmKeyModifier().isActive()) {
             this.onClose();
             return true;
         }
+        //#if MC >= 1.21.9
         return super.keyPressed(event);
+        //#else
+        //$$ return super.keyPressed(event.key(), event.scancode(), event.modifiers());
+        //#endif
     }
 
     private void clickConfig(String buttonName) {
@@ -583,7 +606,7 @@ public class AnimationRouletteScreen extends Screen {
         if (player != null && ClientConfig.PRINT_ANIMATION_ROULETTE_MSG.get()) {
             MutableComponent component =
                 Component.translatable("message.yes_steve_model.model.animation_roulette.play", selectKey);
-            player.sendSystemMessage(component);
+            com.elfmcys.ysm.platform.McCompat.message(player, component);
         }
         com.elfmcys.ysm.platform.McCompat.setScreen(null);
     }
@@ -593,7 +616,7 @@ public class AnimationRouletteScreen extends Screen {
         if (CACHE.size() > 5) {
             LocalPlayer player = this.minecraft.player;
             if (player != null) {
-                player.sendSystemMessage(Component.translatable("gui.yes_steve_model.roulette.too_long"));
+                com.elfmcys.ysm.platform.McCompat.message(player, Component.translatable("gui.yes_steve_model.roulette.too_long"));
             }
             return;
         }

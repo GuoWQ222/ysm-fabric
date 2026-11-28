@@ -29,8 +29,10 @@ public enum KeyModifier {
         for (int key : keys)
             //#if MC >= 26.3
             //$$ if (InputConstants.isKeyDown(key))
-            //#else
+            //#elseif MC >= 1.21.9
             if (InputConstants.isKeyDown(window, key))
+            //#else
+            //$$ if (InputConstants.isKeyDown(window.getWindow(), key))
             //#endif
                 return true;
         return false;

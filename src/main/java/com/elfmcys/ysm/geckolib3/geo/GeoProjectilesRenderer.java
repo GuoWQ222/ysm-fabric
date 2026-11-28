@@ -29,10 +29,10 @@ public abstract class GeoProjectilesRenderer<TEntity extends Projectile, T exten
                 return false;
             var entity = animatable.getEntity();
             var bodyVisible = !entity.isInvisibleTo(mc.player);
-            var glowing = state.appearsGlowing();
+            var glowing = com.elfmcys.ysm.platform.render.YsmRenderStateKeys.appearsGlowing(state);
             var renderType = getRenderType(data.texture, bodyVisible, glowing, data.modelState.hasTranslucentVertices());
             if (renderType != null) {
-                int light = state.lightCoords;
+                int light = com.elfmcys.ysm.platform.render.YsmRenderStateKeys.light(state);
                 int overlay = getPackedOverlay(entity, 0);
                 poseStack.pushPose();
                 try {
@@ -43,11 +43,11 @@ public abstract class GeoProjectilesRenderer<TEntity extends Projectile, T exten
                     if (!animatable.canConsume(data, data.ctx))
                         return false;
                     if (renderType.isOutline()) {
-                        renderOutline(data, animatable, renderType, poseStack, collector, state.outlineColor);
+                        renderOutline(data, animatable, renderType, poseStack, collector, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
                     } else {
                         if (!render(data, animatable, renderType, poseStack, collector, light, overlay, Color.WHITE))
                             return false;
-                        renderOutline(data, animatable, renderType, poseStack, collector, state.outlineColor);
+                        renderOutline(data, animatable, renderType, poseStack, collector, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state));
                     }
                     if (animatable.canConsume(data, data.ctx))
                         postRender(data, animatable, poseStack, collector, light, overlay, Color.WHITE);

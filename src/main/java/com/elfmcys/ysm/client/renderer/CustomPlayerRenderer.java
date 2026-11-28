@@ -23,7 +23,11 @@ import org.jetbrains.annotations.Nullable;
 public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<Player, CustomPlayerEntity> {
     public CustomPlayerRenderer(EntityRendererProvider.Context ctx) {
         addLayer(new CustomPlayerItemInHandLayer(ctx.getItemModelResolver()));
+        //#if MC >= 1.21.2
         addLayer(new CustomPlayerElytraLayer(ctx.getModelSet(), ctx.getEquipmentRenderer()));
+        //#else
+        //$$ addLayer(new CustomPlayerElytraLayer(ctx.getModelSet()));
+        //#endif
         addLayer(new CustomParrotOnShoulderLayer(ctx.getModelSet()));
         addLayer(new CustomPlayerHeadLayer(ctx.getItemModelResolver()));
     }

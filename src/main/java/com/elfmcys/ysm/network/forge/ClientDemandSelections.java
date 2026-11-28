@@ -96,7 +96,7 @@ public final class ClientDemandSelections implements ClientDemandCoordinator.Sel
         var stage = failure instanceof ClientDemandCoordinator.SelectionFailure selection ? selection.stage()
             : ClientDemandCoordinator.FailureStage.INSTALLATION;
         if (player != null)
-            player.sendSystemMessage(Component.translatable(
+            com.elfmcys.ysm.platform.McCompat.message(player, Component.translatable(
                 "message.yes_steve_model.selection.failure." + stage.name().toLowerCase(java.util.Locale.ROOT)));
         com.elfmcys.ysm.YesSteveModel.LOGGER.warn("Model selection failed during {}", stage, failure);
     }

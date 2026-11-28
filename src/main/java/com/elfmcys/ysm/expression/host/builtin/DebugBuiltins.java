@@ -102,15 +102,34 @@ public final class DebugBuiltins implements EntityComponent<Entity> {
             return;
         print("Display ", stack.getItem().getName(stack).getString(99));
         print("Name ", id.toString());
+        //#if MC >= 26.1
         stack.typeHolder().tags().forEach(tag -> print("Tag ", tag.location().toString()));
+        //#else
+        //$$ stack.getTags().forEach(tag -> print("Tag ", tag.location().toString()));
+        //#endif
+        //#if MC >= 1.20.5
         for (var entry : stack.getEnchantments().entrySet()) {
             var enchantment = entry.getKey();
             var enchantmentId = enchantment.unwrapKey().map(key -> key.identifier().toString()).orElse("?");
             debug.print(Component.literal("Enchantment: display ")
+                //#if MC >= 1.21
                 .append(copy(net.minecraft.world.item.enchantment.Enchantment.getFullname(enchantment, entry.getIntValue())
                     .getString(99)))
+                //#else
+                //$$ // before 1.21 enchantments are plain objects (no data-driven holder function)
+                //$$ .append(copy(enchantment.value().getFullname(entry.getIntValue()).getString(99)))
+                //#endif
                 .append(Component.literal("  name ").append(copy(enchantmentId))));
         }
+        //#else
+        //$$ // before 1.20.5 enchantments are an NBT list read through EnchantmentHelper
+        //$$ for (var entry : net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantments(stack).entrySet()) {
+        //$$     var enchantmentId = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.getKey(entry.getKey());
+        //$$     debug.print(Component.literal("Enchantment: display ")
+        //$$         .append(copy(entry.getKey().getFullname(entry.getValue()).getString(99)))
+        //$$         .append(Component.literal("  name ").append(copy(String.valueOf(enchantmentId)))));
+        //$$ }
+        //#endif
     }
 
     @BuiltinFunction(value = "dump_relative_block", alwaysOrigin = true, action = true)
@@ -126,7 +145,11 @@ public final class DebugBuiltins implements EntityComponent<Entity> {
             return;
         print("Display ", block.getBlock().getName().getString(99));
         print("Name ", id.toString());
+        //#if MC >= 26.1
         block.typeHolder().tags().forEach(tag -> print("Tag ", tag.location().toString()));
+        //#else
+        //$$ block.getTags().forEach(tag -> print("Tag ", tag.location().toString()));
+        //#endif
     }
 
     private void print(String prefix, String value) {

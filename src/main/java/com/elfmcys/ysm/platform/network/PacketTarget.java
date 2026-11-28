@@ -56,7 +56,11 @@ public final class PacketTarget {
     public static PacketTarget trackingEntity(Entity entity) {
         return new PacketTarget(NetworkDirection.PLAY_TO_CLIENT, packet -> {
             if (entity.level() instanceof ServerLevel level)
+                //#if MC >= 1.21.9
                 level.getChunkSource().sendToTrackingPlayers(entity,
+                //#else
+                //$$ level.getChunkSource().broadcast(entity,
+                //#endif
                     (Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>)packet);
         });
     }
@@ -65,7 +69,11 @@ public final class PacketTarget {
     public static PacketTarget trackingEntityAndSelf(Entity entity) {
         return new PacketTarget(NetworkDirection.PLAY_TO_CLIENT, packet -> {
             if (entity.level() instanceof ServerLevel level)
+                //#if MC >= 1.21.9
                 level.getChunkSource().sendToTrackingPlayersAndSelf(entity,
+                //#else
+                //$$ level.getChunkSource().broadcastAndSend(entity,
+                //#endif
                     (Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>)packet);
         });
     }

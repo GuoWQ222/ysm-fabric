@@ -50,17 +50,29 @@ sourceSets {
     }
 }
 
+ext.ysmExtraSources = (findProperty('extra_sources') ?: '').toString().split(',')*.trim().findAll { it }
+// legacy mixin configs (ysm.<name>.mixins.json in src/legacy/<name>/resources) go with the extra sources
+ysmExtraSources.each { name -> sourceSets.main.resources.srcDir "src/legacy/${name}/resources" }
+
 // Other Minecraft versions: hand-written sources go through the preprocessor (generated source dirs are added later
 // by the schema and compatibility scripts and stay as they are).
 if (minecraft_version != ysmSourceMc || ysmLoader != 'fabric') {
     [main: 'src/main/java', localtest: 'src/localtest/java'].each { setName, dirPath ->
         def prepare = tasks.register("preprocess${setName.capitalize()}Java", com.elfmcys.ysm.gradle.PreprocessTask) {
             sources.from(file(dirPath))
+            // versions/<mc>.properties "extra_sources": stand-ins for newer Minecraft APIs (src/legacy/<name>/java)
+            if (setName == 'main')
+                ysmExtraSources.each { name -> sources.from(file("src/legacy/${name}/java")) }
             minecraftVersion.set(minecraft_version)
             loader.set(ysmLoader)
             output.set(layout.buildDirectory.dir("preprocessed/${minecraft_version}/${setName}"))
-            [file("versions/${minecraft_version}.remap"), file("versions/loader-${ysmLoader}.remap")].findAll { it.exists() }
-                .each { remaps.from(it) }
+            // versions/<mc>.remap, then the shared tables the version file names in "remaps" (e.g. below-26.1),
+            // then the loader's table
+            def shared = (findProperty('remaps') ?: '').toString().split(',')*.trim().findAll { it }
+                    .collect { name -> file("versions/${name}.remap") }
+            shared.findAll { !it.exists() }.each { throw new GradleException("No ${it}") }
+            ([file("versions/${minecraft_version}.remap")] + shared + [file("versions/loader-${ysmLoader}.remap")])
+                .findAll { it.exists() }.each { remaps.from(it) }
         }
         sourceSets.getByName(setName).java.setSrcDirs([prepare.flatMap { it.output }])
     }
@@ -94,7 +106,8 @@ java {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 25
+    // Minecraft before 26.1 runs on Java 21 or 17: versions/<mc>.properties sets java_release
+    options.release = (findProperty('java_release') ?: '25').toString() as int
     options.compilerArgs += ['-Xmaxerrs', '100000', '-Xmaxwarns', '0']
 }
 
@@ -174,6 +187,8 @@ dependencies {
     compileOnly 'org.ow2.asm:asm-tree:9.9.1'
 }
 
+ext.ysmCompatExcluded = (findProperty('compat_exclude') ?: '').toString().split(',')*.trim().findAll { it }
+
 // Port in progress: other-mod compatibility code and the Forge-era mixins stay in the tree for reference
 // but are not compiled; ported mixins live under mixin/platform and mixin/fabric.
 sourceSets.main.java {
@@ -185,6 +200,51 @@ sourceSets.main.java {
     // Fabric-only integration (Mod Menu entry); the WTHIT plugin is built for every loader (WTHIT exists for all)
     if (ysmLoader != 'fabric') {
         exclude 'com/elfmcys/ysm/fabric/YsmModMenu.java'
+    }
+    // versions/<mc>.properties "compat_exclude": integrations without an API build for that Minecraft version
+    ysmCompatExcluded.each { name -> exclude "com/elfmcys/ysm/client/compat/${name}/**" }
+    // versions/<mc>.properties "exclude_sources": files written for newer Minecraft only (a stand-in in src/legacy
+    // replaces them there)
+    (findProperty('exclude_sources') ?: '').toString().split(',')*.trim().findAll { it }.each { exclude it }
+}
+// versions/<mc>.properties "drop_mixins": ysm.mixins.json entries for classes this Minecraft version lacks
+def ysmDroppedMixins = (findProperty('drop_mixins') ?: '').toString().split(',')*.trim().findAll { it }
+if (!ysmDroppedMixins.isEmpty()) {
+    tasks.named('processResources') {
+        inputs.property 'drop_mixins', ysmDroppedMixins.join(',')
+        doLast {
+            // the shared config and the loader's own (ysm.forge.mixins.json lists SoundEngineStreamMixin etc.)
+            ['ysm.mixins.json', 'ysm.forge.mixins.json'].each { name ->
+                def file = new File(destinationDir, name)
+                if (!file.exists())
+                    return
+                def json = new groovy.json.JsonSlurper().parse(file)
+                ['mixins', 'client', 'server'].each { key ->
+                    if (json[key] != null)
+                        json[key] = json[key].findAll { !ysmDroppedMixins.contains(it) }
+                }
+                file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+            }
+        }
+    }
+}
+// WTHIT finds its plugins through waila_plugins.json: without the plugin classes the file goes too
+if (ysmCompatExcluded.contains('wthit')) {
+    processResources { exclude 'waila_plugins.json' }
+} else if (ysmExtraSources.contains('wthit-initializer')) {
+    // WTHIT before its split plugin API (the Forge builds for 1.20.2, 1.20.3 and 1.20.6) reads one plugin class from
+    // "initializer"; src/legacy/wthit-initializer holds that class
+    processResources {
+        filesMatching('waila_plugins.json') {
+            filter { line ->
+                if (line.contains('"entrypoints"'))
+                    return line.replaceFirst(/"entrypoints"\s*:\s*\{/,
+                        '"initializer": "com.elfmcys.ysm.client.compat.wthit.YsmWthitPlugin",')
+                if (line.contains('"common"') || line.contains('"client"') || line.trim() == '},')
+                    return ''
+                return line
+            }
+        }
     }
 }
 
@@ -268,6 +328,8 @@ tasks.named('shadowJar') {
         } finally {
             shaded.close()
         }
+        // and no call into the loader or Minecraft that names a relocated library type (it could not link)
+        com.elfmcys.ysm.gradle.RelocationCheck.check(archiveFile.get().asFile, 'com/elfmcys/ysm/internal/')
         if (ysmLoader == 'fabric') {
             def zip = new java.util.zip.ZipFile(archiveFile.get().asFile)
             try {

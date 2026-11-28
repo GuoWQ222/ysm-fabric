@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Fabric port: restores 1.20's walkDist (see {@link EntityWalkDistance}). */
 @Mixin(Entity.class)
 public abstract class EntityWalkDistanceMixin implements EntityWalkDistance {
+    //#if MC >= 1.21.2
     @Unique
     private float ysm$walkDist;
 
@@ -27,9 +28,18 @@ public abstract class EntityWalkDistanceMixin implements EntityWalkDistance {
         CallbackInfo ci) {
         ysm$walkDist += (float)(clippedMovement.horizontalDistance() * 0.6F);
     }
+    //#else
+    //$$ // before 1.21.2 vanilla still keeps walkDist (Entity.move adds the same distance)
+    //$$ @org.spongepowered.asm.mixin.Shadow
+    //$$ public float walkDist;
+    //#endif
 
     @Override
     public float ysm$walkDist() {
+        //#if MC >= 1.21.2
         return ysm$walkDist;
+        //#else
+        //$$ return walkDist;
+        //#endif
     }
 }

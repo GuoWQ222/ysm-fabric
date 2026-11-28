@@ -1,0 +1,18 @@
+# Minecraft before 1.20.5 (Forge builds 1.20.2 - 1.20.4). After below-1.21: no typed custom payloads or stream codecs
+# (src/legacy/pre-payload-types), no item data components or entity attachments (src/legacy/pre-data-components),
+# effects are plain objects (no registry holders).
+net.minecraft.network.protocol.common.custom.CustomPacketPayload com.elfmcys.ysm.legacy.network.CustomPacketPayload
+net.minecraft.network.codec.StreamCodec com.elfmcys.ysm.legacy.network.StreamCodec
+net.minecraft.network.codec.ByteBufCodecs com.elfmcys.ysm.legacy.network.ByteBufCodecs
+regex	\.payload\(\)\.type\(\)\.id\(\)	.payload().id()
+regex	\(\(com\.elfmcys\.ysm\.mixin\.fabric\.ArrowPotionAccessor\)(\w+)\)\.ysm\$getPotionContents\(\)	com.elfmcys.ysm.legacy.item.ArrowPotions.of($1)
+regex	\.getEffect\(\)\.value\(\)	.getEffect()
+regex	net\.minecraft\.core\.registries\.BuiltInRegistries\.MOB_EFFECT\.wrapAsHolder\((\w+)\)	$1
+Holder<MobEffect> MobEffect
+net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()
+net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE net.minecraftforge.common.ForgeMod.ENTITY_REACH.get()
+net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY net.minecraftforge.common.ForgeMod.ENTITY_GRAVITY.get()
+regex	getAttributeValue\(net\.minecraft\.world\.entity\.ai\.attributes\.Attributes\.STEP_HEIGHT\) - 0\.6	getAttributeValue(net.minecraftforge.common.ForgeMod.STEP_HEIGHT_ADDITION.get())
+regex	(?<![\w.])BuiltInRegistries\.MOB_EFFECT\.wrapAsHolder\((\w+)\)	$1
+regex	item instanceof net\.minecraft\.world\.item\.MaceItem	false
+regex	ParticleArgument\.readParticle\(new StringReader\(id\), (net\.minecraft\.client\.Minecraft\.getInstance\(\)\.level\.registryAccess\(\))\)	ParticleArgument.readParticle(new StringReader(id), $1.lookupOrThrow(net.minecraft.core.registries.Registries.PARTICLE_TYPE))

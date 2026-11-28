@@ -54,18 +54,32 @@ public class CustomPlayerElytraLayer extends GeoLayerRenderer<CustomPlayerEntity
             // 2.6.5 (26.x) draws the 26.x elytra model at the locator, only flipped; the 1.20.1 offset and 2x scale
             // made the wings twice as large on 26.x.
             com.elfmcys.ysm.platform.McCompat.rotate(locatorPose, Axis.ZP.rotationDegrees(180));
+            //#if MC >= 1.21.9
             equipmentRenderer.renderLayers(EquipmentClientInfo.LayerType.WINGS, asset, model, humanoid, wings,
-                locatorPose, collector, packedLight, texture, state.outlineColor, 0);
+                locatorPose, collector, packedLight, texture, com.elfmcys.ysm.platform.render.YsmRenderStateKeys.outlineColor(state), 0);
+            //#else
+            //$$ model.setupAnim(humanoid);
+            //$$ equipmentRenderer.renderLayers(EquipmentClientInfo.LayerType.WINGS, asset, model, wings, locatorPose,
+            //$$     collector.buffers(), packedLight, texture);
+            //#endif
         });
     }
 
     private static @Nullable Identifier playerElytraTexture(LivingEntityRenderState state) {
         if (state instanceof AvatarRenderState avatar) {
+            //#if MC >= 1.21.9
             var skin = avatar.skin;
             if (skin.elytra() != null)
                 return skin.elytra().texturePath();
             if (skin.cape() != null && avatar.showCape)
                 return skin.cape().texturePath();
+            //#else
+            //$$ var skin = avatar.skin;
+            //$$ if (skin.elytraTexture() != null)
+            //$$     return skin.elytraTexture();
+            //$$ if (skin.capeTexture() != null && avatar.showCape)
+            //$$     return skin.capeTexture();
+            //#endif
         }
         return null;
     }

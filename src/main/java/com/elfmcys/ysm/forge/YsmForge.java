@@ -13,7 +13,9 @@ import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
+//#if MC >= 1.21.6
 import net.minecraftforge.eventbus.api.bus.BusGroup;
+//#endif
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.IConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
@@ -25,21 +27,39 @@ import net.minecraftforge.registries.RegisterEvent;
 public final class YsmForge {
     private static FMLJavaModLoadingContext context;
 
+    //#if MC >= 1.21.1
     public YsmForge(FMLJavaModLoadingContext context) {
         YsmForge.context = context;
+    //#else
+    //$$ // Forge for 1.21 constructs mods without arguments
+    //$$ public YsmForge() {
+    //$$     YsmForge.context = FMLJavaModLoadingContext.get();
+    //#endif
         YesSteveModel.init();
         if (com.elfmcys.ysm.platform.Platform.isClient())
             YesSteveModel.initClient();
     }
 
+    //#if MC >= 1.21.6
     public static BusGroup modBusGroup() {
         return context.getModBusGroup();
     }
+    //#else
+    //$$ /** Forge before 1.21.6 (EventBus 6): the mod event bus (versions/forge-eventbus6.remap routes listeners here). */
+    //$$ public static net.minecraftforge.eventbus.api.IEventBus modEventBus() {
+    //$$     return context.getModEventBus();
+    //$$ }
+    //#endif
 
     /** Forge's own config system (Fabric and NeoForge use Forge Config API Port for the same specs). */
     public static void registerConfigs(IConfigSpec<?> client, IConfigSpec<?> server) {
+        //#if MC >= 1.21.1
         context.registerConfig(ModConfig.Type.CLIENT, client);
         context.registerConfig(ModConfig.Type.SERVER, server);
+        //#else
+        //$$ net.minecraftforge.fml.ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, client);
+        //$$ net.minecraftforge.fml.ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, server);
+        //#endif
     }
 
     /** Forge freezes the vanilla registries; entries go in through its RegisterEvent. */
